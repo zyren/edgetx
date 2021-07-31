@@ -25,6 +25,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "board_common.h"
 
 #define     __IO    volatile             /*!< Defines 'read / write' permissions */
 
@@ -135,6 +136,12 @@
                                     (__HANDLE__)->Lock = HAL_UNLOCKED;    \
                                   }while (0U)
 
+// HAL Lock structures definition
+typedef enum
+{
+  HAL_UNLOCKED = 0x00U,
+  HAL_LOCKED   = 0x01U
+} HAL_LockTypeDef;
 
 /* Enable the specified I2C peripheral.
  * @param  __HANDLE__ specifies the I2C Handle.
@@ -210,6 +217,17 @@
 #define HAL_I2C_ERROR_DMA_PARAM         0x00000080U    /*!< DMA Parameter Error   */
 #define HAL_I2C_WRONG_START             0x00000200U    /*!< Wrong start Error     */
 
+// HAL DMA State structures definition
+typedef enum
+{
+  HAL_DMA_STATE_RESET             = 0x00U,  /*!< DMA not yet initialized or disabled */
+  HAL_DMA_STATE_READY             = 0x01U,  /*!< DMA initialized and ready for use   */
+  HAL_DMA_STATE_BUSY              = 0x02U,  /*!< DMA process is ongoing              */
+  HAL_DMA_STATE_TIMEOUT           = 0x03U,  /*!< DMA timeout state                   */
+  HAL_DMA_STATE_ERROR             = 0x04U,  /*!< DMA error state                     */
+  HAL_DMA_STATE_ABORT             = 0x05U,  /*!< DMA Abort state                     */
+}HAL_DMA_StateTypeDef;
+
 // I2C XferOptions definition
 #define  I2C_FIRST_FRAME                0x00000001U
 #define  I2C_FIRST_AND_NEXT_FRAME       0x00000002U
@@ -221,6 +239,10 @@
 // List of XferOptions
 #define  I2C_OTHER_FRAME                (0x00AA0000U)
 #define  I2C_OTHER_AND_LAST_FRAME       (0xAA000000U)
+
+// I2C XferDirection definition
+#define I2C_DIRECTION_RECEIVE           0x00000000U
+#define I2C_DIRECTION_TRANSMIT          0x00000001U
 
 // I2C states
 #define I2C_STATE_MSK             ((uint32_t)((uint32_t)((uint32_t)HAL_I2C_STATE_BUSY_TX | (uint32_t)HAL_I2C_STATE_BUSY_RX) & (uint32_t)(~((uint32_t)HAL_I2C_STATE_READY)))) /*!< Mask State define, keep only RX and TX bits            */
@@ -248,6 +270,18 @@
 #define HAL_DMA_ERROR_NO_XFER         0x00000080U    /*!< Abort requested with no Xfer ongoing   */
 #define HAL_DMA_ERROR_NOT_SUPPORTED   0x00000100U    /*!< Not supported mode                     */
 
+/* Clears the I2C STOPF pending flag.
+ * @param  __HANDLE__ specifies the I2C Handle.
+ * @retval None
+ */
+#define __HAL_I2C_CLEAR_STOPFLAG(__HANDLE__)           \
+  do{                                                  \
+    __IO uint32_t tmpreg = 0x00U;                      \
+    tmpreg = (__HANDLE__)->Instance->SR1;              \
+    SET_BIT((__HANDLE__)->Instance->CR1, I2C_CR1_PE);  \
+    UNUSED(tmpreg);                                    \
+  } while(0)
+
 /* Clears the I2C ADDR pending flag.
  * @param  __HANDLE__ specifies the I2C Handle.
  *         This parameter can be I2C where x: 1, 2, or 3 to select the I2C peripheral.
@@ -273,6 +307,19 @@
  */
 #define __HAL_I2C_CLEAR_FLAG(__HANDLE__, __FLAG__) ((__HANDLE__)->Instance->SR1 = (uint16_t)(~((__FLAG__) & I2C_FLAG_MASK)))
 
+/* Returns the number of remaining data units in the current DMAy Streamx transfer.
+ * @param  __HANDLE__ DMA handle
+ *
+ * @retval The number of remaining data units in the current DMA Stream transfer.
+ */
+#define __HAL_DMA_GET_COUNTER(__HANDLE__) ((__HANDLE__)->Instance->NDTR)
+
+#define I2C_CHECK_FLAG(__ISR__, __FLAG__)         ((((__ISR__) & ((__FLAG__) & I2C_FLAG_MASK)) == ((__FLAG__) & I2C_FLAG_MASK)) ? SET : RESET)
+#define I2C_CHECK_IT_SOURCE(__CR1__, __IT__)      ((((__CR1__) & (__IT__)) == (__IT__)) ? SET : RESET)
+
+#define IS_I2C_TRANSFER_OTHER_OPTIONS_REQUEST(REQUEST) (((REQUEST) == I2C_OTHER_FRAME)     || \
+                                                        ((REQUEST) == I2C_OTHER_AND_LAST_FRAME))
+
 /* Enable or disable the specified I2C interrupts.
  * @param  __HANDLE__ specifies the I2C Handle.
  * @param  __INTERRUPT__ specifies the interrupt source to enable or disable.
@@ -284,6 +331,28 @@
  */
 #define __HAL_I2C_ENABLE_IT(__HANDLE__, __INTERRUPT__)   SET_BIT((__HANDLE__)->Instance->CR2,(__INTERRUPT__))
 #define __HAL_I2C_DISABLE_IT(__HANDLE__, __INTERRUPT__)  CLEAR_BIT((__HANDLE__)->Instance->CR2, (__INTERRUPT__))
+
+// DMA handle Structure definition
+typedef struct __DMA_HandleTypeDef
+{
+  DMA_Stream_TypeDef         *Instance;                                                        /*!< Register base address                  */
+  DMA_InitTypeDef            Init;                                                             /*!< DMA communication parameters           */
+  HAL_LockTypeDef            Lock;                                                             /*!< DMA locking object                     */
+  __IO HAL_DMA_StateTypeDef  State;                                                            /*!< DMA transfer state                     */
+  void                       *Parent;                                                          /*!< Parent object state                    */
+  void                       (* XferCpltCallback)( struct __DMA_HandleTypeDef * hdma);         /*!< DMA transfer complete callback         */
+  void                       (* XferHalfCpltCallback)( struct __DMA_HandleTypeDef * hdma);     /*!< DMA Half transfer complete callback    */
+  void                       (* XferM1CpltCallback)( struct __DMA_HandleTypeDef * hdma);       /*!< DMA transfer complete Memory1 callback */
+  void                       (* XferM1HalfCpltCallback)( struct __DMA_HandleTypeDef * hdma);   /*!< DMA transfer Half complete Memory1 callback */
+  void                       (* XferErrorCallback)( struct __DMA_HandleTypeDef * hdma);        /*!< DMA transfer error callback            */
+  void                       (* XferAbortCallback)( struct __DMA_HandleTypeDef * hdma);        /*!< DMA transfer Abort callback            */
+  __IO uint32_t              ErrorCode;                                                        /*!< DMA Error code                          */
+  uint32_t                   StreamBaseAddress;                                                /*!< DMA Stream Base Address                */
+  uint32_t                   StreamIndex;                                                      /*!< DMA Stream Index                       */
+}DMA_HandleTypeDef;
+
+// Peripheral State functions
+HAL_DMA_StateTypeDef HAL_DMA_GetState(DMA_HandleTypeDef *hdma);
 
 // DMA Data transfer direction
 #define DMA_PERIPH_TO_MEMORY          0x00000000U                 /*!< Peripheral to memory direction */
@@ -310,13 +379,6 @@ typedef enum
   HAL_BUSY     = 0x02U,
   HAL_TIMEOUT  = 0x03U
 } HAL_StatusTypeDef;
-
-// HAL lock structures definition
-typedef enum
-{
- HAL_UNLOCKED = 0x00U,
- HAL_LOCKED   = 0x01U
-} HAL_LockTypeDef;
 
 /* HAL State structure definition
   * HAL I2C State value coding follow below described bitmap :
@@ -384,37 +446,6 @@ typedef enum
   HAL_I2C_MODE_MEM                = 0x40U    /*!< I2C communication is in Memory Mode       */
 } HAL_I2C_ModeTypeDef;
 
-// HAL DMA State structures definition
-typedef enum
-{
-  HAL_DMA_STATE_RESET             = 0x00U,  /*!< DMA not yet initialized or disabled */
-  HAL_DMA_STATE_READY             = 0x01U,  /*!< DMA initialized and ready for use   */
-  HAL_DMA_STATE_BUSY              = 0x02U,  /*!< DMA process is ongoing              */
-  HAL_DMA_STATE_TIMEOUT           = 0x03U,  /*!< DMA timeout state                   */
-  HAL_DMA_STATE_ERROR             = 0x04U,  /*!< DMA error state                     */
-  HAL_DMA_STATE_ABORT             = 0x05U,  /*!< DMA Abort state                     */
-}HAL_DMA_StateTypeDef;
-
-// DMA handle Structure definition
-typedef struct __DMA_HandleTypeDef
-{
-  DMA_Stream_TypeDef         *Instance;                                                        /*!< Register base address                  */
-  DMA_InitTypeDef            Init;                                                             /*!< DMA communication parameters           */
-  HAL_LockTypeDef            Lock;                                                             /*!< DMA locking object                     */
-  __IO HAL_DMA_StateTypeDef  State;                                                            /*!< DMA transfer state                     */
-  void                       *Parent;                                                          /*!< Parent object state                    */
-  void                       (* XferCpltCallback)( struct __DMA_HandleTypeDef * hdma);         /*!< DMA transfer complete callback         */
-  void                       (* XferHalfCpltCallback)( struct __DMA_HandleTypeDef * hdma);     /*!< DMA Half transfer complete callback    */
-  void                       (* XferM1CpltCallback)( struct __DMA_HandleTypeDef * hdma);       /*!< DMA transfer complete Memory1 callback */
-  void                       (* XferM1HalfCpltCallback)( struct __DMA_HandleTypeDef * hdma);   /*!< DMA transfer Half complete Memory1 callback */
-  void                       (* XferErrorCallback)( struct __DMA_HandleTypeDef * hdma);        /*!< DMA transfer error callback            */
-  void                       (* XferAbortCallback)( struct __DMA_HandleTypeDef * hdma);        /*!< DMA transfer Abort callback            */
-  __IO uint32_t              ErrorCode;                                                        /*!< DMA Error code                          */
-  uint32_t                   StreamBaseAddress;                                                /*!< DMA Stream Base Address                */
-  uint32_t                   StreamIndex;                                                      /*!< DMA Stream Index                       */
-}DMA_HandleTypeDef;
-
-
 // I2C configuration structure definition
 typedef struct
 {
@@ -474,3 +505,10 @@ HAL_StatusTypeDef HAL_I2C_Master_Transmit(I2C_HandleTypeDef *hi2c, uint16_t DevA
 HAL_StatusTypeDef HAL_I2C_Master_Receive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t Timeout);
 HAL_StatusTypeDef HAL_I2C_Mem_Write_DMA(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint16_t MemAddress, uint16_t MemAddSize, uint8_t *pData, uint16_t Size);
 HAL_StatusTypeDef HAL_I2C_Mem_Read_DMA(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint16_t MemAddress, uint16_t MemAddSize, uint8_t *pData, uint16_t Size);
+
+void HAL_I2C_EV_IRQHandler(I2C_HandleTypeDef *hi2c);
+
+void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c);
+void HAL_I2C_AddrCallback(I2C_HandleTypeDef *hi2c, uint8_t TransferDirection, uint16_t AddrMatchCode);
+void HAL_I2C_AbortCpltCallback(I2C_HandleTypeDef *hi2c);
+void HAL_I2C_ListenCpltCallback(I2C_HandleTypeDef *hi2c);
