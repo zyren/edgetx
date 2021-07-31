@@ -270,6 +270,28 @@ typedef enum
 #define HAL_DMA_ERROR_NO_XFER         0x00000080U    /*!< Abort requested with no Xfer ongoing   */
 #define HAL_DMA_ERROR_NOT_SUPPORTED   0x00000100U    /*!< Not supported mode                     */
 
+// DMA flag definitions
+#define DMA_FLAG_FEIF0_4              0x00000001U
+#define DMA_FLAG_DMEIF0_4             0x00000004U
+#define DMA_FLAG_TEIF0_4              0x00000008U
+#define DMA_FLAG_HTIF0_4              0x00000010U
+#define DMA_FLAG_TCIF0_4              0x00000020U
+#define DMA_FLAG_FEIF1_5              0x00000040U
+#define DMA_FLAG_DMEIF1_5             0x00000100U
+#define DMA_FLAG_TEIF1_5              0x00000200U
+#define DMA_FLAG_HTIF1_5              0x00000400U
+#define DMA_FLAG_TCIF1_5              0x00000800U
+#define DMA_FLAG_FEIF2_6              0x00010000U
+#define DMA_FLAG_DMEIF2_6             0x00040000U
+#define DMA_FLAG_TEIF2_6              0x00080000U
+#define DMA_FLAG_HTIF2_6              0x00100000U
+#define DMA_FLAG_TCIF2_6              0x00200000U
+#define DMA_FLAG_FEIF3_7              0x00400000U
+#define DMA_FLAG_DMEIF3_7             0x01000000U
+#define DMA_FLAG_TEIF3_7              0x02000000U
+#define DMA_FLAG_HTIF3_7              0x04000000U
+#define DMA_FLAG_TCIF3_7              0x08000000U
+
 /* Clears the I2C STOPF pending flag.
  * @param  __HANDLE__ specifies the I2C Handle.
  * @retval None
@@ -313,6 +335,21 @@ typedef enum
  * @retval The number of remaining data units in the current DMA Stream transfer.
  */
 #define __HAL_DMA_GET_COUNTER(__HANDLE__) ((__HANDLE__)->Instance->NDTR)
+
+/* Check whether the specified DMA Stream interrupt is enabled or disabled.
+ * @param  __HANDLE__ DMA handle
+ * @param  __INTERRUPT__ specifies the DMA interrupt source to check.
+ *         This parameter can be one of the following values:
+ *            @arg DMA_IT_TC: Transfer complete interrupt mask.
+ *            @arg DMA_IT_HT: Half transfer complete interrupt mask.
+ *            @arg DMA_IT_TE: Transfer error interrupt mask.
+ *            @arg DMA_IT_FE: FIFO error interrupt mask.
+ *            @arg DMA_IT_DME: Direct mode error interrupt.
+ * @retval The state of DMA_IT.
+ */
+#define __HAL_DMA_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__)  (((__INTERRUPT__) != DMA_IT_FE)? \
+                                                        ((__HANDLE__)->Instance->CR & (__INTERRUPT__)) : \
+                                                        ((__HANDLE__)->Instance->FCR & (__INTERRUPT__)))
 
 #define I2C_CHECK_FLAG(__ISR__, __FLAG__)         ((((__ISR__) & ((__FLAG__) & I2C_FLAG_MASK)) == ((__FLAG__) & I2C_FLAG_MASK)) ? SET : RESET)
 #define I2C_CHECK_IT_SOURCE(__CR1__, __IT__)      ((((__CR1__) & (__IT__)) == (__IT__)) ? SET : RESET)
