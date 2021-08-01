@@ -718,8 +718,14 @@
   #define I2C_SCL_GPIO_PinSource          GPIO_PinSource7
   #define I2C_SDA_GPIO_PinSource          GPIO_PinSource8
   #define I2C_EV_IRQHandler               I2C3_EV_IRQHandler
+  #define I2C_EV_IRQn                     I2C3_EV_IRQn
+  #define I2C_EV_IRQ_PRIO                 5
   #define I2C_DMA_RX_IRQHandler           DMA1_Stream2_IRQHandler // TODO! Check for conflicts
-  #define I2C_DMA_TX_IRQHandler           DMA1_Stream4_IRQHandler // TODO! Check for conflicts
+  #define I2C_DMA_RX_DMA_Stream_IRQn      DMA1_Stream2_IRQn
+  #define I2C_DMA_RX_DMA_Stream_PRIO      5
+  #define I2C_DMA_TX_IRQHandler           DMA1_Stream4_IRQHandler
+  #define I2C_DMA_TX_DMA_Stream_IRQn      DMA1_Stream4_IRQn
+  #define I2C_DMA_TX_DMA_Stream_PRIO      5
 #else
   #define I2C_RCC_AHB1Periph              RCC_AHB1Periph_GPIOB
   #define I2C_RCC_APB1Periph              RCC_APB1Periph_I2C1
@@ -731,8 +737,14 @@
   #define I2C_SCL_GPIO_PinSource          GPIO_PinSource8
   #define I2C_SDA_GPIO_PinSource          GPIO_PinSource9
   #define I2C_EV_IRQHandler               I2C1_EV_IRQHandler
+  #define I2C_EV_IRQn                     I2C1_EV_IRQn
+  #define I2C_EV_IRQ_PRIO                 5
   #define I2C_DMA_RX_IRQHandler           DMA1_Stream0_IRQHandler
+  #define I2C_DMA_RX_DMA_Stream_IRQn      DMA1_Stream0_IRQn
+  #define I2C_DMA_RX_DMA_Stream_PRIO      5
   #define I2C_DMA_TX_IRQHandler           DMA1_Stream7_IRQHandler
+  #define I2C_DMA_TX_DMA_Stream_IRQn      DMA1_Stream7_IRQn
+  #define I2C_DMA_TX_DMA_Stream_PRIO      5
 #endif
 #define I2C_CLK_RATE                      400000
 

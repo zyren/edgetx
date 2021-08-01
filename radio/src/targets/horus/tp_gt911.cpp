@@ -22,6 +22,7 @@
 #include "i2c_driver.h"
 #include "tp_gt911.h"
 #include "touch.h"
+#include "semphr.h"
 
 #if defined (RADIO_T18)
 const uint8_t TOUCH_GT911_Cfg[] = {
@@ -401,11 +402,11 @@ const uint8_t TOUCH_GT911_Cfg[] =
     0x00,                // 0x80FD Reserved
     0x00                 // 0x80FE Reserved
   };
-
 #endif
 
+#define I2C_TIMEOUT pdMS_TO_TICKS(20)
+
 bool touchGT911Flag = false;
-volatile static bool touchEventOccured = false;
 struct TouchData touchData;
 uint16_t touchGT911fwver = 0;
 uint32_t touchGT911hiccups = 0;
@@ -413,6 +414,13 @@ uint32_t touchGT911hiccups = 0;
 I2C_HandleTypeDef hi2c1;
 DMA_HandleTypeDef hdma_i2c1_rx;
 DMA_HandleTypeDef hdma_i2c1_tx;
+
+StaticSemaphore_t bufBinSemI2CCB;
+StaticSemaphore_t bufBinSemTouchINT;
+SemaphoreHandle_t hBinSemI2CCB;
+SemaphoreHandle_t hBinSemTouchINT;
+
+void Error_Handler(void);
 
 static void TOUCH_AF_ExtiStop(void)
 {
@@ -489,9 +497,34 @@ void TOUCH_AF_INT_Change(void)
   GPIO_Init(TOUCH_INT_GPIO, &GPIO_InitStructure);
 }
 
+#define __HAL_RCC_DMA1_CLK_ENABLE()  do { \
+                                        __IO uint32_t tmpreg = 0x00U; \
+                                        SET_BIT(RCC->AHB1ENR, RCC_AHB1ENR_DMA1EN);\
+                                        /* Delay after an RCC peripheral clock enabling */ \
+                                        tmpreg = READ_BIT(RCC->AHB1ENR, RCC_AHB1ENR_DMA1EN);\
+                                        UNUSED(tmpreg); \
+                                         } while(0U)
+#define __HAL_RCC_DMA2_CLK_ENABLE()     do { \
+                                        __IO uint32_t tmpreg = 0x00U; \
+                                        SET_BIT(RCC->AHB1ENR, RCC_AHB1ENR_DMA2EN);\
+                                        /* Delay after an RCC peripheral clock enabling */ \
+                                        tmpreg = READ_BIT(RCC->AHB1ENR, RCC_AHB1ENR_DMA2EN);\
+                                        UNUSED(tmpreg); \
+                                          } while(0U)
+
 void I2C_Init_Radio(void)
 {
   TRACE("I2C Init");
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  NVIC_SetPriority(I2C_DMA_RX_DMA_Stream_IRQn, I2C_DMA_RX_DMA_Stream_PRIO);
+  NVIC_EnableIRQ(I2C_DMA_RX_DMA_Stream_IRQn);
+
+  NVIC_SetPriority(I2C_DMA_TX_DMA_Stream_IRQn, I2C_DMA_TX_DMA_Stream_PRIO);
+  NVIC_EnableIRQ(I2C_DMA_TX_DMA_Stream_IRQn);
 
   hi2c1.Instance = I2C;
   hi2c1.Init.ClockSpeed = I2C_CLK_RATE;
@@ -516,25 +549,59 @@ void I2C_Init_Radio(void)
   {
       TRACE("I2C ERROR: HAL_I2CEx_ConfigDigitalFilter() failed");
   }
+
+  /* I2C1 DMA Init */
+  /* I2C1_RX Init */
+  hdma_i2c1_rx.Instance = DMA1_Stream0;
+  hdma_i2c1_rx.Init.DMA_Channel = DMA_CHANNEL_1;
+  hdma_i2c1_rx.Init.DMA_DIR = DMA_PERIPH_TO_MEMORY;
+  hdma_i2c1_rx.Init.DMA_PeripheralInc = DMA_PINC_DISABLE;
+  hdma_i2c1_rx.Init.DMA_MemoryInc = DMA_MINC_ENABLE;
+  hdma_i2c1_rx.Init.DMA_PeripheralDataSize = DMA_PDATAALIGN_BYTE;
+  hdma_i2c1_rx.Init.DMA_MemoryDataSize = DMA_MDATAALIGN_BYTE;
+  hdma_i2c1_rx.Init.DMA_Mode = DMA_NORMAL;
+  hdma_i2c1_rx.Init.DMA_Priority = DMA_PRIORITY_LOW;
+  hdma_i2c1_rx.Init.DMA_FIFOMode = DMA_FIFOMODE_DISABLE;
+  if (HAL_DMA_Init(&hdma_i2c1_rx) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  __HAL_LINKDMA(&hi2c1,hdmarx,hdma_i2c1_rx);
+
+  /* I2C1_TX Init */
+  hdma_i2c1_tx.Instance = DMA1_Stream7;
+  hdma_i2c1_tx.Init.DMA_Channel = DMA_CHANNEL_1;
+  hdma_i2c1_tx.Init.DMA_DIR = DMA_MEMORY_TO_PERIPH;
+  hdma_i2c1_tx.Init.DMA_PeripheralInc = DMA_PINC_DISABLE;
+  hdma_i2c1_tx.Init.DMA_MemoryInc = DMA_MINC_ENABLE;
+  hdma_i2c1_tx.Init.DMA_PeripheralDataSize = DMA_PDATAALIGN_BYTE;
+  hdma_i2c1_tx.Init.DMA_MemoryDataSize = DMA_MDATAALIGN_BYTE;
+  hdma_i2c1_tx.Init.DMA_Mode = DMA_NORMAL;
+  hdma_i2c1_tx.Init.DMA_Priority = DMA_PRIORITY_LOW;
+  hdma_i2c1_tx.Init.DMA_FIFOMode = DMA_FIFOMODE_DISABLE;
+  if (HAL_DMA_Init(&hdma_i2c1_tx) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  __HAL_LINKDMA(&hi2c1,hdmatx,hdma_i2c1_tx);
+
+  /* I2C1 interrupt Init */
+  NVIC_SetPriority(I2C_EV_IRQn, I2C_DMA_RX_DMA_Stream_PRIO);
+  NVIC_EnableIRQ(I2C_EV_IRQn);
 }
 
 bool I2C_GT911_WriteRegister(uint16_t reg, uint8_t * buf, uint8_t len)
 {
-    uint8_t uAddrAndBuf[258];
-    uAddrAndBuf[0] = (uint8_t)((reg & 0xFF00) >> 8);
-    uAddrAndBuf[1] = (uint8_t)(reg & 0x00FF);
-
-    if (len > 0)
+    if (HAL_I2C_Mem_Write_DMA(&hi2c1, GT911_I2C_ADDR << 1, reg, I2C_MEMADD_SIZE_16BIT, buf, len) != HAL_OK)
     {
-        for (int i = 0;i < len;i++)
-        {
-            uAddrAndBuf[i + 2] = buf[i];
-        }
+        TRACE("I2C ERROR: GT911 WriteRegister failed");
+        return false;
     }
-
-    if (HAL_I2C_Master_Transmit(&hi2c1, GT911_I2C_ADDR << 1, uAddrAndBuf, len + 2, 100) != HAL_OK)
+    if (xSemaphoreTake(hBinSemI2CCB, I2C_TIMEOUT) != pdPASS)
     {
-        TRACE("I2C ERROR: WriteRegister failed");
+        TRACE("I2C ERROR: GT911 WriteRegister  did not succeed");
         return false;
     }
     return true;
@@ -542,19 +609,14 @@ bool I2C_GT911_WriteRegister(uint16_t reg, uint8_t * buf, uint8_t len)
 
 bool I2C_GT911_ReadRegister(uint16_t reg, uint8_t * buf, uint8_t len)
 {
-    uint8_t uRegAddr[2];
-    uRegAddr[0] = (uint8_t)((reg & 0xFF00) >> 8);
-    uRegAddr[1] = (uint8_t)(reg & 0x00FF);
-
-    if (HAL_I2C_Master_Transmit(&hi2c1, GT911_I2C_ADDR << 1, uRegAddr, 2, 10) != HAL_OK)
+    if (HAL_I2C_Mem_Read_DMA(&hi2c1, GT911_I2C_ADDR << 1, reg, I2C_MEMADD_SIZE_16BIT, buf, len) != HAL_OK)
     {
-        TRACE("I2C ERROR: ReadRegister write reg address failed");
+        TRACE("I2C ERROR: GT911 ReadRegister failed");
         return false;
     }
-
-    if (HAL_I2C_Master_Receive(&hi2c1, GT911_I2C_ADDR << 1, buf, len, 100) != HAL_OK)
+    if (xSemaphoreTake(hBinSemI2CCB, I2C_TIMEOUT) != pdPASS)
     {
-        TRACE("I2C ERROR: ReadRegister read reg address failed");
+        TRACE("I2C ERROR: GT911 ReadRegister did not succeed");
         return false;
     }
     return true;
@@ -718,11 +780,6 @@ void touchPanelRead()
 {
   uint8_t state = 0;
 
-  if (!touchEventOccured)
-    return;
-
-  touchEventOccured = false;
-
   uint32_t startReadStatus = RTOS_GET_MS();
   do {
     if (!I2C_GT911_ReadRegister(GT911_READ_XY_REG, &state, 1)) {
@@ -793,11 +850,60 @@ void touchPanelRead()
 
 void gt911_Task(void)
 {
+    hBinSemI2CCB = xSemaphoreCreateBinaryStatic( &bufBinSemI2CCB );
+    hBinSemTouchINT = xSemaphoreCreateBinaryStatic( &bufBinSemTouchINT );
+
+    if (hBinSemI2CCB == NULL || hBinSemTouchINT == NULL)
+    {
+        TRACE("Failed to create touch task sempahores");
+        while(true)
+        {
+            vTaskDelay(pdMS_TO_TICKS(1000));
+        }
+    }
+
+    if (hBinSemI2CCB)
+        xSemaphoreTake(hBinSemI2CCB, 0);
+
+    if (!touchPanelInit())
+        TRACE("Touch panel init failed");
+
+    if (hBinSemTouchINT)
+        xSemaphoreTake(hBinSemTouchINT, 0);
 
     while (true) {
-
-        vTaskDelay(pdMS_TO_TICKS(1000));    // TODO! Remove, just for testing
+        if (hBinSemTouchINT)
+        {
+            xSemaphoreTake(hBinSemTouchINT, portMAX_DELAY);
+            touchPanelRead();
+        }
+        vTaskDelay(pdMS_TO_TICKS(5));    // Do not run faster than once every 5ms
     }
+}
+
+// This function is executed in case of error occurrence.
+void Error_Handler(void)
+{
+  __disable_irq();
+  while (1)
+  {
+  }
+}
+
+void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+    BaseType_t xHigherPriorityTaskWoken = false;
+    if (hBinSemI2CCB)
+        xSemaphoreGiveFromISR(hBinSemI2CCB, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+    BaseType_t xHigherPriorityTaskWoken = false;
+    if (hBinSemI2CCB)
+        xSemaphoreGiveFromISR(hBinSemI2CCB, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 extern "C" void TOUCH_INT_EXTI_IRQHandler1(void)
@@ -807,8 +913,12 @@ extern "C" void TOUCH_INT_EXTI_IRQHandler1(void)
       // on touch turn the light on
       resetBacklightTimeout();
     }
-    touchEventOccured = true;
     EXTI_ClearITPendingBit(TOUCH_INT_EXTI_LINE1);
+
+    BaseType_t xHigherPriorityTaskWoken = false;
+    if (hBinSemTouchINT)
+        xSemaphoreGiveFromISR(hBinSemTouchINT, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
   }
 }
 
@@ -825,9 +935,4 @@ extern "C" void I2C_DMA_RX_IRQHandler(void)
 extern "C" void I2C_DMA_TX_IRQHandler(void)
 {
     HAL_DMA_IRQHandler(&hdma_i2c1_tx);
-}
-
-bool touchPanelEventOccured()
-{
-  return touchEventOccured;
 }

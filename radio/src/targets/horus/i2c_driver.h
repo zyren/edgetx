@@ -292,6 +292,76 @@ typedef enum
 #define DMA_FLAG_HTIF3_7              0x04000000U
 #define DMA_FLAG_TCIF3_7              0x08000000U
 
+/** @defgroup DMA_Channel_selection DMA Channel selection
+  * @brief    DMA channel selection
+  * @{
+  */
+#define DMA_CHANNEL_0                 0x00000000U    /*!< DMA Channel 0 */
+#define DMA_CHANNEL_1                 0x02000000U    /*!< DMA Channel 1 */
+#define DMA_CHANNEL_2                 0x04000000U    /*!< DMA Channel 2 */
+#define DMA_CHANNEL_3                 0x06000000U    /*!< DMA Channel 3 */
+#define DMA_CHANNEL_4                 0x08000000U    /*!< DMA Channel 4 */
+#define DMA_CHANNEL_5                 0x0A000000U    /*!< DMA Channel 5 */
+#define DMA_CHANNEL_6                 0x0C000000U    /*!< DMA Channel 6 */
+#define DMA_CHANNEL_7                 0x0E000000U    /*!< DMA Channel 7 */
+#if defined (DMA_SxCR_CHSEL_3)
+#define DMA_CHANNEL_8                 0x10000000U    /*!< DMA Channel 8 */
+#define DMA_CHANNEL_9                 0x12000000U    /*!< DMA Channel 9 */
+#define DMA_CHANNEL_10                0x14000000U    /*!< DMA Channel 10 */
+#define DMA_CHANNEL_11                0x16000000U    /*!< DMA Channel 11 */
+#define DMA_CHANNEL_12                0x18000000U    /*!< DMA Channel 12 */
+#define DMA_CHANNEL_13                0x1A000000U    /*!< DMA Channel 13 */
+#define DMA_CHANNEL_14                0x1C000000U    /*!< DMA Channel 14 */
+#define DMA_CHANNEL_15                0x1E000000U    /*!< DMA Channel 15 */
+#endif /* DMA_SxCR_CHSEL_3 */
+
+// DMA Peripheral incremented mode
+#define DMA_PINC_ENABLE               ((uint32_t)DMA_SxCR_PINC)   /*!< Peripheral increment mode enable  */
+#define DMA_PINC_DISABLE              0x00000000U                 /*!< Peripheral increment mode disable */
+
+// DMA Memory incremented mode
+#define DMA_MINC_ENABLE               ((uint32_t)DMA_SxCR_MINC)   /*!< Memory increment mode enable  */
+#define DMA_MINC_DISABLE              0x00000000U                 /*!< Memory increment mode disable */
+
+// DMA Peripheral data size
+#define DMA_PDATAALIGN_BYTE           0x00000000U                  /*!< Peripheral data alignment: Byte     */
+#define DMA_PDATAALIGN_HALFWORD       ((uint32_t)DMA_SxCR_PSIZE_0) /*!< Peripheral data alignment: HalfWord */
+#define DMA_PDATAALIGN_WORD           ((uint32_t)DMA_SxCR_PSIZE_1) /*!< Peripheral data alignment: Word     */
+
+// DMA Memory data size
+#define DMA_MDATAALIGN_BYTE           0x00000000U                  /*!< Memory data alignment: Byte     */
+#define DMA_MDATAALIGN_HALFWORD       ((uint32_t)DMA_SxCR_MSIZE_0) /*!< Memory data alignment: HalfWord */
+#define DMA_MDATAALIGN_WORD           ((uint32_t)DMA_SxCR_MSIZE_1) /*!< Memory data alignment: Word     */
+
+// DMA mode
+#define DMA_NORMAL                    0x00000000U                  /*!< Normal mode                  */
+#define DMA_CIRCULAR                  ((uint32_t)DMA_SxCR_CIRC)    /*!< Circular mode                */
+#define DMA_PFCTRL                    ((uint32_t)DMA_SxCR_PFCTRL)  /*!< Peripheral flow control mode */
+
+// DMA Priority level
+#define DMA_PRIORITY_LOW              0x00000000U                 /*!< Priority level: Low       */
+#define DMA_PRIORITY_MEDIUM           ((uint32_t)DMA_SxCR_PL_0)   /*!< Priority level: Medium    */
+#define DMA_PRIORITY_HIGH             ((uint32_t)DMA_SxCR_PL_1)   /*!< Priority level: High      */
+#define DMA_PRIORITY_VERY_HIGH        ((uint32_t)DMA_SxCR_PL)     /*!< Priority level: Very High */
+
+// DMA FIFO direct mode
+#define DMA_FIFOMODE_DISABLE          0x00000000U                 /*!< FIFO mode disable */
+#define DMA_FIFOMODE_ENABLE           ((uint32_t)DMA_SxFCR_DMDIS) /*!< FIFO mode enable  */
+
+#define HAL_TIMEOUT_DMA_ABORT    5U  /* 5 ms */
+
+// DMA Memory burst
+#define DMA_MBURST_SINGLE             0x00000000U
+#define DMA_MBURST_INC4               ((uint32_t)DMA_SxCR_MBURST_0)
+#define DMA_MBURST_INC8               ((uint32_t)DMA_SxCR_MBURST_1)
+#define DMA_MBURST_INC16              ((uint32_t)DMA_SxCR_MBURST)
+
+// DMA FIFO threshold level
+#define DMA_FIFO_THRESHOLD_1QUARTERFULL       0x00000000U                  /*!< FIFO threshold 1 quart full configuration  */
+#define DMA_FIFO_THRESHOLD_HALFFULL           ((uint32_t)DMA_SxFCR_FTH_0)  /*!< FIFO threshold half full configuration     */
+#define DMA_FIFO_THRESHOLD_3QUARTERSFULL      ((uint32_t)DMA_SxFCR_FTH_1)  /*!< FIFO threshold 3 quarts full configuration */
+#define DMA_FIFO_THRESHOLD_FULL               ((uint32_t)DMA_SxFCR_FTH)    /*!< FIFO threshold full configuration          */
+
 /* Clears the I2C STOPF pending flag.
  * @param  __HANDLE__ specifies the I2C Handle.
  * @retval None
@@ -407,6 +477,12 @@ HAL_DMA_StateTypeDef HAL_DMA_GetState(DMA_HandleTypeDef *hdma);
  * @retval None
  */
 #define __HAL_DMA_DISABLE(__HANDLE__)     ((__HANDLE__)->Instance->CR &=  ~DMA_SxCR_EN)
+
+#define __HAL_LINKDMA(__HANDLE__, __PPP_DMA_FIELD__, __DMA_HANDLE__)               \
+                        do{                                                      \
+                              (__HANDLE__)->__PPP_DMA_FIELD__ = &(__DMA_HANDLE__); \
+                              (__DMA_HANDLE__).Parent = (__HANDLE__);             \
+                          } while(0U)
 
 // HAL Status structures definition
 typedef enum
@@ -550,3 +626,5 @@ void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c);
 void HAL_I2C_AddrCallback(I2C_HandleTypeDef *hi2c, uint8_t TransferDirection, uint16_t AddrMatchCode);
 void HAL_I2C_AbortCpltCallback(I2C_HandleTypeDef *hi2c);
 void HAL_I2C_ListenCpltCallback(I2C_HandleTypeDef *hi2c);
+
+HAL_StatusTypeDef HAL_DMA_Init(DMA_HandleTypeDef *hdma);

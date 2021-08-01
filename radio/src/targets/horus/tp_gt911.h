@@ -85,4 +85,3 @@ PACK(struct TouchData {
 void gt911_Task(void);
 bool touchPanelInit(void);
 void touchPanelRead(void);
-bool touchPanelEventOccured(void);
