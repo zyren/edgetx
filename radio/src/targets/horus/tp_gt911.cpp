@@ -791,6 +791,15 @@ void touchPanelRead()
   TRACE("touch event = %s", event2str(touchState.event));
 }
 
+void gt911_Task(void)
+{
+
+    while (true) {
+
+        vTaskDelay(pdMS_TO_TICKS(1000));    // TODO! Remove, just for testing
+    }
+}
+
 extern "C" void TOUCH_INT_EXTI_IRQHandler1(void)
 {
   if (EXTI_GetITStatus(TOUCH_INT_EXTI_LINE1) != RESET) {

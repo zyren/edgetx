@@ -31,15 +31,18 @@
 #endif
 #define MIXER_STACK_SIZE       400
 #define AUDIO_STACK_SIZE       400
+#define TOUCH_STACK_SIZE       400   // only consumed if radio supports touch
 #define CLI_STACK_SIZE         1000  // only consumed with CLI build option
 
 #if defined(FREE_RTOS)
 #define MIXER_TASK_PRIO        (tskIDLE_PRIORITY + 4)
+#define TOUCH_TASK_PRIO        (tskIDLE_PRIORITY + 3)
 #define AUDIO_TASK_PRIO        (tskIDLE_PRIORITY + 2)
 #define MENUS_TASK_PRIO        (tskIDLE_PRIORITY + 1)
 #define CLI_TASK_PRIO          (tskIDLE_PRIORITY + 1)
 #else
 #define MIXER_TASK_PRIO        (4)
+#define TOUCH_TASK_PRIO        (3)
 #define AUDIO_TASK_PRIO        (2)
 #define MENUS_TASK_PRIO        (1)
 #define CLI_TASK_PRIO          (1)
@@ -53,6 +56,11 @@ extern RTOS_DEFINE_STACK(mixerStack, MIXER_STACK_SIZE);
 
 extern RTOS_TASK_HANDLE audioTaskId;
 extern RTOS_DEFINE_STACK(audioStack, AUDIO_STACK_SIZE);
+
+#if defined(HARDWARE_TOUCH)
+extern RTOS_TASK_HANDLE touchTaskId;
+extern RTOS_DEFINE_STACK(touchStack, TOUCH_STACK_SIZE);
+#endif
 
 extern RTOS_MUTEX_HANDLE mixerMutex;
 

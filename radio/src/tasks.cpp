@@ -30,6 +30,11 @@ RTOS_DEFINE_STACK(mixerStack, MIXER_STACK_SIZE);
 RTOS_TASK_HANDLE audioTaskId;
 RTOS_DEFINE_STACK(audioStack, AUDIO_STACK_SIZE);
 
+#if defined(HARDWARE_TOUCH)
+RTOS_TASK_HANDLE touchTaskId;
+RTOS_DEFINE_STACK(touchStack, TOUCH_STACK_SIZE);
+#endif
+
 RTOS_MUTEX_HANDLE audioMutex;
 RTOS_MUTEX_HANDLE mixerMutex;
 
@@ -273,6 +278,13 @@ TASK_FUNCTION(menusTask)
   TASK_RETURN();
 }
 
+#if defined(HARDWARE_TOUCH)
+TASK_FUNCTION(touchTask)
+{
+    gt911_Task();
+}
+#endif
+
 void tasksStart()
 {
   RTOS_CREATE_MUTEX(audioMutex);
@@ -286,6 +298,11 @@ void tasksStart()
                    MIXER_STACK_SIZE, MIXER_TASK_PRIO);
   RTOS_CREATE_TASK(menusTaskId, menusTask, "menus", menusStack,
                    MENUS_STACK_SIZE, MENUS_TASK_PRIO);
+
+#if defined(HARDWARE_TOUCH)
+  RTOS_CREATE_TASK(touchTaskId, touchTask, "touch", touchStack,
+                   TOUCH_STACK_SIZE, TOUCH_TASK_PRIO);
+#endif
 
 #if !defined(SIMU)
   RTOS_CREATE_TASK(audioTaskId, audioTask, "audio", audioStack,

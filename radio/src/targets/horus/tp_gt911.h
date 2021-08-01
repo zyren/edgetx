@@ -25,10 +25,6 @@
 extern bool touchGT911Flag;
 extern uint16_t touchGT911fwver;
 extern uint32_t touchGT911hiccups;
-extern bool touchPanelInit();
-
-void touchPanelRead();
-bool touchPanelEventOccured();
 
 #define GT911_TIMEOUT           3 // 3ms
 
@@ -85,3 +81,8 @@ PACK(struct TouchData {
 
 #define TPINT_LOW()   do { TOUCH_INT_GPIO->BSRRH = TOUCH_INT_GPIO_PIN; } while(0)
 #define TPINT_HIGH()  do { TOUCH_INT_GPIO->BSRRL = TOUCH_INT_GPIO_PIN; } while(0)
+
+void gt911_Task(void);
+bool touchPanelInit(void);
+void touchPanelRead(void);
+bool touchPanelEventOccured(void);
