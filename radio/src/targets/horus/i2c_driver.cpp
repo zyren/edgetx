@@ -3223,6 +3223,16 @@ static void I2C_ITError(I2C_HandleTypeDef *hi2c)
   }
 }
 
+/* Returns the DMA state.
+ * @param  hdma pointer to a DMA_HandleTypeDef structure that contains
+ *               the configuration information for the specified DMA Stream.
+ * @retval HAL state
+ */
+HAL_DMA_StateTypeDef HAL_DMA_GetState(DMA_HandleTypeDef *hdma)
+{
+  return hdma->State;
+}
+
 /* Handle STOPF flag for Slave
  * @param  hi2c Pointer to a I2C_HandleTypeDef structure that contains
  *         the configuration information for I2C module

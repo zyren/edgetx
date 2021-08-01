@@ -370,19 +370,19 @@ typedef enum
 #define __HAL_I2C_DISABLE_IT(__HANDLE__, __INTERRUPT__)  CLEAR_BIT((__HANDLE__)->Instance->CR2, (__INTERRUPT__))
 
 // DMA handle Structure definition
-typedef struct __DMA_HandleTypeDef
+typedef struct DMA_HandleTypeDef
 {
   DMA_Stream_TypeDef         *Instance;                                                        /*!< Register base address                  */
   DMA_InitTypeDef            Init;                                                             /*!< DMA communication parameters           */
   HAL_LockTypeDef            Lock;                                                             /*!< DMA locking object                     */
   __IO HAL_DMA_StateTypeDef  State;                                                            /*!< DMA transfer state                     */
   void                       *Parent;                                                          /*!< Parent object state                    */
-  void                       (* XferCpltCallback)( struct __DMA_HandleTypeDef * hdma);         /*!< DMA transfer complete callback         */
-  void                       (* XferHalfCpltCallback)( struct __DMA_HandleTypeDef * hdma);     /*!< DMA Half transfer complete callback    */
-  void                       (* XferM1CpltCallback)( struct __DMA_HandleTypeDef * hdma);       /*!< DMA transfer complete Memory1 callback */
-  void                       (* XferM1HalfCpltCallback)( struct __DMA_HandleTypeDef * hdma);   /*!< DMA transfer Half complete Memory1 callback */
-  void                       (* XferErrorCallback)( struct __DMA_HandleTypeDef * hdma);        /*!< DMA transfer error callback            */
-  void                       (* XferAbortCallback)( struct __DMA_HandleTypeDef * hdma);        /*!< DMA transfer Abort callback            */
+  void                       (* XferCpltCallback)( struct DMA_HandleTypeDef * hdma);         /*!< DMA transfer complete callback         */
+  void                       (* XferHalfCpltCallback)( struct DMA_HandleTypeDef * hdma);     /*!< DMA Half transfer complete callback    */
+  void                       (* XferM1CpltCallback)( struct DMA_HandleTypeDef * hdma);       /*!< DMA transfer complete Memory1 callback */
+  void                       (* XferM1HalfCpltCallback)( struct DMA_HandleTypeDef * hdma);   /*!< DMA transfer Half complete Memory1 callback */
+  void                       (* XferErrorCallback)( struct DMA_HandleTypeDef * hdma);        /*!< DMA transfer error callback            */
+  void                       (* XferAbortCallback)( struct DMA_HandleTypeDef * hdma);        /*!< DMA transfer Abort callback            */
   __IO uint32_t              ErrorCode;                                                        /*!< DMA Error code                          */
   uint32_t                   StreamBaseAddress;                                                /*!< DMA Stream Base Address                */
   uint32_t                   StreamIndex;                                                      /*!< DMA Stream Index                       */
@@ -544,6 +544,7 @@ HAL_StatusTypeDef HAL_I2C_Mem_Write_DMA(I2C_HandleTypeDef *hi2c, uint16_t DevAdd
 HAL_StatusTypeDef HAL_I2C_Mem_Read_DMA(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint16_t MemAddress, uint16_t MemAddSize, uint8_t *pData, uint16_t Size);
 
 void HAL_I2C_EV_IRQHandler(I2C_HandleTypeDef *hi2c);
+void HAL_DMA_IRQHandler(DMA_HandleTypeDef *hdma);
 
 void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c);
 void HAL_I2C_AddrCallback(I2C_HandleTypeDef *hi2c, uint8_t TransferDirection, uint16_t AddrMatchCode);

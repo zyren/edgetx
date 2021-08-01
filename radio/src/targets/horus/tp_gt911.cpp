@@ -411,6 +411,8 @@ uint16_t touchGT911fwver = 0;
 uint32_t touchGT911hiccups = 0;
 
 I2C_HandleTypeDef hi2c1;
+DMA_HandleTypeDef hdma_i2c1_rx;
+DMA_HandleTypeDef hdma_i2c1_tx;
 
 static void TOUCH_AF_ExtiStop(void)
 {
@@ -799,6 +801,21 @@ extern "C" void TOUCH_INT_EXTI_IRQHandler1(void)
     touchEventOccured = true;
     EXTI_ClearITPendingBit(TOUCH_INT_EXTI_LINE1);
   }
+}
+
+extern "C" void I2C_EV_IRQHandler(void)
+{
+    HAL_I2C_EV_IRQHandler(&hi2c1);
+}
+
+extern "C" void I2C_DMA_RX_IRQHandler(void)
+{
+    HAL_DMA_IRQHandler(&hdma_i2c1_rx);
+}
+
+extern "C" void I2C_DMA_TX_IRQHandler(void)
+{
+    HAL_DMA_IRQHandler(&hdma_i2c1_tx);
 }
 
 bool touchPanelEventOccured()
