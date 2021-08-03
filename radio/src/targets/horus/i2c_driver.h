@@ -27,6 +27,8 @@
 #include <stdint.h>
 #include "board_common.h"
 
+#define  USE_HAL_I2C_REGISTER_CALLBACKS         0U /* I2C register callback disabled       */
+
 #define     __IO    volatile             /*!< Defines 'read / write' permissions */
 
 #ifndef __weak

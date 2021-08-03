@@ -670,17 +670,17 @@ bool touchPanelInit(void)
 
     TPRST_LOW();
     TPINT_HIGH();
-    delay_us(200);
+    vTaskDelay(pdMS_TO_TICKS(1));
 
     TPRST_HIGH();
-    delay_ms(6);
+    vTaskDelay(pdMS_TO_TICKS(6));
 
     TPINT_LOW();
-    delay_ms(55);
+    vTaskDelay(pdMS_TO_TICKS(55));
 
     TOUCH_AF_INT_Change();  //Set INT INPUT INT=LOW
 
-    delay_ms(50);
+    vTaskDelay(pdMS_TO_TICKS(50));
 
     TRACE("Reading Touch registry");
     if (!I2C_GT911_ReadRegister(GT_PID_REG, tmp, 4))
@@ -721,7 +721,7 @@ bool touchPanelInit(void)
           TRACE("GT911 FW version: %u", touchGT911fwver);
       }
 
-      delay_ms(10);
+      vTaskDelay(pdMS_TO_TICKS(10));
       tmp[0] = 0X00;
       if (!I2C_GT911_WriteRegister(GT_CTRL_REG, tmp, 1))  //end reset
       {
