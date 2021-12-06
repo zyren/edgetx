@@ -306,6 +306,13 @@ void RadioHardwarePage::build(FormWindow * window)
     grid.nextLine();
   }
 
+#if defined(PCBNV14)
+  // Trim hats as trims or keys
+  new StaticText(window, grid.getLabelSlot(), STR_TRIMHAT, 0, COLOR_THEME_PRIMARY1);
+  new Choice(window, grid.getFieldSlot(), STR_TRIMHATTYPES, TRIMHAT_AUTO, TRIMHAT_MAX, GET_SET_DEFAULT(g_eeGeneral.trimHatMode));
+  grid.nextLine();
+#endif
+
   // Bat calibration
   new StaticText(window, grid.getLabelSlot(), STR_BATT_CALIB, 0, COLOR_THEME_PRIMARY1);
   auto batCal = new NumberEdit(window, grid.getFieldSlot(1,0), -127, 127, GET_SET_DEFAULT(g_eeGeneral.txVoltageCalibration));

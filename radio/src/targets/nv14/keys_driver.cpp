@@ -27,7 +27,15 @@ uint32_t readKeys()
   uint32_t result = 0;
   bool getKeys = true;
 #if defined(LUA)
-  if (!isLuaStandaloneRunning()) {
+  if (!isLuaStandaloneRunning() && g_eeGeneral.trimHatMode == TRIMHAT_AUTO) {
+    getKeys = false;
+  }
+#endif
+
+#if !defined(BOOT)
+  if (g_eeGeneral.trimHatMode & TRIMHAT_KEYS) {
+    getKeys = true;
+  } else if (g_eeGeneral.trimHatMode & TRIMHAT_TRIMS) {
     getKeys = false;
   }
 #endif
@@ -66,10 +74,19 @@ uint32_t readTrims()
 
   bool getTrim = true;
 #if defined(LUA)
-  if (isLuaStandaloneRunning()) {
+  if (isLuaStandaloneRunning() && g_eeGeneral.trimHatMode == TRIMHAT_AUTO) {
     getTrim = false;
   }
 #endif
+
+#if !defined(BOOT)
+  if (g_eeGeneral.trimHatMode & TRIMHAT_TRIMS) {
+    getTrim = true;
+  } else if (g_eeGeneral.trimHatMode & TRIMHAT_KEYS) {
+    getTrim = false;
+  }
+#endif
+
   if(!getTrim) return result;
   if (TRIMS_GPIO_REG_LHL & TRIMS_GPIO_PIN_LHL)
     result |= 1 << (TRM_LH_DWN - TRM_BASE);

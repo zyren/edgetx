@@ -102,6 +102,12 @@ const struct YamlIdStr enum_ZoneOptionValueEnum[] = {
   {  ZOV_Color, "Color"  },
   {  0, NULL  }
 };
+const struct YamlIdStr enum_TrimHatMode[] = {
+  {  TRIMHAT_AUTO, "AUTO"  },
+  {  TRIMHAT_KEYS, "KEYS"  },
+  {  TRIMHAT_TRIMS, "TRIMS"  },
+  {  0, NULL  }
+};
 const struct YamlIdStr enum_TimerModes[] = {
   {  TMRMODE_OFF, "OFF"  },
   {  TMRMODE_ON, "ON"  },
@@ -437,6 +443,7 @@ static const struct YamlNode struct_RadioData[] = {
   YAML_STRUCT("themeData", 480, struct_OpenTxTheme__PersistentData, NULL),
   YAML_STRING("ownerRegistrationID", 8),
   YAML_SIGNED( "uartSampleMode", 2 ),
+  YAML_ENUM("trimHatMode", 3, enum_TrimHatMode),
   YAML_END
 };
 static const struct YamlNode struct_unsigned_8[] = {

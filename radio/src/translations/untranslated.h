@@ -220,7 +220,9 @@
 #define TR_PWR_OFF_DELAYS              "0s""1s""2s""4s"
 
 #if defined(PCBNV14)
-#define  TR_RFPOWER_AFHDS2             "\007" "Default\0""High\0"
+#define TR_RFPOWER_AFHDS2             "\007" "Default\0""High\0"
+#define TR_TRIMHAT                    "Use trim hats as"
+#define TR_TRIMHATTYPES               "\005" "Auto\0""Keys\0""Trims\0"
 #endif
 
 #define TR_SENSOR_RSSI                      "RSSI"

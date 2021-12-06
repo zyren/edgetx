@@ -909,6 +909,9 @@ PACK(struct RadioData {
   GYRO_FIELDS
 
   NOBACKUP(int8_t   uartSampleMode:2); // See UartSampleModes
+#if defined(PCBNV14)
+  NOBACKUP(uint8_t  trimHatMode:3 ENUM(TrimHatMode));
+#endif
 });
 
 #undef SWITCHES_WARNING_DATA

@@ -1141,6 +1141,12 @@ extern const char STR_AUTH_FAILURE[];
 extern const char STR_PROTOCOL[];
 extern const char STR_RACING_MODE[];
 
+#if defined(PCBNV14)
+extern const char STR_RFPOWER_AFHDS2[];
+extern const char STR_TRIMHAT[];
+extern const char STR_TRIMHATTYPES[];
+#endif
+
 extern const char STR_USE_THEME_COLOR[];
 
 extern const char STR_DUPLICATE[];
