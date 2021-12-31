@@ -472,6 +472,9 @@ void usbJoystickUpdate();
 }
 #endif
 
+// SPI Flash driver
+void flashInit();
+
 // Audio driver
 void audioInit();
 void audioConsumeCurrentBuffer();
