@@ -1300,6 +1300,7 @@
 #define TR_EDIT_THEME                 "編輯主題"
 #define TR_DETAILS                    "詳細信息"
 #define TR_THEME_EDITOR               "主題"
+#define TR_LOADING                     "Loading"
 
 // Main menu
 #define TR_MAIN_MENU_SELECT_MODEL     "模型選擇"

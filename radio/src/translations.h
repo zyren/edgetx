@@ -1157,6 +1157,7 @@ extern const char STR_CANCEL[];
 extern const char STR_EDIT_THEME[];
 extern const char STR_DETAILS[];
 extern const char STR_THEME_EDITOR[];
+extern const char STR_LOADING[];
 
 #if defined(COLORLCD)
 

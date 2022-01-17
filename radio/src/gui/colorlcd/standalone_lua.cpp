@@ -19,6 +19,7 @@
  * GNU General Public License for more details.
  */
 
+#include "opentx.h"
 #include "standalone_lua.h"
 #include "view_main.h"
 #include "touch.h"
@@ -76,6 +77,11 @@ StandaloneLuaWindow* StandaloneLuaWindow::instance()
 
 void StandaloneLuaWindow::attach(Window* newParent)
 {
+  lcdStoreBackupBuffer();
+  BitmapBuffer buffer(BMP_ARGB4444, LCD_W, LCD_H, lcdGetBackupBuffer());
+  buffer.drawSolidFilledRect(LCD_W/2-80, LCD_H/2-25, 160, 50, COLOR_THEME_PRIMARY2);
+  buffer.drawText(LCD_W/2, LCD_H/2-20, STR_LOADING, FONT(XL)|CENTERED|COLOR_THEME_PRIMARY1);
+
   Window::attach(newParent->getFullScreenWindow());
   Layer::push(this);
   setFocus();

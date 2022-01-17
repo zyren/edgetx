@@ -609,7 +609,10 @@ void lcdCopy(void * dest, void * src)
 
 void lcdStoreBackupBuffer()
 {
-  lcdCopy(LCD_BACKUP_FRAME_BUFFER, lcd->getData());
+  if (currentLayer == LCD_FIRST_LAYER)
+    lcdCopy(LCD_BACKUP_FRAME_BUFFER, lcd->getData());
+  else
+    lcdCopy(LCD_BACKUP_FRAME_BUFFER, lcdFront->getData());
 }
 
 int lcdRestoreBackupBuffer()

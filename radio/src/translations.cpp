@@ -961,6 +961,7 @@ const char STR_CANCEL[] = TR_CANCEL;
 const char STR_EDIT_THEME[] = TR_EDIT_THEME;
 const char STR_DETAILS[] = TR_DETAILS;
 const char STR_THEME_EDITOR[] = TR_THEME_EDITOR;
+const char STR_LOADING[] = TR_LOADING;
 
 #if defined(COLORLCD)
 

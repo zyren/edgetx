@@ -1386,6 +1386,7 @@
 #define TR_EDIT_THEME                   "EDIT THEME"
 #define TR_DETAILS                      "Details"
 #define TR_THEME_EDITOR                 "THEMES"
+#define TR_LOADING                     "Loading"
 
 // Main menu
 #define TR_MAIN_MENU_SELECT_MODEL       "Select\nModel"
