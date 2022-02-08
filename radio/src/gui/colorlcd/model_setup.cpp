@@ -1192,6 +1192,50 @@ class ModuleWindow : public FormGroup {
       }
 #endif
 
+#if defined(INTERNAL_MODULE_PXX1) && defined(EXTERNAL_ANTENNA)
+if (isModuleXJT(moduleIdx) && g_eeGeneral.antennaMode == ANTENNA_MODE_PER_MODEL) {
+        new StaticText(this, grid.getLabelSlot(true), STR_ANTENNA, 0, COLOR_THEME_PRIMARY1);
+        new Choice(
+            this, grid.getFieldSlot(), STR_ANTENNA_MODES,
+            ANTENNA_MODE_INTERNAL, ANTENNA_MODE_EXTERNAL,
+            GET_DEFAULT(g_model.moduleData[moduleIdx].pxx.antennaMode),
+             [=](int32_t antenna) -> void {
+              if (!isExternalAntennaEnabled() &&
+                  (antenna == ANTENNA_MODE_EXTERNAL ||
+                   (antenna == ANTENNA_MODE_PER_MODEL &&
+                    g_model.moduleData[moduleIdx].pxx.antennaMode ==
+                        ANTENNA_MODE_EXTERNAL))) {
+                if (confirmationDialog(STR_ANTENNACONFIRM1,
+                                       STR_ANTENNACONFIRM2)) {
+                  g_model.moduleData[moduleIdx].pxx.antennaMode = antenna;
+                  SET_DIRTY();
+                }
+              } else {
+                g_model.moduleData[moduleIdx].pxx.antennaMode = antenna;
+                checkExternalAntenna();
+                SET_DIRTY();
+              }
+            });
+        grid.nextLine();
+/*
+        reusableBuffer.moduleSetup.antennaMode = editChoice(MODEL_SETUP_2ND_COLUMN, y, INDENT TR_ANTENNA, STR_ANTENNA_MODES,
+                                                            reusableBuffer.moduleSetup.antennaMode == ANTENNA_MODE_PER_MODEL ? ANTENNA_MODE_INTERNAL : reusableBuffer.moduleSetup.antennaMode,
+                                                            ANTENNA_MODE_INTERNAL, ANTENNA_MODE_EXTERNAL, attr, event,
+                                                            [](int value) { return value != ANTENNA_MODE_PER_MODEL; });
+        if (event && !s_editMode && reusableBuffer.moduleSetup.antennaMode != g_model.moduleData[INTERNAL_MODULE].pxx.antennaMode) {
+          if (reusableBuffer.moduleSetup.antennaMode == ANTENNA_MODE_EXTERNAL && !isExternalAntennaEnabled()) {
+            POPUP_CONFIRMATION(STR_ANTENNACONFIRM1, onModelAntennaSwitchConfirm);
+            SET_WARNING_INFO(STR_ANTENNACONFIRM2, sizeof(TR_ANTENNACONFIRM2), 0);
+          }
+          else {
+            g_model.moduleData[INTERNAL_MODULE].pxx.antennaMode = reusableBuffer.moduleSetup.antennaMode;
+            checkExternalAntenna();
+          }
+        }
+*/
+}
+#endif
+
       // Failsafe
       if (isModuleFailsafeAvailable(moduleIdx)) {
         hasFailsafe = true;

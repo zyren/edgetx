@@ -109,14 +109,6 @@ void onAntennaSelection(const char * result)
   }
 }
 
-void onAntennaSwitchConfirm(const char * result)
-{
-  if (result == STR_OK) {
-    // Switch to external antenna confirmation
-    globalData.externalAntennaEnabled = true;
-  }
-}
-
 void checkExternalAntenna()
 {
   if (isModuleXJT(INTERNAL_MODULE)) {
@@ -126,7 +118,9 @@ void checkExternalAntenna()
     else if (g_eeGeneral.antennaMode == ANTENNA_MODE_PER_MODEL && g_model.moduleData[INTERNAL_MODULE].pxx.antennaMode == ANTENNA_MODE_EXTERNAL) {
       if (!globalData.externalAntennaEnabled) {
 #if defined(COLORLCD)
-#warning "Antenna confirmation dialog needed"
+        if (confirmationDialog(STR_ANTENNACONFIRM1, STR_ANTENNACONFIRM2)) {
+          globalData.externalAntennaEnabled = true;
+        }
 #else
         POPUP_CONFIRMATION(STR_ANTENNACONFIRM1, onAntennaSwitchConfirm);
         SET_WARNING_INFO(STR_ANTENNACONFIRM2, sizeof(TR_ANTENNACONFIRM2), 0);
@@ -136,7 +130,10 @@ void checkExternalAntenna()
     else if (g_eeGeneral.antennaMode == ANTENNA_MODE_ASK || (g_eeGeneral.antennaMode == ANTENNA_MODE_PER_MODEL && g_model.moduleData[INTERNAL_MODULE].pxx.antennaMode == ANTENNA_MODE_ASK)) {
       globalData.externalAntennaEnabled = false;
 #if defined(COLORLCD)
-#warning "Antenna confirmation dialog needed"
+      if (confirmationDialog(STR_ANTENNACONFIRM1, STR_ANTENNACONFIRM2)) {
+        globalData.externalAntennaEnabled = true;
+      }
+
 #else
       POPUP_MENU_ADD_ITEM(STR_USE_INTERNAL_ANTENNA);
       POPUP_MENU_ADD_ITEM(STR_USE_EXTERNAL_ANTENNA);
