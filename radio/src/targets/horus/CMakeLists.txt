@@ -159,7 +159,6 @@ add_definitions(-DPCBREV_${PCBREV})
 set(RADIO_DEPENDENCIES
   ${RADIO_DEPENDENCIES}
   ${BITMAPS_TARGET}
-  truetype_fonts
   )
 
 set(FIRMWARE_DEPENDENCIES datacopy)
