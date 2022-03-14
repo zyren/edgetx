@@ -61,7 +61,7 @@ void ViewTextWindow::buildBody(Window *window)
   GridLayout grid(window);
   grid.spacer();
   int i;
-  FIL file;
+  VfsFile file;
 
   // assume average characte is 10 pixels wide, round the string length to tens.
   // Font is not fixed width, so this is for the worst case...
@@ -78,11 +78,11 @@ void ViewTextWindow::buildBody(Window *window)
   }
 
   if (isInSetup) {
-    if (FR_OK ==
-        f_open(&file, (TCHAR *)fullPath.c_str(), FA_OPEN_EXISTING | FA_READ)) {
-      const int fileLenght = file.obj.objsize;
+    if (VfsError::OK ==
+        VirtualFS::instance().openFile(file, fullPath, VfsOpenFlags::OPEN_EXISTING | VfsOpenFlags::READ)) {
+      const int fileLenght = file.size();
       maxLines = 20 * fileLenght / maxLineLength;
-      f_close(&file);
+      file.close();
 
       textBottom = false;
       longestLine = 0;
