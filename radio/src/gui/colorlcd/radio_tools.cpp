@@ -172,26 +172,26 @@ void RadioToolsPage::rebuild(FormWindow * window)
 
 // LUA scripts in TOOLS
 #if defined(LUA)
-  FILINFO fno;
-  DIR dir;
+  VfsFileInfo fno;
+  VfsDir dir;
 
 #if defined(CROSSFIRE)
 //  if (isFileAvailable(SCRIPTS_TOOLS_PATH "/CROSSFIRE/crossfire.lua"))
 //    addRadioScriptTool(index++, SCRIPTS_TOOLS_PATH "/CROSSFIRE/crossfire.lua");
 #endif
 
-  FRESULT res = f_opendir(&dir, SCRIPTS_TOOLS_PATH);
-  if (res == FR_OK) {
+  VfsError res = VirtualFS::instance().openDirectory(dir, SCRIPTS_TOOLS_PATH);
+  if (res == VfsError::OK) {
     std::vector<LuaScript> luaScripts;  // gather them all and then create UI after sort
 
     for (;;) {
       TCHAR path[FF_MAX_LFN+1] = SCRIPTS_TOOLS_PATH "/";
-      res = f_readdir(&dir, &fno);                   /* Read a directory item */
-      if (res != FR_OK || fno.fname[0] == 0) break;  /* Break on error or end of dir */
-      if (fno.fattrib & AM_DIR) continue;            /* Skip subfolders */
-      if (fno.fattrib & AM_HID) continue;            /* Skip hidden files */
-      if (fno.fattrib & AM_SYS) continue;            /* Skip system files */
-
+      res = dir.read(fno);                   /* Read a directory item */
+      if (res != VfsError::OK || fno.fname[0] == 0) break;  /* Break on error or end of dir */
+      if (fnogetType() == VfsType::DIR) continue;            /* Skip subfolders */
+//      if (fno.fattrib & AM_HID) continue;            /* Skip hidden files */
+//      if (fno.fattrib & AM_SYS) continue;            /* Skip system files */
+#warning finalize VirtualFS conversion
       strcat(path, fno.fname);
       if (isRadioScriptTool(fno.fname)) {
         char toolName[RADIO_TOOL_NAME_MAXLEN + 1] = {0};
