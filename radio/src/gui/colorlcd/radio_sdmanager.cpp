@@ -194,7 +194,7 @@ void RadioSdManagerPage::build(FormWindow * window)
   std::list<std::string> files;
   std::list<std::string> directories;
 
-  std::string currentPath(vfs->getCurWorkDir());
+  std::string currentPath = vfs->getCurWorkDir();
   auto preview = new FilePreview(window, {LCD_W / 2 + 6, 0, LCD_W / 2 - 16, window->height()});
 
   VfsError res = vfs->openDirectory(dir, currentPath.c_str()); // Open the directory
@@ -225,7 +225,7 @@ void RadioSdManagerPage::build(FormWindow * window)
     files.sort(compare_nocase);
 
     for (auto name: directories) {
-      new SDmanagerButton(window, grid.getLabelSlot(), name, [&]() -> uint8_t {
+      new SDmanagerButton(window, grid.getLabelSlot(), name, [=]() -> uint8_t {
           std::string fullpath = currentPath + "/" + name;
           vfs->changeDirectory(fullpath);
           window->clear();

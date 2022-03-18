@@ -132,7 +132,7 @@ void buildLuaUi(std::vector<LuaScript> luaScripts, FormWindow *window, FormGridL
 
           char toolPath[FF_MAX_LFN + 1];
           strncpy(toolPath, luaScript.path.c_str(), sizeof(toolPath)-1);
-          *((char *)getBasename(toolPath)-1) = '\0';
+          *((char *)VirtualFS::getBasename(toolPath)-1) = '\0';
           f_chdir(toolPath);
 
           luaExec(luaScript.path.c_str());
@@ -176,7 +176,7 @@ void RadioToolsPage::rebuild(FormWindow * window)
   VfsDir dir;
 
 #if defined(CROSSFIRE)
-//  if (isFileAvailable(SCRIPTS_TOOLS_PATH "/CROSSFIRE/crossfire.lua"))
+//  if (VirtualFS::instance().isFileAvailable(SCRIPTS_TOOLS_PATH "/CROSSFIRE/crossfire.lua"))
 //    addRadioScriptTool(index++, SCRIPTS_TOOLS_PATH "/CROSSFIRE/crossfire.lua");
 #endif
 
@@ -202,7 +202,7 @@ void RadioToolsPage::rebuild(FormWindow * window)
         }
         else {
           *ext = '\0';
-          label = getBasename(path);
+          label = VirtualFS::getBasename(path);
         }
 
         luaScripts.emplace_back(LuaScript{ path, label });

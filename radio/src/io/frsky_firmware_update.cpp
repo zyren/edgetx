@@ -415,7 +415,7 @@ const char * FrskyDeviceFirmwareUpdate::uploadFileToHorusXJT(const char * filena
   uint8_t index = 0;
   size_t fSize = file.size();
   while (true) {
-    progressHandler(getBasename(filename), STR_WRITING, file.tell(), fSize);
+    progressHandler(VirtualFS::getBasename(filename), STR_WRITING, file.tell(), fSize);
 
     if (file.read(buffer, 1024, count) != VfsError::OK) {
       return STR_DEVICE_FILE_ERROR;
@@ -490,7 +490,7 @@ const char * FrskyDeviceFirmwareUpdate::uploadFileNormal(const char * filename, 
       state = SPORT_DATA_TRANSFER,
       sendFrame();
       if (i == 0) {
-        progressHandler(getBasename(filename), STR_WRITING, file.tell(), fSize);
+        progressHandler(VirtualFS::getBasename(filename), STR_WRITING, file.tell(), fSize);
       }
     }
 
@@ -533,7 +533,7 @@ const char * FrskyDeviceFirmwareUpdate::flashFirmware(const char * filename, Pro
   SPORT_UPDATE_POWER_OFF();
 #endif
 
-  progressHandler(getBasename(filename), STR_DEVICE_RESET, 0, 0);
+  progressHandler(VirtualFS::getBasename(filename), STR_DEVICE_RESET, 0, 0);
 
   /* wait 2s off */
   watchdogSuspend(1000 /*10s*/);
@@ -763,7 +763,7 @@ const char * FrskyChipFirmwareUpdate::doFlashFirmware(const char * filename, Pro
   }
 
   uint32_t packetsCount = (information->size + sizeof(buffer) - 1) / sizeof(buffer);
-  progressHandler(getBasename(filename), STR_FLASH_WRITE, 0, packetsCount);
+  progressHandler(VirtualFS::getBasename(filename), STR_FLASH_WRITE, 0, packetsCount);
 
   result = sendUpgradeCommand('A', packetsCount);
   if (result)
@@ -771,7 +771,7 @@ const char * FrskyChipFirmwareUpdate::doFlashFirmware(const char * filename, Pro
 
   uint32_t index = 0;
   while (1) {
-    progressHandler(getBasename(filename), STR_FLASH_WRITE, index, packetsCount);
+    progressHandler(VirtualFS::getBasename(filename), STR_FLASH_WRITE, index, packetsCount);
     if (file.read(buffer, sizeof(buffer), count) != VfsError::OK) {
       file.close();
       return STR_DEVICE_FILE_ERROR;
@@ -790,7 +790,7 @@ const char * FrskyChipFirmwareUpdate::doFlashFirmware(const char * filename, Pro
 
 const char * FrskyChipFirmwareUpdate::flashFirmware(const char * filename, ProgressHandler progressHandler, bool wait)
 {
-  progressHandler(getBasename(filename), STR_DEVICE_RESET, 0, 0);
+  progressHandler(VirtualFS::getBasename(filename), STR_DEVICE_RESET, 0, 0);
 
   pausePulses();
 

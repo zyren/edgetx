@@ -310,7 +310,7 @@ static void replaceSpaceWithUnderscore(std::string &name)
 
 bool openNotes(const char buf[], std::string modelNotesName)
 {
-  if (isFileAvailable(modelNotesName.c_str())) {
+  if (VirtualFS::instance().isFileAvailable(modelNotesName.c_str())) {
     new ViewTextWindow(std::string(buf), modelNotesName, ICON_MODEL);
     return true;
   } else {

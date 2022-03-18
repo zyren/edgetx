@@ -20,6 +20,7 @@
  */
 
 #include "opentx.h"
+#include "logs.h"
 
 CustomFunctionsContext modelFunctionsContext = { 0 };
 
