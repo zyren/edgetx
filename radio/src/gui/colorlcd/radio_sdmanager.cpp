@@ -401,7 +401,7 @@ void RadioSdManagerPage::build(FormWindow * window)
               }
             }
 #if defined(LUA)
-            else if (isExtensionMatching(ext, SCRIPTS_EXT)) {
+            else if (isFileExtensionMatching(ext, SCRIPTS_EXT)) {
               std::string fullpath = currentPath + "/" + name;
               menu->addLine(STR_EXECUTE_FILE, [=]() {
                 luaExec(fullpath.c_str());

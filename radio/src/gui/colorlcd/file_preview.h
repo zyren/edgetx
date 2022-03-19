@@ -51,7 +51,7 @@ class FilePreview : public Window
       bitmap = nullptr;
 
       const char *ext = getFileExtension(filename);
-      if (ext && isExtensionMatching(ext, BITMAPS_EXT)) {
+      if (ext && isFileExtensionMatching(ext, BITMAPS_EXT)) {
         bitmap = BitmapBuffer::loadBitmap(filename);
       } else {
         bitmap = nullptr;
