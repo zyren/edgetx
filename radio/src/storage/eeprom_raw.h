@@ -30,10 +30,8 @@ void eeDeleteModel( uint8_t id );
 bool eeCopyModel(uint8_t dst, uint8_t src);
 void eeSwapModels(uint8_t id1, uint8_t id2);
 
-#if defined(SDCARD)
 const char * eeBackupModel(uint8_t i_fileSrc);
 const char * eeRestoreModel(uint8_t i_fileDst, char *model_name);
-#endif
 
 enum EepromWriteState {
   EEPROM_IDLE = 0,

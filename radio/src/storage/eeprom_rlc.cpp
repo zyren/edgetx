@@ -450,7 +450,7 @@ bool RlcFile::copy(uint8_t i_fileDst, uint8_t i_fileSrc)
   return true;
 }
 
-#if defined(SDCARD) && !defined(SDCARD_RAW) && !defined(SDCARD_YAML)||1
+#if !defined(SDCARD_RAW) && !defined(SDCARD_YAML)
 const char * eeBackupModel(uint8_t i_fileSrc)
 {
   VirtualFS& vfs = VirtualFS::instance();
@@ -900,7 +900,6 @@ void eeDeleteModel(uint8_t idx)
   memset(&modelHeaders[idx], 0, sizeof(ModelHeader));
 }
 
-#if defined(SDCARD)
 void eepromBackup()
 {
   char path[60];
@@ -948,4 +947,3 @@ void eepromBackup()
   storageDirty(EE_GENERAL);
   storageCheck(true);
 }
-#endif
