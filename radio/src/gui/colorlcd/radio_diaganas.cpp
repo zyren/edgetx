@@ -155,8 +155,8 @@ class AnaCalibratedViewWindow: public Window {
       x1 = dc->drawText(x1, y1, ".");
       x1 = dc->drawNumber(x1, y1, touchICfwver & 0xFF, LEFT, 0) + 16;
 #endif
-        x1 = dc->drawText(x1, y1, "TSI2CEvents:") + 4;
-      dc->drawNumber(x1, y1, touchI2Chiccups, LEFT, 5);
+/*        x1 = dc->drawText(x1, y1, "TSI2CEvents:") + 4;
+      dc->drawNumber(x1, y1, touchI2Chiccups, LEFT, 5);*/
 #endif
 #endif
     };
