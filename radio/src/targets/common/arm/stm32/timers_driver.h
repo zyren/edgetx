@@ -27,7 +27,7 @@ uint16_t getTmr2MHz();
 
 #elif defined(STM32)
 
-#include "board.h"
+#include "hal.h"
 
 void init2MhzTimer();
 void init1msTimer();
@@ -36,3 +36,12 @@ void stop1msTimer();
 static inline uint16_t getTmr2MHz() { return TIMER_2MHz_TIMER->CNT; }
 
 #endif
+
+#include "opentx_types.h"
+
+extern volatile tmr10ms_t g_tmr10ms;
+
+static inline tmr10ms_t get_tmr10ms()
+{
+  return g_tmr10ms;
+}
