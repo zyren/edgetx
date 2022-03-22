@@ -148,7 +148,7 @@ bool ModelCell::fetchRfData()
 
   FSIZE_t start_offset = f_tell(&file);
 
-  UINT read;
+  size_t read;
   if ((f_read(&file, buf, LEN_MODEL_NAME, &read) != FR_OK) || (read != LEN_MODEL_NAME))
     goto error;
 
@@ -375,7 +375,7 @@ bool ModelsList::loadYaml()
 
     yp.init(get_modelslist_parser_calls(), ctx);
 
-    UINT bytes_read=0;
+    size_t bytes_read=0;
     while (file.read(line, sizeof(line), bytes_read) == VfsError::OK) {
 
       // reached EOF?

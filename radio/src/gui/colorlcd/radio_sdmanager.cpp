@@ -100,7 +100,7 @@ RadioSdManagerPage::RadioSdManagerPage() :
 {
   setOnSetVisibleHandler([]() {
     TRACE("f_chdir(ROOT_PATH)");
-    f_chdir(ROOT_PATH);
+    VirtualFS::instance().changeDirectory("/");
   });
 }
 
@@ -239,7 +239,6 @@ void RadioSdManagerPage::build(FormWindow * window)
     for (auto name: files) {
       auto button = new SDmanagerButton(window, grid.getLabelSlot(), name, [=]() -> uint8_t {
           auto menu = new Menu(window);
-          f_chdir(currentPath.c_str());
           const char *ext = VirtualFS::getFileExtension(name.c_str());
           if (ext) {
             if (!strcasecmp(ext, SOUNDS_EXT)) {

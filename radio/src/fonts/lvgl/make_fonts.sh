@@ -32,10 +32,10 @@ function make_bootloader_font() {
   local name=$1
   local ttf=$2
   local size=$3
-  lv_font_conv --no-prefilter --bpp 4 --size ${size} \
+  lv_font_conv --no-prefilter --bpp 1 --size ${size} \
                --font ${TTF_DIR}${ttf} -r ${ASCII} \
                --font ${SYMBOLS_FONT} -r ${BL_SYMBOLS} \
-               --format lvgl -o lv_font_${name}_${size}.c --force-fast-kern-format
+               --format lvgl -o lv_font_${name}_${size}.c 
 }
 
 make_font "roboto" "Roboto/Roboto-Regular.ttf" 9 
