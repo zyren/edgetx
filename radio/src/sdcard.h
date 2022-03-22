@@ -33,10 +33,4 @@ uint32_t sdGetNoSectors();
 uint32_t sdGetSize();
 uint32_t sdGetFreeSectors();
 
-unsigned int findNextFileIndex(char * filename, uint8_t size, const char * directory);
-
-#define LIST_NONE_SD_FILE   1
-#define LIST_SD_FILE_EXT    2
-bool sdListFiles(const char * path, const char * extension, const uint8_t maxlen, const char * selection, uint8_t flags=0);
-
 #endif // _SDCARD_H_

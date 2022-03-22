@@ -47,7 +47,7 @@ void ViewTextWindow::extractNameSansExt()
   uint8_t extLength;
 
   const char *ext =
-      getFileExtension(name.data(), 0, 0, &nameLength, &extLength);
+      VirtualFS::getFileExtension(name.data(), 0, 0, &nameLength, &extLength);
   extension = std::string(ext);
   if (nameLength > TEXT_FILENAME_MAXLEN) nameLength = TEXT_FILENAME_MAXLEN;
 

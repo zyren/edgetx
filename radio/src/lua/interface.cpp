@@ -33,8 +33,6 @@
 #if defined(LIBOPENUI)
   #include "api_colorlcd.h"
   #include "libopenui.h"
-#else
-  #include "libopenui/src/libopenui_file.h"
 #endif
 
 extern "C" {
@@ -467,7 +465,7 @@ int luaLoadScriptFileToState(lua_State * L, const char * filename, const char * 
 
   fnamelen = strlen(filename);
   // check if file extension is already in the file name and strip it
-  getFileExtension(filename, fnamelen, 0, nullptr, &extlen);
+  VirtualFS::getFileExtension(filename, fnamelen, 0, nullptr, &extlen);
   fnamelen -= extlen;
   if (fnamelen > sizeof(filenameFull) - sizeof(SCRIPT_BIN_EXT)) {
     TRACE_ERROR("luaLoadScriptFileToState(%s, %s): Error loading script: filename buffer overflow.\n", filename, lmode);
@@ -1426,6 +1424,6 @@ bool readToolName(char * toolName, const char * filename)
 
 bool isRadioScriptTool(const char * filename)
 {
-  const char * ext = getFileExtension(filename);
+  const char * ext = VirtualFS::getFileExtension(filename);
   return ext && !strcasecmp(ext, SCRIPT_EXT);
 }

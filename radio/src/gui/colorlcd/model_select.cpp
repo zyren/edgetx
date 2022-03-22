@@ -518,9 +518,10 @@ class ModelCategoryPageBody : public FormWindow
             char duplicatedFilename[LEN_MODEL_FILENAME + 1];
             memcpy(duplicatedFilename, model->modelFilename,
                    sizeof(duplicatedFilename));
-            if (findNextFileIndex(duplicatedFilename, LEN_MODEL_FILENAME,
+            VirtualFS& vfs = VirtualFS::instance();
+            if (vfs.findNextFileIndex(duplicatedFilename, LEN_MODEL_FILENAME,
                                   MODELS_PATH)) {
-              VirtualFS::instance().copyFile(model->modelFilename, MODELS_PATH, duplicatedFilename,
+              vfs.copyFile(model->modelFilename, MODELS_PATH, duplicatedFilename,
                          MODELS_PATH);
               modelslist.addModel(category, duplicatedFilename);
               update(index);

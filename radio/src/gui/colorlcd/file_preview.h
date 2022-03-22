@@ -21,6 +21,7 @@
 
 #pragma once
 #include "libopenui.h"
+#include "VirtualFS.h"
 
 class FilePreview : public Window
 {
@@ -50,8 +51,8 @@ class FilePreview : public Window
         delete bitmap;
       bitmap = nullptr;
 
-      const char *ext = getFileExtension(filename);
-      if (ext && isFileExtensionMatching(ext, BITMAPS_EXT)) {
+      const char *ext = VirtualFS::getFileExtension(filename);
+      if (ext && VirtualFS::isFileExtensionMatching(ext, BITMAPS_EXT)) {
         bitmap = BitmapBuffer::loadBitmap(filename);
       } else {
         bitmap = nullptr;

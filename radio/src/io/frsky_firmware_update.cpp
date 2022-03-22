@@ -27,8 +27,6 @@
 
 #if defined(LIBOPENUI)
   #include "libopenui.h"
-#else
-  #include "libopenui/src/libopenui_file.h"
 #endif
 
 #if defined(INTMODULE_USART)
@@ -331,7 +329,7 @@ const char * FrskyDeviceFirmwareUpdate::doFlashFirmware(const char * filename, P
     return STR_NEEDS_FILE;
   }
 
-  const char * ext = getFileExtension(filename);
+  const char * ext = VirtualFS::getFileExtension(filename);
   if (ext && !strcasecmp(ext, FRSKY_FIRMWARE_EXT)) {
     if (file.read(&information, sizeof(FrSkyFirmwareInformation), count) != VfsError::OK || count != sizeof(FrSkyFirmwareInformation)) {
       file.close();
