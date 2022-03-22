@@ -144,10 +144,10 @@ FlashCheckRes checkFlashFile(unsigned int index, FlashCheckRes res)
   if (res != FC_UNCHECKED)
     return res;
 
-  if (openBinFile(memoryType, index) != FR_OK)
+  if (openBinFile(memoryType, index) != VfsError::OK)
     return FC_ERROR;
 
-  if (closeBinFile() != FR_OK)
+  if (closeBinFile() != VfsError::OK)
     return FC_ERROR;
 
   if (!isValidBufferStart(Block_buffer))
@@ -169,7 +169,7 @@ int menuFlashFile(uint32_t index, event_t event)
 
   if (event == EVT_KEY_LONG(KEY_ENTER)) {
 
-    return (openBinFile(memoryType, index) == FR_OK) && isValidBufferStart(Block_buffer);
+    return (openBinFile(memoryType, index) == VfsError::OK) && isValidBufferStart(Block_buffer);
   }
   else if (event == EVT_KEY_BREAK(KEY_EXIT))
     return 0;
@@ -212,14 +212,14 @@ void bootloaderInitApp()
                          LCD_RCC_AHB1Periph | BACKLIGHT_RCC_AHB1Periph |
                          AUX_SERIAL_RCC_AHB1Periph | AUX2_SERIAL_RCC_AHB1Periph |
                          I2C_B1_RCC_AHB1Periph | KEYS_BACKLIGHT_RCC_AHB1Periph |
-                         SD_RCC_AHB1Periph, ENABLE);
+                         SD_RCC_AHB1Periph | FLASH_RCC_AHB1Periph , ENABLE);
 
   RCC_APB1PeriphClockCmd(ROTARY_ENCODER_RCC_APB1Periph | LCD_RCC_APB1Periph | BACKLIGHT_RCC_APB1Periph |
                          INTERRUPT_xMS_RCC_APB1Periph | I2C_B1_RCC_APB1Periph |
                          AUX_SERIAL_RCC_APB1Periph | AUX2_SERIAL_RCC_APB1Periph |
                          SD_RCC_APB1Periph, ENABLE);
 
-  RCC_APB2PeriphClockCmd(LCD_RCC_APB2Periph | BACKLIGHT_RCC_APB2Periph | RCC_APB2Periph_SYSCFG | AUX_SERIAL_RCC_APB2Periph  | AUX2_SERIAL_RCC_APB2Periph, ENABLE);
+  RCC_APB2PeriphClockCmd(LCD_RCC_APB2Periph | BACKLIGHT_RCC_APB2Periph | RCC_APB2Periph_SYSCFG | AUX_SERIAL_RCC_APB2Periph  | AUX2_SERIAL_RCC_APB2Periph | FLASH_RCC_APB2Periph, ENABLE);
 
   pwrInit();
   keysInit();
@@ -276,6 +276,7 @@ void bootloaderInitApp()
 
   // SD card detect pin
   sdInit();
+  flashInit();
   usbInit();
 }
 
@@ -288,7 +289,7 @@ int  bootloaderMain()
   BootloaderState state = ST_START;
   uint32_t vpos = 0;
   uint8_t index = 0;
-  FRESULT fr;
+  VfsError fr;
   uint32_t nameCount = 0;
 
   // init hardware (may jump to app)
@@ -384,14 +385,14 @@ int  bootloaderMain()
       else if (state == ST_DIR_CHECK) {
         fr = openBinDir(memoryType);
 
-        if (fr == FR_OK) {
+        if (fr == VfsError::OK) {
           index = vpos = 0;
           state = ST_FILE_LIST;
           nameCount = fetchBinFiles(index);
           continue;
         }
         else {
-          bootloaderDrawScreen(state, fr);
+          bootloaderDrawScreen(state, (int)fr);
 
           if (event == EVT_KEY_BREAK(KEY_EXIT) || event == EVT_KEY_BREAK(KEY_ENTER)) {
             vpos = 0;
