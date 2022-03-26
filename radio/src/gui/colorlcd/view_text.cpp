@@ -23,7 +23,6 @@
 #include "gridlayout.h"
 #include "menu.h"
 #include "opentx.h"
-#include "sdcard.h"
 #include "VirtualFS.h"
 
 #define CASE_EVT_KEY_NEXT_LINE \

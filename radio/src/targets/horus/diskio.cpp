@@ -486,6 +486,10 @@ void sdInit(void)
     f_chdir("/");
   }
 }
+void sdMount(void)
+{
+  sdInit();
+}
 #else
 
 #include "audio.h"

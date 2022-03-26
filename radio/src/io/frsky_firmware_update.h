@@ -26,7 +26,6 @@
 #include "definitions.h"
 #include "frsky_pxx2.h"
 #include "pulses/modules_helpers.h"
-#include "ff.h"
 #include "popups.h"
 
 enum FrskyFirmwareProductFamily {

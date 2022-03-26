@@ -299,9 +299,14 @@ set(SRC
 set(FIRMWARE_TARGET_SRC
   ${FIRMWARE_TARGET_SRC}
   keys_driver.cpp
-  diskio.cpp
   telemetry_driver.cpp
 )
+if(SDCARD OR (SPI_FLASH AND NOT LITTLEFS))
+  set(FIRMWARE_TARGET_SRC
+    ${FIRMWARE_TARGET_SRC}
+    diskio.cpp
+  )
+endif()
 
 set(FIRMWARE_SRC
   ${FIRMWARE_SRC}

@@ -26,8 +26,6 @@
 #include "definitions.h"
 #include "datastructs_220.h"
 
-#include "sdcard.h"
-
 #include <storage/yaml/yaml_node.h>
 
 using namespace bin_storage_220;
