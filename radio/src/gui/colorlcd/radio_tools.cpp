@@ -133,7 +133,7 @@ void buildLuaUi(std::vector<LuaScript> luaScripts, FormWindow *window, FormGridL
           char toolPath[FF_MAX_LFN + 1];
           strncpy(toolPath, luaScript.path.c_str(), sizeof(toolPath)-1);
           *((char *)VirtualFS::getBasename(toolPath)-1) = '\0';
-          f_chdir(toolPath);
+          VirtualFS::instance().changeDirectory(toolPath);
 
           luaExec(luaScript.path.c_str());
           auto lua_win = StandaloneLuaWindow::instance();

@@ -324,7 +324,7 @@ void readModelNotes()
   std::string modelNotesName(g_model.header.name);
   modelNotesName.append(TEXT_EXT);
   const char buf[] = {MODELS_PATH};
-  f_chdir((TCHAR *)buf);
+  VirtualFS::instance().changeDirectory(buf);
 
   notesFound = openNotes(buf, modelNotesName);
   if (!notesFound) {
