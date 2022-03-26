@@ -1216,29 +1216,6 @@ class ModuleWindow : public FormGroup {
               }
             });
         grid.nextLine();
-        /*
-                reusableBuffer.moduleSetup.antennaMode =
-           editChoice(MODEL_SETUP_2ND_COLUMN, y, INDENT TR_ANTENNA,
-           STR_ANTENNA_MODES, reusableBuffer.moduleSetup.antennaMode ==
-           ANTENNA_MODE_PER_MODEL ? ANTENNA_MODE_INTERNAL :
-           reusableBuffer.moduleSetup.antennaMode, ANTENNA_MODE_INTERNAL,
-           ANTENNA_MODE_EXTERNAL, attr, event,
-                                                                    [](int
-           value) { return value != ANTENNA_MODE_PER_MODEL; }); if (event &&
-           !s_editMode && reusableBuffer.moduleSetup.antennaMode !=
-           g_model.moduleData[INTERNAL_MODULE].pxx.antennaMode) { if
-           (reusableBuffer.moduleSetup.antennaMode == ANTENNA_MODE_EXTERNAL &&
-           !isExternalAntennaEnabled()) {
-                    POPUP_CONFIRMATION(STR_ANTENNACONFIRM1,
-           onModelAntennaSwitchConfirm); SET_WARNING_INFO(STR_ANTENNACONFIRM2,
-           sizeof(TR_ANTENNACONFIRM2), 0);
-                  }
-                  else {
-                    g_model.moduleData[INTERNAL_MODULE].pxx.antennaMode =
-           reusableBuffer.moduleSetup.antennaMode; checkExternalAntenna();
-                  }
-                }
-        */
       }
 #endif
 
