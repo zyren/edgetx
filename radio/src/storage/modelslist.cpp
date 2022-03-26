@@ -139,17 +139,17 @@ bool ModelCell::fetchRfData()
   char buf[256];
   getModelPath(buf, modelFilename);
 
-  FIL      file;
+  VfsFile  file;
   uint16_t size;
   uint8_t  version;
 
   const char * err = openFileBin(buf, &file, &size, &version);
   if (err || version != EEPROM_VER) return false;
 
-  FSIZE_t start_offset = f_tell(&file);
+  isze_t start_offset = file.ftell();
 
   size_t read;
-  if ((f_read(&file, buf, LEN_MODEL_NAME, &read) != FR_OK) || (read != LEN_MODEL_NAME))
+  if ((file.read(buf, LEN_MODEL_NAME, read) != VfsError::OK) || (read != LEN_MODEL_NAME))
     goto error;
 
   setModelName(buf);
@@ -157,27 +157,27 @@ bool ModelCell::fetchRfData()
   // 1. fetch modelId: NUM_MODULES @ offsetof(ModelHeader, modelId)
   // if (f_lseek(&file, start_offset + offsetof(ModelHeader, modelId)) != FR_OK)
   //   goto error;
-  if ((f_read(&file, modelId, NUM_MODULES, &read) != FR_OK) || (read != NUM_MODULES))
+  if ((filei.read(modelId, NUM_MODULES, read) != VfsError::OK) || (read != NUM_MODULES))
     goto error;
 
   // 2. fetch ModuleData: sizeof(ModuleData)*NUM_MODULES @ offsetof(ModelData, moduleData)
-  if (f_lseek(&file, start_offset + offsetof(ModelData, moduleData)) != FR_OK)
+  if (filei.lseek(start_offset + offsetof(ModelData, moduleData)) != VfsError::OK)
     goto error;
 
   for(uint8_t i=0; i<NUM_MODULES; i++) {
     ModuleData modData;
-    if ((f_read(&file, &modData, NUM_MODULES, &read) != FR_OK) || (read != NUM_MODULES))
+    if ((file.read(&modData, NUM_MODULES, &read) != VfsError::OK) || (read != NUM_MODULES))
       goto error;
 
     setRfModuleData(i, &modData);
   }
 
   valid_rfData = true;  
-  f_close(&file);
+  file.close;
   return true;
   
  error:
-  f_close(&file);
+  file.close;
   return false;
 
 #else

@@ -467,9 +467,6 @@ DRESULT disk_ioctl (
 // TODO everything here should not be in the driver layer ...
 
 FATFS g_FATFS_Obj __DMA;    // initialized in boardInit()
-#if defined(LOG_TELEMETRY)
-FIL g_telemetryFile = {};
-#endif
 
 #if defined(BOOT)
 void sdInit(void)
@@ -505,13 +502,6 @@ void sdMount()
   if (f_mount(&g_FATFS_Obj, "", 1) == FR_OK) {
     // call sdGetFreeSectors() now because f_getfree() takes a long time first time it's called
     sdGetFreeSectors();
-
-#if defined(LOG_TELEMETRY)
-    f_open(&g_telemetryFile, LOGS_PATH "/telemetry.log", FA_OPEN_ALWAYS | FA_WRITE);
-    if (f_size(&g_telemetryFile) > 0) {
-      f_lseek(&g_telemetryFile, f_size(&g_telemetryFile)); // append
-    }
-#endif
   }
   else {
     TRACE("f_mount() failed");
@@ -524,9 +514,6 @@ void sdDone()
   
   if (sdMounted()) {
     audioQueue.stopSD();
-#if defined(LOG_TELEMETRY)
-    f_close(&g_telemetryFile);
-#endif
     f_mount(NULL, "", 0); // unmount SD
   }
 }
