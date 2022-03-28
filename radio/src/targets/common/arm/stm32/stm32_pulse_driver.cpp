@@ -39,9 +39,11 @@ void stm32_pulse_init(const stm32_pulse_timer_t* tim)
   timInit.Autoreload = 65535;
   LL_TIM_Init(tim->TIMx, &timInit);
 
-  // Enable DMA IRQ
-  NVIC_EnableIRQ(tim->DMA_IRQn);
-  NVIC_SetPriority(tim->DMA_IRQn, 7);
+  if (tim->DMAx) {
+    // Enable DMA IRQ
+    NVIC_EnableIRQ(tim->DMA_IRQn);
+    NVIC_SetPriority(tim->DMA_IRQn, 7);
+  }
 
   // Enable timer IRQ
   NVIC_EnableIRQ(tim->TIM_IRQn);
@@ -51,11 +53,15 @@ void stm32_pulse_init(const stm32_pulse_timer_t* tim)
 void stm32_pulse_deinit(const stm32_pulse_timer_t* tim)
 {
   // Disable IRQs
-  NVIC_DisableIRQ(tim->DMA_IRQn);
+  if (tim->DMAx) {
+    NVIC_DisableIRQ(tim->DMA_IRQn);
+  }
   NVIC_DisableIRQ(tim->TIM_IRQn);
-  
-  // De-init DMA & timer
-  LL_DMA_DeInit(tim->DMAx, tim->DMA_Stream);
+
+  if (tim->DMAx) {
+    // De-init DMA & timer
+    LL_DMA_DeInit(tim->DMAx, tim->DMA_Stream);
+  }
   LL_TIM_DeInit(tim->TIMx);
 
   // Reconfigure pin as output
@@ -63,7 +69,7 @@ void stm32_pulse_deinit(const stm32_pulse_timer_t* tim)
   LL_GPIO_StructInit(&pinInit);
 
   pinInit.Pin = tim->GPIO_Pin;
-  pinInit.Mode = LL_GPIO_MODE_OUTPUT;
+  pinInit.Mode = LL_GPIO_MODE_INPUT;
   LL_GPIO_Init(tim->GPIOx, &pinInit);
 }
 
@@ -139,6 +145,9 @@ static void set_compare_reg(const stm32_pulse_timer_t* tim, uint32_t val)
   case LL_TIM_CHANNEL_CH1:
   case LL_TIM_CHANNEL_CH1N:
     LL_TIM_OC_SetCompareCH1(tim->TIMx, val);
+    break;
+  case LL_TIM_CHANNEL_CH2:
+    LL_TIM_OC_SetCompareCH2(tim->TIMx, val);
     break;
   case LL_TIM_CHANNEL_CH3:
     LL_TIM_OC_SetCompareCH3(tim->TIMx, val);
@@ -266,4 +275,14 @@ void stm32_pulse_tim_update_isr(const stm32_pulse_timer_t* tim)
 
   // Halt pulses by forcing to inactive level
   set_oc_mode(tim, LL_TIM_OCMODE_FORCED_INACTIVE);
+}
+
+// input mode
+void stm32_pulse_config_input(const stm32_pulse_timer_t* tim)
+{
+  LL_TIM_IC_InitTypeDef icInit;
+  LL_TIM_IC_StructInit(&icInit);
+  icInit.ICActiveInput = LL_TIM_ACTIVEINPUT_DIRECTTI;
+  icInit.ICFilter = LL_TIM_IC_FILTER_FDIV1_N8;
+  LL_TIM_IC_Init(tim->TIMx, tim->TIM_Channel, &icInit);
 }

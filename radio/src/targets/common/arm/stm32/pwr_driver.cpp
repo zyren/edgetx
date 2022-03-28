@@ -70,11 +70,6 @@ void pwrInit()
   hardwareOptions.pcbrev = PCBREV_VALUE();
 #endif
 
-#if defined(TRAINER_DETECT_GPIO_PIN)
-  GPIO_InitStructure.GPIO_Pin = TRAINER_DETECT_GPIO_PIN;
-  GPIO_Init(TRAINER_DETECT_GPIO, &GPIO_InitStructure);
-#endif
-
 #if defined(SD_PRESENT_GPIO_PIN)
   GPIO_ResetBits(SD_PRESENT_GPIO, SD_PRESENT_GPIO_PIN);
   GPIO_InitStructure.GPIO_Pin = SD_PRESENT_GPIO_PIN;

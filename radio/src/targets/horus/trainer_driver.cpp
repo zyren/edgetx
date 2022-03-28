@@ -19,126 +19,212 @@
  * GNU General Public License for more details.
  */
 
+#include "stm32_pulse_driver.h"
+
 #include "opentx.h"
 #include "aux_serial_driver.h"
 
-void trainerSendNextFrame();
+static_assert((TRAINER_OUT_TIMER_Channel == LL_TIM_CHANNEL_CH1 ||
+               TRAINER_OUT_TIMER_Channel == LL_TIM_CHANNEL_CH2) &&
+              __STM32_PULSE_IS_TIMER_CHANNEL_SUPPORTED(TRAINER_OUT_TIMER_Channel),
+              "Unsupported trainer timer output channel");
+
+static_assert(TRAINER_IN_TIMER_Channel == LL_TIM_CHANNEL_CH1 ||
+              TRAINER_IN_TIMER_Channel == LL_TIM_CHANNEL_CH2,
+              "Unsupported trainer timer input channel");
+
+static void (*_trainer_timer_isr)();
+
+void init_trainer()
+{
+#if defined(TRAINER_DETECT_GPIO_PIN)
+  LL_GPIO_InitTypeDef pinInit;
+  LL_GPIO_StructInit(&pinInit);
+
+  pinInit.Pin = TRAINER_DETECT_GPIO_PIN;
+  pinInit.Mode = LL_GPIO_MODE_INPUT;
+  pinInit.Pull = LL_GPIO_PULL_UP;
+  LL_GPIO_Init(TRAINER_DETECT_GPIO, &pinInit);
+#endif  
+
+  _trainer_timer_isr = nullptr;
+}
+
+static const stm32_pulse_timer_t trainerOutputTimer = {
+  .GPIOx = TRAINER_GPIO,
+  .GPIO_Pin = TRAINER_OUT_GPIO_PIN,
+  .GPIO_Alternate = TRAINER_GPIO_AF,
+  .TIMx = TRAINER_TIMER,
+  .TIM_Prescaler = __LL_TIM_CALC_PSC(TRAINER_TIMER_FREQ, 2000000),
+  .TIM_Channel = TRAINER_OUT_TIMER_Channel,
+  .TIM_IRQn = TRAINER_TIMER_IRQn,
+  .DMAx = nullptr,
+  .DMA_Stream = 0,
+  .DMA_Channel = 0,
+  .DMA_IRQn = (IRQn_Type)0,
+};
+
+static void trainerSendNextFrame()
+{
+  stm32_pulse_set_polarity(&trainerOutputTimer, GET_TRAINER_PPM_POLARITY());
+  
+  // load the first period: next reload when CC compare event triggers
+  trainerPulsesData.ppm.ptr = trainerPulsesData.ppm.pulses;
+  TRAINER_TIMER->ARR = *(trainerPulsesData.ppm.ptr++);
+
+  switch (trainerOutputTimer.TIM_Channel) {
+  case LL_TIM_CHANNEL_CH1:
+    LL_TIM_EnableIT_CC1(trainerOutputTimer.TIMx);
+    break;
+  case LL_TIM_CHANNEL_CH2:
+    LL_TIM_EnableIT_CC2(trainerOutputTimer.TIMx);
+    break;
+  }
+}
+
+static void trainer_out_isr();
+static void trainer_in_isr();
 
 void init_trainer_ppm()
 {
-  GPIO_PinAFConfig(TRAINER_GPIO, TRAINER_OUT_GPIO_PinSource, TRAINER_GPIO_AF);
+  // set proper ISR handler first
+  _trainer_timer_isr = trainer_out_isr;
 
-  GPIO_InitTypeDef GPIO_InitStructure;
-  GPIO_InitStructure.GPIO_Pin = TRAINER_OUT_GPIO_PIN;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(TRAINER_GPIO, &GPIO_InitStructure);
-
-  TRAINER_TIMER->CR1 &= ~TIM_CR1_CEN;
-  TRAINER_TIMER->PSC = TRAINER_TIMER_FREQ / 2000000 - 1; // 0.5uS
-  TRAINER_TIMER->ARR = 45000;
-  TRAINER_TIMER->CCR2 = GET_TRAINER_PPM_DELAY() * 2;
-  TRAINER_TIMER->CCER = TIM_CCER_CC2E | (GET_TRAINER_PPM_POLARITY() ? 0 : TIM_CCER_CC2P);
-  TRAINER_TIMER->CCMR1 = TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2M_0; // Force O/P high
-  TRAINER_TIMER->BDTR = TIM_BDTR_MOE;
-  TRAINER_TIMER->EGR = 1;
-  TRAINER_TIMER->CCMR1 = TIM_CCMR1_OC2M_1 | TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2PE; // PWM mode 1
-  TRAINER_TIMER->CR1 |= TIM_CR1_CEN;
+  stm32_pulse_init(&trainerOutputTimer);
+  stm32_pulse_config_output(&trainerOutputTimer, GET_TRAINER_PPM_POLARITY(),
+                            LL_TIM_OCMODE_PWM1, GET_TRAINER_PPM_DELAY() * 2);
 
   setupPulsesPPMTrainer();
   trainerSendNextFrame();
 
-  NVIC_EnableIRQ(TRAINER_TIMER_IRQn);
-  NVIC_SetPriority(TRAINER_TIMER_IRQn, 7);
+  LL_TIM_EnableCounter(trainerOutputTimer.TIMx);
 }
 
 void stop_trainer_ppm()
 {
-  NVIC_DisableIRQ(TRAINER_TIMER_IRQn);
-
-  TRAINER_TIMER->DIER = 0; // Stop Interrupt
-  TRAINER_TIMER->CR1 &= ~TIM_CR1_CEN; // Stop counter
+  stm32_pulse_deinit(&trainerOutputTimer);
+  _trainer_timer_isr = nullptr;
 }
+
+static const stm32_pulse_timer_t trainerInputTimer = {
+  .GPIOx = TRAINER_GPIO,
+  .GPIO_Pin = TRAINER_IN_GPIO_PIN,
+  .GPIO_Alternate = TRAINER_GPIO_AF,
+  .TIMx = TRAINER_TIMER,
+  .TIM_Prescaler = __LL_TIM_CALC_PSC(TRAINER_TIMER_FREQ, 2000000),
+  .TIM_Channel = TRAINER_IN_TIMER_Channel,
+  .TIM_IRQn = TRAINER_TIMER_IRQn,
+  .DMAx = nullptr,
+  .DMA_Stream = 0,
+  .DMA_Channel = 0,
+  .DMA_IRQn = (IRQn_Type)0,
+};
 
 void init_trainer_capture()
 {
-  GPIO_InitTypeDef GPIO_InitStructure;
+  // set proper ISR handler first
+  _trainer_timer_isr = trainer_in_isr;
 
-  GPIO_InitStructure.GPIO_Pin = TRAINER_IN_GPIO_PIN;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(TRAINER_GPIO, &GPIO_InitStructure);
-  GPIO_PinAFConfig(TRAINER_GPIO, TRAINER_IN_GPIO_PinSource, TRAINER_GPIO_AF);
+  stm32_pulse_init(&trainerInputTimer);
+  stm32_pulse_config_input(&trainerInputTimer);
 
-  TRAINER_TIMER->ARR = 0xFFFF;
-  TRAINER_TIMER->PSC = TRAINER_TIMER_FREQ / 2000000 - 1; // 0.5uS
-  TRAINER_TIMER->CR2 = 0;
-  TRAINER_TIMER->CCMR1 = TIM_CCMR1_IC1F_0 | TIM_CCMR1_IC1F_1 | TIM_CCMR1_CC1S_0;
-  TRAINER_TIMER->CCER = TIM_CCER_CC1E;
-  TRAINER_TIMER->SR &= ~TIM_SR_CC1IF & ~TIM_SR_CC2IF & ~TIM_SR_UIF; // Clear flags
-  TRAINER_TIMER->DIER |= TIM_DIER_CC1IE;
-  TRAINER_TIMER->CR1 = TIM_CR1_CEN;
+  switch (trainerInputTimer.TIM_Channel) {
+  case LL_TIM_CHANNEL_CH1:
+    LL_TIM_EnableIT_CC1(trainerInputTimer.TIMx);
+    break;
+  case LL_TIM_CHANNEL_CH2:
+    LL_TIM_EnableIT_CC2(trainerInputTimer.TIMx);
+    break;
+  }
 
-  NVIC_EnableIRQ(TRAINER_TIMER_IRQn);
-  NVIC_SetPriority(TRAINER_TIMER_IRQn, 7);
+  LL_TIM_EnableCounter(trainerInputTimer.TIMx);
 }
 
 void stop_trainer_capture()
 {
-  NVIC_DisableIRQ(TRAINER_TIMER_IRQn); // Stop Interrupt
-
-  TRAINER_TIMER->CR1 &= ~TIM_CR1_CEN; // Stop counter
-  TRAINER_TIMER->DIER = 0; // Stop Interrupt
+  stm32_pulse_deinit(&trainerInputTimer);
+  _trainer_timer_isr = nullptr;
 }
 
-void trainerSendNextFrame()
+bool is_trainer_connected()
 {
-  TRAINER_TIMER->CCR2 = GET_TRAINER_PPM_DELAY() * 2;
-  TRAINER_TIMER->CCER = TIM_CCER_CC2E | (GET_TRAINER_PPM_POLARITY() ? 0 : TIM_CCER_CC2P);
-
-  // load the first period: next reload when CCR2 compare event triggers
-  trainerPulsesData.ppm.ptr = trainerPulsesData.ppm.pulses;
-  TRAINER_TIMER->ARR = *(trainerPulsesData.ppm.ptr++);
-  TRAINER_TIMER->DIER |= TIM_DIER_CC2IE;
+  bool set = LL_GPIO_IsInputPinSet(TRAINER_DETECT_GPIO, TRAINER_DETECT_GPIO_PIN);
+#if defined(TRAINER_DETECT_INVERTED)
+  return !set;
+#else
+  return set;
+#endif
 }
 
+static inline bool trainer_check_isr_flag(const stm32_pulse_timer_t* tim)
+{
+  switch(tim->TIM_Channel) {
+  case LL_TIM_CHANNEL_CH1:
+    if (LL_TIM_IsEnabledIT_CC1(tim->TIMx) &&
+        LL_TIM_IsActiveFlag_CC1(tim->TIMx)) {
+      LL_TIM_ClearFlag_CC1(tim->TIMx);
+      return true;
+    }
+    break;
+  case LL_TIM_CHANNEL_CH2:
+    if (LL_TIM_IsEnabledIT_CC2(tim->TIMx) &&
+        LL_TIM_IsActiveFlag_CC2(tim->TIMx)) {
+      LL_TIM_ClearFlag_CC2(tim->TIMx);
+      return true;
+    }
+    break;
+  }
+  return false;
+}
 
+static void trainer_out_isr()
+{
+  // proceed only if the channel flag was set
+  // and the IRQ was enabled
+  if (!trainer_check_isr_flag(&trainerOutputTimer))
+    return;
 
+  if (*trainerPulsesData.ppm.ptr) {
+    // load next period
+    LL_TIM_SetAutoReload(trainerOutputTimer.TIMx,
+                         *(trainerPulsesData.ppm.ptr++));
+  } else {
+    setupPulsesPPMTrainer();
+    trainerSendNextFrame();
+  }  
+}
 
+static void trainer_in_isr()
+{
+  // proceed only if the channel flag was set
+  // and the IRQ was enabled
+  if (!trainer_check_isr_flag(&trainerOutputTimer))
+    return;
+
+  uint16_t capture = 0;
+  switch(trainerOutputTimer.TIM_Channel) {
+  case LL_TIM_CHANNEL_CH1:
+    capture = LL_TIM_IC_GetCaptureCH1(trainerOutputTimer.TIMx);
+    break;
+  case LL_TIM_CHANNEL_CH2:
+    capture = LL_TIM_IC_GetCaptureCH2(trainerOutputTimer.TIMx);
+    break;
+  default:
+    return;
+  }
+
+  // avoid spurious pulses in case the cable is not connected
+  if (is_trainer_connected())
+    captureTrainerPulses(capture);
+}
+
+#if !defined(TRAINER_TIMER_IRQHandler)
+  #error "Missing TRAINER_TIMER_IRQHandler definition"
+#endif
 extern "C" void TRAINER_TIMER_IRQHandler()
 {
   DEBUG_INTERRUPT(INT_TRAINER);
 
-  uint16_t capture = 0;
-  bool doCapture = false;
-
-  // What mode? in or out?
-  if ((TRAINER_TIMER->DIER & TIM_DIER_CC1IE) && (TRAINER_TIMER->SR & TIM_SR_CC1IF)) {
-    // capture mode on trainer jack
-    capture = TRAINER_TIMER->CCR1;
-    if (TRAINER_CONNECTED() && currentTrainerMode == TRAINER_MODE_MASTER_TRAINER_JACK) {
-      doCapture = true;
-    }
-  }
-
-  if (doCapture) {
-    captureTrainerPulses(capture);
-  }
-
-  // PPM out compare interrupt
-  if ((TRAINER_TIMER->DIER & TIM_DIER_CC2IE) && (TRAINER_TIMER->SR & TIM_SR_CC2IF)) {
-    // compare interrupt
-    TRAINER_TIMER->SR &= ~TIM_SR_CC2IF; // Clear flag
-    if (*trainerPulsesData.ppm.ptr) {
-      // load next period
-      TRAINER_TIMER->ARR = *(trainerPulsesData.ppm.ptr++);
-    } else {
-      setupPulsesPPMTrainer();
-      trainerSendNextFrame();
-    }
-  }
+  if (_trainer_timer_isr)
+    _trainer_timer_isr();
 }
