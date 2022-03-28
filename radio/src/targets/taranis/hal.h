@@ -156,11 +156,14 @@
   #define ROTARY_ENCODER_POSITION()     (ROTARY_ENCODER_GPIO->IDR >> 12) & 0x03
   #define ROTARY_ENCODER_EXTI_LINE1     EXTI_Line12
   #define ROTARY_ENCODER_EXTI_LINE2     EXTI_Line13
-  #define ROTARY_ENCODER_EXTI_IRQn1        EXTI15_10_IRQn
-  #define ROTARY_ENCODER_EXTI_IRQHandler1  EXTI15_10_IRQHandler
   #define ROTARY_ENCODER_EXTI_PortSource   EXTI_PortSourceGPIOD
   #define ROTARY_ENCODER_EXTI_PinSource1   EXTI_PinSource12
   #define ROTARY_ENCODER_EXTI_PinSource2   EXTI_PinSource13
+  // ROTARY_ENCODER_EXTI IRQ
+  #if !defined(USE_EXTI15_10_IRQ)
+    #define USE_EXTI15_10_IRQ
+    #define EXTI15_10_IRQ_Priority 5
+  #endif
 #elif defined(RADIO_X9DP2019)
   #define ROTARY_ENCODER_NAVIGATION
   #define ROTARY_ENCODER_GPIO           GPIOE
@@ -169,11 +172,14 @@
   #define ROTARY_ENCODER_POSITION()     (((ROTARY_ENCODER_GPIO->IDR >> 9) & 0x02) + ((ROTARY_ENCODER_GPIO->IDR >> 11) & 0x01))
   #define ROTARY_ENCODER_EXTI_LINE1     EXTI_Line10
   #define ROTARY_ENCODER_EXTI_LINE2     EXTI_Line11
-  #define ROTARY_ENCODER_EXTI_IRQn1        EXTI15_10_IRQn
-  #define ROTARY_ENCODER_EXTI_IRQHandler1  EXTI15_10_IRQHandler
   #define ROTARY_ENCODER_EXTI_PortSource   EXTI_PortSourceGPIOE
   #define ROTARY_ENCODER_EXTI_PinSource1   EXTI_PinSource10
   #define ROTARY_ENCODER_EXTI_PinSource2   EXTI_PinSource11
+  // ROTARY_ENCODER_EXTI IRQ
+  #if !defined(USE_EXTI15_10_IRQ)
+    #define USE_EXTI15_10_IRQ
+    #define EXTI15_10_IRQ_Priority 5
+  #endif
 #elif defined(RADIO_X7) || defined(RADIO_X7ACCESS) || defined(RADIO_TPRO)
   #define ROTARY_ENCODER_NAVIGATION
   #define ROTARY_ENCODER_GPIO           GPIOE
@@ -182,10 +188,16 @@
   #define ROTARY_ENCODER_POSITION()     (((ROTARY_ENCODER_GPIO->IDR >> 10) & 0x02) + ((ROTARY_ENCODER_GPIO->IDR >> 9) & 0x01))
   #define ROTARY_ENCODER_EXTI_LINE1     EXTI_Line9
   #define ROTARY_ENCODER_EXTI_LINE2     EXTI_Line11
-  #define ROTARY_ENCODER_EXTI_IRQn1        EXTI9_5_IRQn
-  #define ROTARY_ENCODER_EXTI_IRQHandler1  EXTI9_5_IRQHandler
-  #define ROTARY_ENCODER_EXTI_IRQn2        EXTI15_10_IRQn
-  #define ROTARY_ENCODER_EXTI_IRQHandler2  EXTI15_10_IRQHandler
+  // ROTARY_ENCODER_EXTI_LINE1 IRQ
+  #if !defined(USE_EXTI9_5_IRQ)
+    #define USE_EXTI9_5_IRQ
+    #define EXTI9_5_IRQ_Priority 5
+  #endif
+  // ROTARY_ENCODER_EXTI_LINE2 IRQ
+  #if !defined(USE_EXTI15_10_IRQ)
+    #define USE_EXTI15_10_IRQ
+    #define EXTI15_10_IRQ_Priority 5
+  #endif
   #define ROTARY_ENCODER_EXTI_PortSource  EXTI_PortSourceGPIOE
   #define ROTARY_ENCODER_EXTI_PinSource1  EXTI_PinSource9
   #define ROTARY_ENCODER_EXTI_PinSource2  EXTI_PinSource11
@@ -197,11 +209,14 @@
   #define ROTARY_ENCODER_POSITION()     (((ROTARY_ENCODER_GPIO->IDR >> 12) & 0x01) + ((ROTARY_ENCODER_GPIO->IDR >> 9) & 0x02))
   #define ROTARY_ENCODER_EXTI_LINE1     EXTI_Line10
   #define ROTARY_ENCODER_EXTI_LINE2     EXTI_Line12
-  #define ROTARY_ENCODER_EXTI_IRQn1        EXTI15_10_IRQn
-  #define ROTARY_ENCODER_EXTI_IRQHandler1  EXTI15_10_IRQHandler
   #define ROTARY_ENCODER_EXTI_PortSource  EXTI_PortSourceGPIOE
   #define ROTARY_ENCODER_EXTI_PinSource1  EXTI_PinSource10
   #define ROTARY_ENCODER_EXTI_PinSource2  EXTI_PinSource12
+  // ROTARY_ENCODER_EXTI IRQ
+  #if !defined(USE_EXTI15_10_IRQ)
+    #define USE_EXTI15_10_IRQ
+    #define EXTI15_10_IRQ_Priority 5
+  #endif
 #elif defined(RADIO_TX12) || defined(RADIO_ZORRO)
   #define ROTARY_ENCODER_NAVIGATION
   #define ROTARY_ENCODER_GPIO              GPIOE
@@ -210,13 +225,19 @@
   #define ROTARY_ENCODER_POSITION()        ((ROTARY_ENCODER_GPIO->IDR >> 9) & 0x03)
   #define ROTARY_ENCODER_EXTI_LINE1        EXTI_Line9
   #define ROTARY_ENCODER_EXTI_LINE2        EXTI_Line10
-  #define ROTARY_ENCODER_EXTI_IRQn1        EXTI9_5_IRQn
-  #define ROTARY_ENCODER_EXTI_IRQHandler1  EXTI9_5_IRQHandler
-  #define ROTARY_ENCODER_EXTI_IRQn2        EXTI15_10_IRQn
-  #define ROTARY_ENCODER_EXTI_IRQHandler2  EXTI15_10_IRQHandler
   #define ROTARY_ENCODER_EXTI_PortSource   EXTI_PortSourceGPIOE
   #define ROTARY_ENCODER_EXTI_PinSource1   EXTI_PinSource9
   #define ROTARY_ENCODER_EXTI_PinSource2   EXTI_PinSource10
+  // ROTARY_ENCODER_EXTI_LINE1 IRQ
+  #if !defined(USE_EXTI9_5_IRQ)
+    #define USE_EXTI9_5_IRQ
+    #define EXTI9_5_IRQ_Priority 5
+  #endif
+  // ROTARY_ENCODER_EXTI_LINE2 IRQ
+  #if !defined(USE_EXTI15_10_IRQ)
+    #define USE_EXTI15_10_IRQ
+    #define EXTI15_10_IRQ_Priority 5
+  #endif
 #endif
 
 #if defined(ROTARY_ENCODER_NAVIGATION)
@@ -1726,15 +1747,11 @@
 #define TELEMETRY_EXTI_PortSource       EXTI_PortSourceGPIOD
 #define TELEMETRY_EXTI_PinSource        EXTI_PinSource6
 #define TELEMETRY_EXTI_LINE             EXTI_Line6
-#define TELEMETRY_EXTI_IRQn             EXTI9_5_IRQn
 #define TELEMETRY_EXTI_TRIGGER          EXTI_Trigger_Rising
-
-#if defined(RADIO_X7) || defined(RADIO_X7ACCESS) || defined(RADIO_TX12) || defined(RADIO_ZORRO) || defined(RADIO_T8) || defined(RADIO_TPRO)
-  #define TELEMETRY_EXTI_REUSE_INTERRUPT_ROTARY_ENCODER
-#elif defined(PCBXLITE) || defined(PCBX9LITE) || defined(RADIO_X9DP2019)
-  #define TELEMETRY_EXTI_IRQHandler       EXTI9_5_IRQHandler
-#else
-  #define TELEMETRY_EXTI_REUSE_INTERRUPT_INTMODULE_HEARTBEAT
+// TELEMETRY_EXTI IRQ
+#if !defined(USE_EXTI9_5_IRQ)
+  #define USE_EXTI9_5_IRQ
+  #define EXTI9_5_IRQ_Priority 5
 #endif
 
 #define TELEMETRY_TIMER                 TIM11
@@ -1817,18 +1834,26 @@
   #define INTMODULE_HEARTBEAT_EXTI_LINE           EXTI_Line15
   #define INTMODULE_HEARTBEAT_EXTI_IRQn           EXTI15_10_IRQn
   #define INTMODULE_HEARTBEAT_EXTI_IRQHandler     EXTI15_10_IRQHandler
+  // INTMODULE_HEARTBEAT_EXTI IRQ
+  #if !defined(USE_EXTI15_10_IRQ)
+    #define USE_EXTI15_10_IRQ
+    #define EXTI15_10_IRQ_Priority 5
+  #endif
 #elif defined(PCBX9LITE)
   #define INTMODULE_HEARTBEAT_RCC_AHB1Periph      0
 #elif defined(RADIO_X7ACCESS)
   #define INTMODULE_HEARTBEAT
-  #define INTMODULE_HEARTBEAT_REUSE_INTERRUPT_ROTARY_ENCODER
   #define INTMODULE_HEARTBEAT_RCC_AHB1Periph      RCC_AHB1Periph_GPIOA
   #define INTMODULE_HEARTBEAT_GPIO                GPIOA
   #define INTMODULE_HEARTBEAT_GPIO_PIN            GPIO_Pin_7  // PA.07
   #define INTMODULE_HEARTBEAT_EXTI_PortSource     EXTI_PortSourceGPIOA
   #define INTMODULE_HEARTBEAT_EXTI_PinSource      GPIO_PinSource7
   #define INTMODULE_HEARTBEAT_EXTI_LINE           EXTI_Line7
-  #define INTMODULE_HEARTBEAT_EXTI_IRQn           EXTI9_5_IRQn
+  // INTMODULE_HEARTBEAT_EXTI IRQ
+  #if !defined(USE_EXTI9_5_IRQ)
+    #define USE_EXTI9_5_IRQ
+    #define EXTI9_5_IRQ_Priority 5
+  #endif
 #elif defined(RADIO_X9DP2019)
   #define INTMODULE_HEARTBEAT
   #define INTMODULE_HEARTBEAT_RCC_AHB1Periph      RCC_AHB1Periph_GPIOB
@@ -1839,6 +1864,11 @@
   #define INTMODULE_HEARTBEAT_EXTI_LINE           EXTI_Line1
   #define INTMODULE_HEARTBEAT_EXTI_IRQn           EXTI1_IRQn
   #define INTMODULE_HEARTBEAT_EXTI_IRQHandler     EXTI1_IRQHandler
+  // INTMODULE_HEARTBEAT_EXTI IRQ
+  #if !defined(USE_EXTI1_IRQ)
+    #define USE_EXTI1_IRQ
+    #define EXTI1_IRQ_Priority 5
+  #endif
 #elif defined(RADIO_ZORRO)
   #define INTMODULE_HEARTBEAT_RCC_AHB1Periph      0
 #else
@@ -1849,24 +1879,24 @@
   #define INTMODULE_HEARTBEAT_EXTI_PortSource     EXTI_PortSourceGPIOC
   #define INTMODULE_HEARTBEAT_EXTI_PinSource      GPIO_PinSource7
   #define INTMODULE_HEARTBEAT_EXTI_LINE           EXTI_Line7
-  #define INTMODULE_HEARTBEAT_EXTI_IRQn           EXTI9_5_IRQn
-  #if defined(RADIO_X7) || defined(RADIO_TX12) || defined(RADIO_TPRO)
-    #define INTMODULE_HEARTBEAT_REUSE_INTERRUPT_ROTARY_ENCODER
-  #else
-    #define INTMODULE_HEARTBEAT_EXTI_IRQHandler     EXTI9_5_IRQHandler
+  // INTMODULE_HEARTBEAT_EXTI IRQ
+  #if !defined(USE_EXTI9_5_IRQ)
+    #define USE_EXTI9_5_IRQ
+    #define EXTI9_5_IRQ_Priority 5
   #endif
 #endif
 
-#if defined(PCBX9LITE)
-  #define EXTMODULE_HEARTBEAT_RCC_AHB1Periph      RCC_AHB1Periph_GPIOD
-  #define EXTMODULE_HEARTBEAT_GPIO                GPIOD
-  #define EXTMODULE_HEARTBEAT_GPIO_PIN            GPIO_Pin_15
-  #define EXTMODULE_HEARTBEAT_EXTI_PortSource     EXTI_PortSourceGPIOD
-  #define EXTMODULE_HEARTBEAT_EXTI_PinSource      GPIO_PinSource15
-  #define EXTMODULE_HEARTBEAT_EXTI_LINE           EXTI_Line15
-  #define EXTMODULE_HEARTBEAT_EXTI_IRQn           EXTI15_10_IRQn
-  #define EXTMODULE_HEARTBEAT_EXTI_IRQHandler     EXTI15_10_IRQHandler
-#endif
+// Unused
+// #if defined(PCBX9LITE)
+//   #define EXTMODULE_HEARTBEAT_RCC_AHB1Periph      RCC_AHB1Periph_GPIOD
+//   #define EXTMODULE_HEARTBEAT_GPIO                GPIOD
+//   #define EXTMODULE_HEARTBEAT_GPIO_PIN            GPIO_Pin_15
+//   #define EXTMODULE_HEARTBEAT_EXTI_PortSource     EXTI_PortSourceGPIOD
+//   #define EXTMODULE_HEARTBEAT_EXTI_PinSource      GPIO_PinSource15
+//   #define EXTMODULE_HEARTBEAT_EXTI_LINE           EXTI_Line15
+//   #define EXTMODULE_HEARTBEAT_EXTI_IRQn           EXTI15_10_IRQn
+//   #define EXTMODULE_HEARTBEAT_EXTI_IRQHandler     EXTI15_10_IRQHandler
+// #endif
 
 // Trainer / Trainee from the module bay
 #if defined(PCBX9LITE) ||  defined(PCBXLITE) || defined(RADIO_X9DP2019) || defined(PCBX7ACCESS) || defined(RADIO_ZORRO)
