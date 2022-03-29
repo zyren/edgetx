@@ -20,9 +20,9 @@
  */
 
 #include "stm32_pulse_driver.h"
+#include "hal/trainer_driver.h"
 
 #include "opentx.h"
-#include "aux_serial_driver.h"
 
 static_assert((TRAINER_OUT_TIMER_Channel == LL_TIM_CHANNEL_CH1 ||
                TRAINER_OUT_TIMER_Channel == LL_TIM_CHANNEL_CH2) &&
@@ -148,11 +148,15 @@ void stop_trainer_capture()
 
 bool is_trainer_connected()
 {
+#if defined(TRAINER_DETECT_GPIO_PIN)
   bool set = LL_GPIO_IsInputPinSet(TRAINER_DETECT_GPIO, TRAINER_DETECT_GPIO_PIN);
 #if defined(TRAINER_DETECT_INVERTED)
   return !set;
 #else
   return set;
+#endif
+#else // TRAINER_DETECT_GPIO_PIN
+  return 1;
 #endif
 }
 
