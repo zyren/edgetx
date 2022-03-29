@@ -55,6 +55,8 @@ void init_trainer_capture() {}
 void stop_trainer_capture() {}
 #endif
 
+bool is_trainer_connected() { return false; }
+
 void init_trainer_module_cppm() {}
 void stop_trainer_module_cppm() {}
 
