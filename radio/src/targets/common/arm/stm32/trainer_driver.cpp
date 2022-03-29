@@ -23,9 +23,9 @@
 #include "hal/trainer_driver.h"
 #include "hal.h"
 
-#if defined(TRAINER_GPIO)
-
 #include "opentx.h"
+
+#if defined(TRAINER_GPIO)
 
 static_assert((TRAINER_OUT_TIMER_Channel == LL_TIM_CHANNEL_CH1 ||
                TRAINER_OUT_TIMER_Channel == LL_TIM_CHANNEL_CH2 ||
@@ -39,6 +39,12 @@ static_assert(TRAINER_IN_TIMER_Channel == LL_TIM_CHANNEL_CH1 ||
               TRAINER_IN_TIMER_Channel == LL_TIM_CHANNEL_CH3 ||
               TRAINER_IN_TIMER_Channel == LL_TIM_CHANNEL_CH4,
               "Unsupported trainer timer input channel");
+#else
+void init_trainer_ppm() {}
+void stop_trainer_ppm() {}
+void init_trainer_capture() {}
+void stop_trainer_capture() {}
+#endif
 
 static void (*_trainer_timer_isr)();
 static const stm32_pulse_timer_t* _trainer_timer;
@@ -58,6 +64,107 @@ void init_trainer()
   _trainer_timer = nullptr;
   _trainer_timer_isr = nullptr;
 }
+
+static inline bool trainer_check_isr_flag(const stm32_pulse_timer_t* tim)
+{
+  switch (tim->TIM_Channel) {
+    case LL_TIM_CHANNEL_CH1:
+      if (LL_TIM_IsEnabledIT_CC1(tim->TIMx) &&
+          LL_TIM_IsActiveFlag_CC1(tim->TIMx)) {
+        LL_TIM_ClearFlag_CC1(tim->TIMx);
+        return true;
+      }
+      break;
+    case LL_TIM_CHANNEL_CH2:
+      if (LL_TIM_IsEnabledIT_CC2(tim->TIMx) &&
+          LL_TIM_IsActiveFlag_CC2(tim->TIMx)) {
+        LL_TIM_ClearFlag_CC2(tim->TIMx);
+        return true;
+      }
+      break;
+    case LL_TIM_CHANNEL_CH3:
+      if (LL_TIM_IsEnabledIT_CC3(tim->TIMx) &&
+          LL_TIM_IsActiveFlag_CC3(tim->TIMx)) {
+        LL_TIM_ClearFlag_CC3(tim->TIMx);
+        return true;
+      }
+      break;
+    case LL_TIM_CHANNEL_CH4:
+      if (LL_TIM_IsEnabledIT_CC4(tim->TIMx) &&
+          LL_TIM_IsActiveFlag_CC4(tim->TIMx)) {
+        LL_TIM_ClearFlag_CC4(tim->TIMx);
+        return true;
+      }
+      break;
+  }
+  return false;
+}
+
+static void trainer_in_isr()
+{
+  // proceed only if the channel flag was set
+  // and the IRQ was enabled
+  if (!trainer_check_isr_flag(_trainer_timer))
+    return;
+
+  uint16_t capture = 0;
+  switch(_trainer_timer->TIM_Channel) {
+  case LL_TIM_CHANNEL_CH1:
+    capture = LL_TIM_IC_GetCaptureCH1(_trainer_timer->TIMx);
+    break;
+  case LL_TIM_CHANNEL_CH2:
+    capture = LL_TIM_IC_GetCaptureCH2(_trainer_timer->TIMx);
+    break;
+  case LL_TIM_CHANNEL_CH3:
+    capture = LL_TIM_IC_GetCaptureCH3(_trainer_timer->TIMx);
+    break;
+  case LL_TIM_CHANNEL_CH4:
+    capture = LL_TIM_IC_GetCaptureCH4(_trainer_timer->TIMx);
+    break;
+  default:
+    return;
+  }
+
+  // avoid spurious pulses in case the cable is not connected
+  if (is_trainer_connected())
+    captureTrainerPulses(capture);
+}
+
+static void _stop_trainer(const stm32_pulse_timer_t* tim)
+{
+  stm32_pulse_deinit(tim);
+  _trainer_timer_isr = nullptr;
+  _trainer_timer = nullptr;
+}
+
+static void _init_trainer_capture(const stm32_pulse_timer_t* tim)
+{
+  // set proper ISR handler first
+  _trainer_timer = tim;
+  _trainer_timer_isr = trainer_in_isr;
+
+  stm32_pulse_init(tim);
+  stm32_pulse_config_input(tim);
+
+  switch (tim->TIM_Channel) {
+  case LL_TIM_CHANNEL_CH1:
+    LL_TIM_EnableIT_CC1(tim->TIMx);
+    break;
+  case LL_TIM_CHANNEL_CH2:
+    LL_TIM_EnableIT_CC2(tim->TIMx);
+    break;
+  case LL_TIM_CHANNEL_CH3:
+    LL_TIM_EnableIT_CC1(tim->TIMx);
+    break;
+  case LL_TIM_CHANNEL_CH4:
+    LL_TIM_EnableIT_CC2(tim->TIMx);
+    break;
+  }
+
+  LL_TIM_EnableCounter(tim->TIMx);
+}
+
+#if defined(TRAINER_GPIO)
 
 static const stm32_pulse_timer_t trainerOutputTimer = {
   .GPIOx = TRAINER_GPIO,
@@ -97,8 +204,22 @@ static void trainerSendNextFrame()
   }
 }
 
-static void trainer_out_isr();
-static void trainer_in_isr();
+static void trainer_out_isr()
+{
+  // proceed only if the channel flag was set
+  // and the IRQ was enabled
+  if (!trainer_check_isr_flag(_trainer_timer))
+    return;
+
+  if (*trainerPulsesData.ppm.ptr) {
+    // load next period
+    LL_TIM_SetAutoReload(_trainer_timer->TIMx,
+                         *(trainerPulsesData.ppm.ptr++));
+  } else {
+    setupPulsesPPMTrainer();
+    trainerSendNextFrame();
+  }  
+}
 
 void init_trainer_ppm()
 {
@@ -114,13 +235,6 @@ void init_trainer_ppm()
   trainerSendNextFrame();
 
   LL_TIM_EnableCounter(trainerOutputTimer.TIMx);
-}
-
-static void _stop_trainer(const stm32_pulse_timer_t* tim)
-{
-  stm32_pulse_deinit(tim);
-  _trainer_timer_isr = nullptr;
-  _trainer_timer = nullptr;
 }
 
 void stop_trainer_ppm()
@@ -142,33 +256,6 @@ static const stm32_pulse_timer_t trainerInputTimer = {
   .DMA_IRQn = (IRQn_Type)0,
 };
 
-static void _init_trainer_capture(const stm32_pulse_timer_t* tim)
-{
-  // set proper ISR handler first
-  _trainer_timer = tim;
-  _trainer_timer_isr = trainer_in_isr;
-
-  stm32_pulse_init(tim);
-  stm32_pulse_config_input(tim);
-
-  switch (tim->TIM_Channel) {
-  case LL_TIM_CHANNEL_CH1:
-    LL_TIM_EnableIT_CC1(tim->TIMx);
-    break;
-  case LL_TIM_CHANNEL_CH2:
-    LL_TIM_EnableIT_CC2(tim->TIMx);
-    break;
-  case LL_TIM_CHANNEL_CH3:
-    LL_TIM_EnableIT_CC1(tim->TIMx);
-    break;
-  case LL_TIM_CHANNEL_CH4:
-    LL_TIM_EnableIT_CC2(tim->TIMx);
-    break;
-  }
-
-  LL_TIM_EnableCounter(tim->TIMx);
-}
-
 void init_trainer_capture()
 {
   _init_trainer_capture(&trainerInputTimer);
@@ -178,6 +265,8 @@ void stop_trainer_capture()
 {
   _stop_trainer(&trainerInputTimer);
 }
+
+#endif // TRAINER_GPIO
 
 bool is_trainer_connected()
 {
@@ -193,91 +282,12 @@ bool is_trainer_connected()
 #endif
 }
 
-static inline bool trainer_check_isr_flag(const stm32_pulse_timer_t* tim)
-{
-  switch (tim->TIM_Channel) {
-    case LL_TIM_CHANNEL_CH1:
-      if (LL_TIM_IsEnabledIT_CC1(tim->TIMx) &&
-          LL_TIM_IsActiveFlag_CC1(tim->TIMx)) {
-        LL_TIM_ClearFlag_CC1(tim->TIMx);
-        return true;
-      }
-      break;
-    case LL_TIM_CHANNEL_CH2:
-      if (LL_TIM_IsEnabledIT_CC2(tim->TIMx) &&
-          LL_TIM_IsActiveFlag_CC2(tim->TIMx)) {
-        LL_TIM_ClearFlag_CC2(tim->TIMx);
-        return true;
-      }
-      break;
-    case LL_TIM_CHANNEL_CH3:
-      if (LL_TIM_IsEnabledIT_CC3(tim->TIMx) &&
-          LL_TIM_IsActiveFlag_CC3(tim->TIMx)) {
-        LL_TIM_ClearFlag_CC3(tim->TIMx);
-        return true;
-      }
-      break;
-    case LL_TIM_CHANNEL_CH4:
-      if (LL_TIM_IsEnabledIT_CC4(tim->TIMx) &&
-          LL_TIM_IsActiveFlag_CC4(tim->TIMx)) {
-        LL_TIM_ClearFlag_CC4(tim->TIMx);
-        return true;
-      }
-      break;
-  }
-  return false;
-}
-
-static void trainer_out_isr()
-{
-  // proceed only if the channel flag was set
-  // and the IRQ was enabled
-  if (!trainer_check_isr_flag(_trainer_timer))
-    return;
-
-  if (*trainerPulsesData.ppm.ptr) {
-    // load next period
-    LL_TIM_SetAutoReload(_trainer_timer->TIMx,
-                         *(trainerPulsesData.ppm.ptr++));
-  } else {
-    setupPulsesPPMTrainer();
-    trainerSendNextFrame();
-  }  
-}
-
-static void trainer_in_isr()
-{
-  // proceed only if the channel flag was set
-  // and the IRQ was enabled
-  if (!trainer_check_isr_flag(_trainer_timer))
-    return;
-
-  uint16_t capture = 0;
-  switch(_trainer_timer->TIM_Channel) {
-  case LL_TIM_CHANNEL_CH1:
-    capture = LL_TIM_IC_GetCaptureCH1(_trainer_timer->TIMx);
-    break;
-  case LL_TIM_CHANNEL_CH2:
-    capture = LL_TIM_IC_GetCaptureCH2(_trainer_timer->TIMx);
-    break;
-  case LL_TIM_CHANNEL_CH3:
-    capture = LL_TIM_IC_GetCaptureCH3(_trainer_timer->TIMx);
-    break;
-  case LL_TIM_CHANNEL_CH4:
-    capture = LL_TIM_IC_GetCaptureCH4(_trainer_timer->TIMx);
-    break;
-  default:
-    return;
-  }
-
-  // avoid spurious pulses in case the cable is not connected
-  if (is_trainer_connected())
-    captureTrainerPulses(capture);
-}
+#if defined(TRAINER_GPIO) || (defined(TRAINER_MODULE_CPPM) && !defined(TRAINER_MODULE_CPPM_TIMER_IRQHandler))
 
 #if !defined(TRAINER_TIMER_IRQHandler)
   #error "Missing TRAINER_TIMER_IRQHandler definition"
 #endif
+
 extern "C" void TRAINER_TIMER_IRQHandler()
 {
   DEBUG_INTERRUPT(INT_TRAINER);
@@ -285,6 +295,7 @@ extern "C" void TRAINER_TIMER_IRQHandler()
   if (_trainer_timer && _trainer_timer_isr)
     _trainer_timer_isr();
 }
+#endif
 
 #if defined(TRAINER_MODULE_CPPM)
 static const stm32_pulse_timer_t trainerModuleTimer = {
@@ -322,14 +333,3 @@ extern "C" void TRAINER_MODULE_CPPM_TIMER_IRQHandler()
 #endif
 
 #endif // TRAINER_MODULE_CPPM
-
-#else // TRAINER_GPIO
-
-void init_trainer() {}
-void init_trainer_ppm() {}
-void stop_trainer_ppm() {}
-void init_trainer_capture() {}
-void stop_trainer_capture() {}
-bool is_trainer_connected() { return true; }
-
-#endif

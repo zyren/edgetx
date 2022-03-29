@@ -1888,7 +1888,7 @@
 #if defined(PCBX9LITE) ||  defined(PCBXLITE)
   #define TRAINER_MODULE_CPPM_TIMER_IRQHandler TIM3_IRQHandler
 #endif
-  // #define TRAINER_MODULE_SBUS
+  // #define TRAINER_MODULE_SBUS -> use ext module serial buffers?
   #define TRAINER_MODULE_SBUS_GPIO             EXTMODULE_USART_GPIO
   #define TRAINER_MODULE_SBUS_GPIO_PIN         EXTMODULE_RX_GPIO_PIN
   #define TRAINER_MODULE_SBUS_GPIO_AF          EXTMODULE_USART_GPIO_AF
@@ -1911,7 +1911,8 @@
   #define TRAINER_MODULE_CPPM_TIMER_IRQn          TRAINER_TIMER_IRQn
   #define TRAINER_MODULE_CPPM_GPIO_AF             GPIO_AF_TIM3
   // Trainer SBUS input on heartbeat pin
-  // #define TRAINER_MODULE_SBUS
+  // #define TRAINER_MODULE_SBUS -> use ext module serial buffers?
+  //                             -> these targets have no external serial module 
   #define TRAINER_MODULE_SBUS_GPIO_AF             GPIO_AF_USART6
   #define TRAINER_MODULE_SBUS_USART               USART6
   #define TRAINER_MODULE_SBUS_GPIO                INTMODULE_HEARTBEAT_GPIO
