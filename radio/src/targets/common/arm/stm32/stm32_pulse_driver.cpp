@@ -152,6 +152,9 @@ static void set_compare_reg(const stm32_pulse_timer_t* tim, uint32_t val)
   case LL_TIM_CHANNEL_CH3:
     LL_TIM_OC_SetCompareCH3(tim->TIMx, val);
     break;
+  case LL_TIM_CHANNEL_CH4:
+    LL_TIM_OC_SetCompareCH4(tim->TIMx, val);
+    break;
   }
 }
 

@@ -21,16 +21,23 @@
 
 #include "stm32_pulse_driver.h"
 #include "hal/trainer_driver.h"
+#include "hal.h"
+
+#if defined(TRAINER_GPIO)
 
 #include "opentx.h"
 
 static_assert((TRAINER_OUT_TIMER_Channel == LL_TIM_CHANNEL_CH1 ||
-               TRAINER_OUT_TIMER_Channel == LL_TIM_CHANNEL_CH2) &&
-              __STM32_PULSE_IS_TIMER_CHANNEL_SUPPORTED(TRAINER_OUT_TIMER_Channel),
+               TRAINER_OUT_TIMER_Channel == LL_TIM_CHANNEL_CH2 ||
+               TRAINER_OUT_TIMER_Channel == LL_TIM_CHANNEL_CH3 ||
+               TRAINER_OUT_TIMER_Channel == LL_TIM_CHANNEL_CH4) &&
+               __STM32_PULSE_IS_TIMER_CHANNEL_SUPPORTED(TRAINER_OUT_TIMER_Channel),
               "Unsupported trainer timer output channel");
 
 static_assert(TRAINER_IN_TIMER_Channel == LL_TIM_CHANNEL_CH1 ||
-              TRAINER_IN_TIMER_Channel == LL_TIM_CHANNEL_CH2,
+              TRAINER_IN_TIMER_Channel == LL_TIM_CHANNEL_CH2 ||
+              TRAINER_IN_TIMER_Channel == LL_TIM_CHANNEL_CH3 ||
+              TRAINER_IN_TIMER_Channel == LL_TIM_CHANNEL_CH4,
               "Unsupported trainer timer input channel");
 
 static void (*_trainer_timer_isr)();
@@ -78,6 +85,12 @@ static void trainerSendNextFrame()
     break;
   case LL_TIM_CHANNEL_CH2:
     LL_TIM_EnableIT_CC2(trainerOutputTimer.TIMx);
+    break;
+  case LL_TIM_CHANNEL_CH3:
+    LL_TIM_EnableIT_CC3(trainerOutputTimer.TIMx);
+    break;
+  case LL_TIM_CHANNEL_CH4:
+    LL_TIM_EnableIT_CC4(trainerOutputTimer.TIMx);
     break;
   }
 }
@@ -135,6 +148,12 @@ void init_trainer_capture()
   case LL_TIM_CHANNEL_CH2:
     LL_TIM_EnableIT_CC2(trainerInputTimer.TIMx);
     break;
+  case LL_TIM_CHANNEL_CH3:
+    LL_TIM_EnableIT_CC1(trainerInputTimer.TIMx);
+    break;
+  case LL_TIM_CHANNEL_CH4:
+    LL_TIM_EnableIT_CC2(trainerInputTimer.TIMx);
+    break;
   }
 
   LL_TIM_EnableCounter(trainerInputTimer.TIMx);
@@ -162,21 +181,35 @@ bool is_trainer_connected()
 
 static inline bool trainer_check_isr_flag(const stm32_pulse_timer_t* tim)
 {
-  switch(tim->TIM_Channel) {
-  case LL_TIM_CHANNEL_CH1:
-    if (LL_TIM_IsEnabledIT_CC1(tim->TIMx) &&
-        LL_TIM_IsActiveFlag_CC1(tim->TIMx)) {
-      LL_TIM_ClearFlag_CC1(tim->TIMx);
-      return true;
-    }
-    break;
-  case LL_TIM_CHANNEL_CH2:
-    if (LL_TIM_IsEnabledIT_CC2(tim->TIMx) &&
-        LL_TIM_IsActiveFlag_CC2(tim->TIMx)) {
-      LL_TIM_ClearFlag_CC2(tim->TIMx);
-      return true;
-    }
-    break;
+  switch (tim->TIM_Channel) {
+    case LL_TIM_CHANNEL_CH1:
+      if (LL_TIM_IsEnabledIT_CC1(tim->TIMx) &&
+          LL_TIM_IsActiveFlag_CC1(tim->TIMx)) {
+        LL_TIM_ClearFlag_CC1(tim->TIMx);
+        return true;
+      }
+      break;
+    case LL_TIM_CHANNEL_CH2:
+      if (LL_TIM_IsEnabledIT_CC2(tim->TIMx) &&
+          LL_TIM_IsActiveFlag_CC2(tim->TIMx)) {
+        LL_TIM_ClearFlag_CC2(tim->TIMx);
+        return true;
+      }
+      break;
+    case LL_TIM_CHANNEL_CH3:
+      if (LL_TIM_IsEnabledIT_CC3(tim->TIMx) &&
+          LL_TIM_IsActiveFlag_CC3(tim->TIMx)) {
+        LL_TIM_ClearFlag_CC3(tim->TIMx);
+        return true;
+      }
+      break;
+    case LL_TIM_CHANNEL_CH4:
+      if (LL_TIM_IsEnabledIT_CC4(tim->TIMx) &&
+          LL_TIM_IsActiveFlag_CC4(tim->TIMx)) {
+        LL_TIM_ClearFlag_CC4(tim->TIMx);
+        return true;
+      }
+      break;
   }
   return false;
 }
@@ -213,6 +246,12 @@ static void trainer_in_isr()
   case LL_TIM_CHANNEL_CH2:
     capture = LL_TIM_IC_GetCaptureCH2(trainerOutputTimer.TIMx);
     break;
+  case LL_TIM_CHANNEL_CH3:
+    capture = LL_TIM_IC_GetCaptureCH3(trainerOutputTimer.TIMx);
+    break;
+  case LL_TIM_CHANNEL_CH4:
+    capture = LL_TIM_IC_GetCaptureCH4(trainerOutputTimer.TIMx);
+    break;
   default:
     return;
   }
@@ -232,3 +271,12 @@ extern "C" void TRAINER_TIMER_IRQHandler()
   if (_trainer_timer_isr)
     _trainer_timer_isr();
 }
+
+#else
+void init_trainer() {}
+void init_trainer_ppm() {}
+void stop_trainer_ppm() {}
+void init_trainer_capture() {}
+void stop_trainer_capture() {}
+bool is_trainer_connected() { return true; }
+#endif

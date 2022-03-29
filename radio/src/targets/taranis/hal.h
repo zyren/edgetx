@@ -1613,32 +1613,19 @@
   #define TRAINER_RCC_AHB1Periph        RCC_AHB1Periph_GPIOD
   #define TRAINER_RCC_APB1Periph        RCC_APB1Periph_TIM4
   #define TRAINER_GPIO                  GPIOD
-  #define TRAINER_IN_GPIO_PIN           GPIO_Pin_13 // PD.13
-  #define TRAINER_IN_GPIO_PinSource     GPIO_PinSource13
-  #define TRAINER_OUT_GPIO_PIN          GPIO_Pin_12 // PD.12
-  #define TRAINER_OUT_GPIO_PinSource    GPIO_PinSource12
+  #define TRAINER_IN_GPIO_PIN           LL_GPIO_PIN_13 // PD.13
+  #define TRAINER_IN_TIMER_Channel      LL_TIM_CHANNEL_CH2
+  #define TRAINER_OUT_GPIO_PIN          LL_GPIO_PIN_12 // PD.12
+  #define TRAINER_OUT_TIMER_Channel     LL_TIM_CHANNEL_CH1
 #if defined(PCBX9LITE)
   #define TRAINER_DETECT_GPIO           GPIOD
-  #define TRAINER_DETECT_GPIO_PIN       GPIO_Pin_11 // PD.11
-  #define TRAINER_DETECT_GPIO_PIN_VALUE Bit_SET
+  #define TRAINER_DETECT_GPIO_PIN       LL_GPIO_PIN_11 // PD.11
 #endif
   #define TRAINER_TIMER                 TIM4
   #define TRAINER_GPIO_AF               GPIO_AF_TIM4 // TIM4_CH1 (Out) + TIM4_CH2 (In)
   #define TRAINER_TIMER_IRQn            TIM4_IRQn
   #define TRAINER_TIMER_IRQHandler      TIM4_IRQHandler
   #define TRAINER_TIMER_FREQ            (PERI1_FREQUENCY * TIMER_MULT_APB1)
-  #define TRAINER_OUT_CCMR1             TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1PE;
-  #define TRAINER_IN_CCMR1              TIM_CCMR1_IC2F_0 | TIM_CCMR1_IC2F_1 | TIM_CCMR1_CC2S_0;
-  #define TRAINER_OUT_COUNTER_REGISTER  TRAINER_TIMER->CCR1
-  #define TRAINER_IN_COUNTER_REGISTER   TRAINER_TIMER->CCR2
-  #define TRAINER_SETUP_REGISTER        TRAINER_TIMER->CCR3
-  #define TRAINER_OUT_INTERRUPT_FLAG    TIM_SR_CC3IF
-  #define TRAINER_OUT_INTERRUPT_ENABLE  TIM_DIER_CC3IE
-  #define TRAINER_IN_INTERRUPT_ENABLE   TIM_DIER_CC2IE
-  #define TRAINER_IN_INTERRUPT_FLAG     TIM_SR_CC2IF
-  #define TRAINER_OUT_CCER              TIM_CCER_CC1E
-  #define TRAINER_CCER_POLARYTY         TIM_CCER_CC1P
-  #define TRAINER_IN_CCER               TIM_CCER_CC2E
 #elif defined(PCBXLITE)
   #define TRAINER_TIMER                 TIM4
   #define TRAINER_RCC_AHB1Periph        0
@@ -1649,41 +1636,27 @@
   #define TRAINER_RCC_AHB1Periph        (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_DMA1)
   #define TRAINER_RCC_APB1Periph        RCC_APB1Periph_TIM3
   #define TRAINER_GPIO                  GPIOC
-  #define TRAINER_IN_GPIO_PIN           GPIO_Pin_8  // PC.08
-  #define TRAINER_IN_GPIO_PinSource     GPIO_PinSource8
-  #define TRAINER_OUT_GPIO_PIN          GPIO_Pin_9  // PC.09
-  #define TRAINER_OUT_GPIO_PinSource    GPIO_PinSource9
+  #define TRAINER_IN_GPIO_PIN           LL_GPIO_PIN_8  // PC.08
+  #define TRAINER_IN_TIMER_Channel      LL_TIM_CHANNEL_CH3
+  #define TRAINER_OUT_GPIO_PIN          LL_GPIO_PIN_9  // PC.09
+  #define TRAINER_OUT_TIMER_Channel     LL_TIM_CHANNEL_CH4
   #define TRAINER_DETECT_GPIO           GPIOA
-  #define TRAINER_DETECT_GPIO_PIN       GPIO_Pin_8  // PA.08
-#if defined(RADIO_X9DP2019) || defined(RADIO_X7ACCESS)
-  #define TRAINER_DETECT_GPIO_PIN_VALUE Bit_SET
-#else
-  #define TRAINER_DETECT_GPIO_PIN_VALUE Bit_RESET
+  #define TRAINER_DETECT_GPIO_PIN       LL_GPIO_PIN_8  // PA.08
+#if !defined(RADIO_X9DP2019) && !defined(RADIO_X7ACCESS)
+  #define TRAINER_DETECT_INVERTED
 #endif
   #define TRAINER_TIMER                 TIM3
   #define TRAINER_TIMER_IRQn            TIM3_IRQn
-  #define TRAINER_GPIO_AF               GPIO_AF_TIM3
-  #define TRAINER_DMA                   DMA1
-  #define TRAINER_DMA_CHANNEL           DMA_Channel_5
-  #define TRAINER_DMA_STREAM            DMA1_Stream2
-  #define TRAINER_DMA_IRQn              DMA1_Stream2_IRQn
-  #define TRAINER_DMA_IRQHandler        DMA1_Stream2_IRQHandler
-  #define TRAINER_DMA_FLAG_TC           DMA_IT_TCIF2
+  #define TRAINER_GPIO_AF               LL_GPIO_AF_2
+  // #define TRAINER_DMA                   DMA1
+  // #define TRAINER_DMA_CHANNEL           DMA_Channel_5
+  // #define TRAINER_DMA_STREAM            DMA1_Stream2
+  // #define TRAINER_DMA_IRQn              DMA1_Stream2_IRQn
+  // #define TRAINER_DMA_IRQHandler        DMA1_Stream2_IRQHandler
+  // #define TRAINER_DMA_FLAG_TC           DMA_IT_TCIF2
   #define TRAINER_TIMER_IRQn            TIM3_IRQn
   #define TRAINER_TIMER_IRQHandler      TIM3_IRQHandler
   #define TRAINER_TIMER_FREQ            (PERI1_FREQUENCY * TIMER_MULT_APB1)
-  #define TRAINER_OUT_CCMR2             TIM_CCMR2_OC4M_1 | TIM_CCMR2_OC4M_2 | TIM_CCMR2_OC4PE;
-  #define TRAINER_IN_CCMR2              TIM_CCMR2_IC3F_0 | TIM_CCMR2_IC3F_1 | TIM_CCMR2_CC3S_0;
-  #define TRAINER_OUT_COUNTER_REGISTER  TRAINER_TIMER->CCR4
-  #define TRAINER_IN_COUNTER_REGISTER   TRAINER_TIMER->CCR3
-  #define TRAINER_SETUP_REGISTER        TRAINER_TIMER->CCR1
-  #define TRAINER_OUT_INTERRUPT_FLAG    TIM_SR_CC1IF
-  #define TRAINER_OUT_INTERRUPT_ENABLE  TIM_DIER_CC1IE
-  #define TRAINER_IN_INTERRUPT_ENABLE   TIM_DIER_CC3IE
-  #define TRAINER_IN_INTERRUPT_FLAG     TIM_SR_CC3IF
-  #define TRAINER_OUT_CCER              TIM_CCER_CC4E
-  #define TRAINER_IN_CCER               TIM_CCER_CC3E
-  #define TRAINER_CCER_POLARYTY         TIM_CCER_CC4P
 #endif
 
 // Serial Port
@@ -1900,8 +1873,8 @@
 
 // Trainer / Trainee from the module bay
 #if defined(PCBX9LITE) ||  defined(PCBXLITE) || defined(RADIO_X9DP2019) || defined(PCBX7ACCESS) || defined(RADIO_ZORRO)
-  #define TRAINER_MODULE_CPPM
-  #define TRAINER_MODULE_SBUS
+  // #define TRAINER_MODULE_CPPM
+  // #define TRAINER_MODULE_SBUS
   #define TRAINER_MODULE_RCC_AHB1Periph      0
   #define TRAINER_MODULE_RCC_APB1Periph      RCC_APB1Periph_TIM3
   #define TRAINER_MODULE_RCC_APB2Periph      0
@@ -1929,7 +1902,7 @@
 #else
 #if defined(INTMODULE_HEARTBEAT_GPIO) && defined(HARDWARE_EXTERNAL_MODULE)
   // Trainer CPPM input on heartbeat pin
-  #define TRAINER_MODULE_CPPM
+  // #define TRAINER_MODULE_CPPM
   #define TRAINER_MODULE_RCC_AHB1Periph           RCC_AHB1Periph_GPIOC
   #define TRAINER_MODULE_RCC_APB2Periph           RCC_APB2Periph_USART6
   #define TRAINER_MODULE_RCC_APB1Periph           RCC_APB1Periph_TIM3
@@ -1945,7 +1918,7 @@
   #define TRAINER_MODULE_CPPM_TIMER_IRQn          TRAINER_TIMER_IRQn
   #define TRAINER_MODULE_CPPM_GPIO_AF             GPIO_AF_TIM3
   // Trainer SBUS input on heartbeat pin
-  #define TRAINER_MODULE_SBUS
+  // #define TRAINER_MODULE_SBUS
   #define TRAINER_MODULE_SBUS_GPIO_AF             GPIO_AF_USART6
   #define TRAINER_MODULE_SBUS_USART               USART6
   #define TRAINER_MODULE_SBUS_GPIO                INTMODULE_HEARTBEAT_GPIO
