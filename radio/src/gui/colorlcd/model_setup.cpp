@@ -1197,7 +1197,7 @@ class ModuleWindow : public FormGroup {
           g_eeGeneral.antennaMode == ANTENNA_MODE_PER_MODEL) {
         new StaticText(this, grid.getLabelSlot(true), STR_ANTENNA, 0,
                        COLOR_THEME_PRIMARY1);
-        new Choice(
+        auto antennaChoice = new Choice(
             this, grid.getFieldSlot(), STR_ANTENNA_MODES, ANTENNA_MODE_INTERNAL,
             ANTENNA_MODE_EXTERNAL,
             GET_DEFAULT(g_model.moduleData[INTERNAL_MODULE].pxx.antennaMode),
@@ -1215,6 +1215,9 @@ class ModuleWindow : public FormGroup {
                 checkExternalAntenna();
               }
             });
+        antennaChoice->setAvailableHandler([=](int8_t mode) {
+           return mode != ANTENNA_MODE_PER_MODEL;
+        });
         grid.nextLine();
       }
 #endif
