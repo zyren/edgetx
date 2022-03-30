@@ -278,7 +278,7 @@ bool is_trainer_connected()
   return set;
 #endif
 #else // TRAINER_DETECT_GPIO_PIN
-  return 1;
+  return true;
 #endif
 }
 

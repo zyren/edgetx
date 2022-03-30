@@ -59,12 +59,11 @@ void stm32_pulse_deinit(const stm32_pulse_timer_t* tim)
   NVIC_DisableIRQ(tim->TIM_IRQn);
 
   if (tim->DMAx) {
-    // De-init DMA & timer
     LL_DMA_DeInit(tim->DMAx, tim->DMA_Stream);
   }
   LL_TIM_DeInit(tim->TIMx);
 
-  // Reconfigure pin as output
+  // Reconfigure pin as input
   LL_GPIO_InitTypeDef pinInit;
   LL_GPIO_StructInit(&pinInit);
 

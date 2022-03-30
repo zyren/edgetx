@@ -107,10 +107,7 @@ void rotaryEncoderInit()
   ROTARY_ENCODER_TIMER->DIER |= TIM_DIER_UIE;
 
   SYSCFG_EXTILineConfig(ROTARY_ENCODER_EXTI_PortSource, ROTARY_ENCODER_EXTI_PinSource1);
-
-#if defined(ROTARY_ENCODER_EXTI_LINE2)
   SYSCFG_EXTILineConfig(ROTARY_ENCODER_EXTI_PortSource, ROTARY_ENCODER_EXTI_PinSource2);
-#endif
 
   EXTI_InitTypeDef EXTI_InitStructure;
   EXTI_StructInit(&EXTI_InitStructure);
@@ -120,10 +117,8 @@ void rotaryEncoderInit()
   EXTI_InitStructure.EXTI_LineCmd = ENABLE;
   EXTI_Init(&EXTI_InitStructure);
 
-#if defined(ROTARY_ENCODER_EXTI_LINE2)
   EXTI_InitStructure.EXTI_Line = ROTARY_ENCODER_EXTI_LINE2;
   EXTI_Init(&EXTI_InitStructure);
-#endif
 
   stm32_exti_enable(ROTARY_ENCODER_EXTI_LINE1, rotaryEncoderStartDelay);
   stm32_exti_enable(ROTARY_ENCODER_EXTI_LINE2, rotaryEncoderStartDelay);
