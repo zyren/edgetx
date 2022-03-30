@@ -107,6 +107,14 @@ void onAntennaSelection(const char* result)
   }
 }
 
+void onAntennaSwitchConfirm(const char * result)
+{
+  if (result == STR_OK) {
+    // Switch to external antenna confirmation
+    globalData.externalAntennaEnabled = true;
+  }
+}
+
 void checkExternalAntenna()
 {
   if (isModuleXJT(INTERNAL_MODULE)) {
