@@ -288,10 +288,6 @@ void bootloaderInitApp()
 #endif
   init10msTimer();
 
-#if defined(SDCARD)
-  // SD card detect pin
-  sdInit();
-#endif
   flashInit();
   usbInit();
 }

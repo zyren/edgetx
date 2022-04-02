@@ -952,49 +952,6 @@ void sdPoll10ms()
   }
 }
 
-// TODO everything here should not be in the driver layer ...
-
-FATFS g_FATFS_Obj __DMA;
-
-#if defined(BOOT)
-void sdInit(void)
-{
-  if (f_mount(&g_FATFS_Obj, "", 1) == FR_OK) {
-    f_chdir("/");
-  }
-}
-#else
-// TODO shouldn't be there!
-void sdInit(void)
-{
-  TRACE("sdInit");
-  RTOS_CREATE_MUTEX(ioMutex);
-  sdMount();
-}
-
-void sdMount()
-{
-  TRACE("sdMount");
-  if (f_mount(&g_FATFS_Obj, "", 1) == FR_OK) {
-    // call sdGetFreeSectors() now because f_getfree() takes a long time first time it's called
-    sdGetFreeSectors();
-  }
-}
-
-void sdDone()
-{
-  if (sdMounted()) {
-    audioQueue.stopSD();
-    f_mount(nullptr, "", 0); // unmount SD
-  }
-}
-#endif
-
-uint32_t sdMounted()
-{
-  return g_FATFS_Obj.fs_type != 0;
-}
-
 uint32_t sdIsHC()
 {
   return (CardType & CT_BLOCK);

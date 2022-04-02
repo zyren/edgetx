@@ -24,8 +24,6 @@
 
 #include "ff.h"
 
-extern FATFS g_FATFS_Obj;
-
 #include "translations.h"
 
 bool sdCardFormat();
