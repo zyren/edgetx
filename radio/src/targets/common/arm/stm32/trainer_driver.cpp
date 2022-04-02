@@ -25,19 +25,21 @@
 
 #include "opentx.h"
 
+#define __IS_TRAINER_TIMER_OUT_CHANNEL_SUPPORTED(ch)             \
+  (((ch) == LL_TIM_CHANNEL_CH1 || (ch) == LL_TIM_CHANNEL_CH2 ||  \
+    (ch) == LL_TIM_CHANNEL_CH3 || (ch) == LL_TIM_CHANNEL_CH4) && \
+   __STM32_PULSE_IS_TIMER_CHANNEL_SUPPORTED(ch))
+
+#define __IS_TRAINER_TIMER_IN_CHANNEL_SUPPORTED(ch)            \
+  ((ch) == LL_TIM_CHANNEL_CH1 || (ch) == LL_TIM_CHANNEL_CH2 || \
+   (ch) == LL_TIM_CHANNEL_CH3 || (ch) == LL_TIM_CHANNEL_CH4)
+
 #if defined(TRAINER_GPIO)
 
-static_assert((TRAINER_OUT_TIMER_Channel == LL_TIM_CHANNEL_CH1 ||
-               TRAINER_OUT_TIMER_Channel == LL_TIM_CHANNEL_CH2 ||
-               TRAINER_OUT_TIMER_Channel == LL_TIM_CHANNEL_CH3 ||
-               TRAINER_OUT_TIMER_Channel == LL_TIM_CHANNEL_CH4) &&
-               __STM32_PULSE_IS_TIMER_CHANNEL_SUPPORTED(TRAINER_OUT_TIMER_Channel),
+static_assert(__IS_TRAINER_TIMER_OUT_CHANNEL_SUPPORTED(TRAINER_OUT_TIMER_Channel),
               "Unsupported trainer timer output channel");
 
-static_assert(TRAINER_IN_TIMER_Channel == LL_TIM_CHANNEL_CH1 ||
-              TRAINER_IN_TIMER_Channel == LL_TIM_CHANNEL_CH2 ||
-              TRAINER_IN_TIMER_Channel == LL_TIM_CHANNEL_CH3 ||
-              TRAINER_IN_TIMER_Channel == LL_TIM_CHANNEL_CH4,
+static_assert(__IS_TRAINER_TIMER_IN_CHANNEL_SUPPORTED(TRAINER_IN_TIMER_Channel),
               "Unsupported trainer timer input channel");
 #else
 void init_trainer_ppm() {}
@@ -125,9 +127,7 @@ static void trainer_in_isr()
     return;
   }
 
-  // avoid spurious pulses in case the cable is not connected
-  if (is_trainer_connected())
-    captureTrainerPulses(capture);
+  captureTrainerPulses(capture);
 }
 
 static void _stop_trainer(const stm32_pulse_timer_t* tim)
@@ -282,7 +282,8 @@ bool is_trainer_connected()
 #endif
 }
 
-#if defined(TRAINER_GPIO) || (defined(TRAINER_MODULE_CPPM) && !defined(TRAINER_MODULE_CPPM_TIMER_IRQHandler))
+#if defined(TRAINER_GPIO) || (defined(TRAINER_MODULE_CPPM) && \
+                              !defined(TRAINER_MODULE_CPPM_TIMER_IRQHandler))
 
 #if !defined(TRAINER_TIMER_IRQHandler)
   #error "Missing TRAINER_TIMER_IRQHandler definition"
@@ -298,6 +299,10 @@ extern "C" void TRAINER_TIMER_IRQHandler()
 #endif
 
 #if defined(TRAINER_MODULE_CPPM)
+
+static_assert(__IS_TRAINER_TIMER_IN_CHANNEL_SUPPORTED(TRAINER_MODULE_CPPM_TIMER_Channel),
+              "Unsupported trainer timer input channel");
+
 static const stm32_pulse_timer_t trainerModuleTimer = {
   .GPIOx = TRAINER_MODULE_CPPM_GPIO,
   .GPIO_Pin = TRAINER_MODULE_CPPM_GPIO_PIN,

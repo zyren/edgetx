@@ -1465,7 +1465,6 @@
   #define INTMODULE_PULSES
   #define INTMODULE_RCC_AHB1Periph      (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_DMA2)
   #define INTMODULE_RCC_APB1Periph      0
-  #define INTMODULE_RCC_APB2Periph      RCC_APB2Periph_TIM1
   #define INTMODULE_PWR_GPIO            GPIOC
   #define INTMODULE_PWR_GPIO_PIN        GPIO_Pin_6  // PC.06
   #define INTMODULE_TX_GPIO             GPIOA
@@ -1485,7 +1484,7 @@
   #define INTMODULE_TIMER_FREQ          (PERI2_FREQUENCY * TIMER_MULT_APB2)
 #elif (defined(RADIO_FAMILY_JUMPER_T12) && defined(HARDWARE_INTERNAL_MODULE)) || defined(RADIO_TX12) || defined(RADIO_T8) || defined(RADIO_TPRO)
   #define INTMODULE_RCC_AHB1Periph        (RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOF | RCC_AHB1Periph_DMA1)
-  #define INTMODULE_RCC_APB1Periph        (RCC_APB1Periph_USART3 | RCC_APB1Periph_TIM2)
+  #define INTMODULE_RCC_APB1Periph        (RCC_APB1Periph_USART3)
   #define INTMODULE_RCC_APB2Periph        0
   #define INTMODULE_PWR_GPIO              GPIOC
   #define INTMODULE_PWR_GPIO_PIN          GPIO_Pin_6  // PC.06
@@ -1507,7 +1506,6 @@
   #define INTMODULE_PULSES
   #define INTMODULE_RCC_AHB1Periph      (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOD | RCC_AHB1Periph_DMA2)
   #define INTMODULE_RCC_APB1Periph      0
-  #define INTMODULE_RCC_APB2Periph      RCC_APB2Periph_TIM1
   #define INTMODULE_PWR_GPIO            GPIOD
   #define INTMODULE_PWR_GPIO_PIN        GPIO_Pin_15 // PD.15
   #define INTMODULE_TX_GPIO             GPIOA
@@ -1529,7 +1527,7 @@
 
 // External Module
 #if defined(PCBXLITE) || defined(PCBX9LITE) || defined(RADIO_X9DP2019) || defined(PCBX7ACCESS) || defined(RADIO_ZORRO)
-  #define EXTMODULE_RCC_APB2Periph      (RCC_APB2Periph_TIM8 | RCC_APB2Periph_USART6)
+  #define EXTMODULE_RCC_APB2Periph      (RCC_APB2Periph_USART6)
   #if defined(RADIO_X9DP2019) || defined(RADIO_X7ACCESS) || defined(RADIO_ZORRO)
     #define EXTMODULE_RCC_AHB1Periph    (RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOD | RCC_AHB1Periph_DMA2)
     #define EXTMODULE_PWR_GPIO          GPIOD
@@ -1583,7 +1581,6 @@
   #define EXTMODULE_USART_RX_DMA_STREAM         DMA2_Stream1
 #else
   #define EXTMODULE_RCC_AHB1Periph              (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOD | RCC_AHB1Periph_DMA2)
-  #define EXTMODULE_RCC_APB2Periph              RCC_APB2Periph_TIM8
   #define EXTMODULE_PWR_GPIO                    GPIOD
   #define EXTMODULE_PWR_GPIO_PIN                GPIO_Pin_8 // PD.08
   #define EXTERNAL_MODULE_PWR_ON()              GPIO_SetBits(EXTMODULE_PWR_GPIO, EXTMODULE_PWR_GPIO_PIN)
@@ -1611,7 +1608,6 @@
 #if defined(PCBXLITES) || defined(PCBX9LITE)
   // on these 2 radios the trainer port already uses DMA1_Stream6, we won't use the DMA
   #define TRAINER_RCC_AHB1Periph        RCC_AHB1Periph_GPIOD
-  #define TRAINER_RCC_APB1Periph        RCC_APB1Periph_TIM4
   #define TRAINER_GPIO                  GPIOD
   #define TRAINER_IN_GPIO_PIN           LL_GPIO_PIN_13 // PD.13
   #define TRAINER_IN_TIMER_Channel      LL_TIM_CHANNEL_CH2
@@ -1629,12 +1625,10 @@
 #elif defined(PCBXLITE)
   #define TRAINER_TIMER                 TIM4
   #define TRAINER_RCC_AHB1Periph        0
-  #define TRAINER_RCC_APB1Periph        RCC_APB1Periph_TIM4
   #define TRAINER_TIMER_IRQn            TIM4_IRQn
   #define TRAINER_TIMER_IRQHandler      TIM4_IRQHandler
 #else
   #define TRAINER_RCC_AHB1Periph        (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_DMA1)
-  #define TRAINER_RCC_APB1Periph        RCC_APB1Periph_TIM3
   #define TRAINER_GPIO                  GPIOC
   #define TRAINER_IN_GPIO_PIN           LL_GPIO_PIN_8  // PC.08
   #define TRAINER_IN_TIMER_Channel      LL_TIM_CHANNEL_CH3
@@ -1876,7 +1870,6 @@
     defined(PCBX7ACCESS) || defined(RADIO_ZORRO)
   #define TRAINER_MODULE_CPPM
   #define TRAINER_MODULE_RCC_AHB1Periph        0
-  #define TRAINER_MODULE_RCC_APB1Periph        RCC_APB1Periph_TIM3
   #define TRAINER_MODULE_RCC_APB2Periph        0
   #define TRAINER_MODULE_CPPM_TIMER            TIM3
   #define TRAINER_MODULE_CCPM_FREQ             (PERI1_FREQUENCY * TIMER_MULT_APB1)
@@ -1902,7 +1895,6 @@
   #define TRAINER_MODULE_CPPM
   #define TRAINER_MODULE_RCC_AHB1Periph           RCC_AHB1Periph_GPIOC
   #define TRAINER_MODULE_RCC_APB2Periph           RCC_APB2Periph_USART6
-  #define TRAINER_MODULE_RCC_APB1Periph           RCC_APB1Periph_TIM3
   #define TRAINER_MODULE_CPPM_TIMER               TRAINER_TIMER
   #define TRAINER_MODULE_CCPM_FREQ                (PERI1_FREQUENCY * TIMER_MULT_APB1)
   #define TRAINER_MODULE_CPPM_GPIO                INTMODULE_HEARTBEAT_GPIO

@@ -22,6 +22,21 @@
 #include "stm32_pulse_driver.h"
 #include "definitions.h"
 
+static void enable_tim_clock(TIM_TypeDef* TIMx)
+{
+  if (TIMx == TIM1) {
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_TIM1);
+  } else if (TIMx == TIM2) {
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM2);
+  } else if (TIMx == TIM3) {
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM3);
+  } else if (TIMx == TIM4) {
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM4);
+  } else if (TIMx == TIM8) {
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_TIM8);
+  }
+}
+
 void stm32_pulse_init(const stm32_pulse_timer_t* tim)
 {
   LL_GPIO_InitTypeDef pinInit;
@@ -37,6 +52,8 @@ void stm32_pulse_init(const stm32_pulse_timer_t* tim)
   // 0.5uS (2Mhz)
   timInit.Prescaler = tim->TIM_Prescaler;
   timInit.Autoreload = 65535;
+
+  enable_tim_clock(tim->TIMx);
   LL_TIM_Init(tim->TIMx, &timInit);
 
   if (tim->DMAx) {
@@ -48,6 +65,21 @@ void stm32_pulse_init(const stm32_pulse_timer_t* tim)
   // Enable timer IRQ
   NVIC_EnableIRQ(tim->TIM_IRQn);
   NVIC_SetPriority(tim->TIM_IRQn, 7);
+}
+
+static void disable_tim_clock(TIM_TypeDef* TIMx)
+{
+  if (TIMx == TIM1) {
+    LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_TIM1);
+  } else if (TIMx == TIM2) {
+    LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_TIM2);
+  } else if (TIMx == TIM3) {
+    LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_TIM3);
+  } else if (TIMx == TIM4) {
+    LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_TIM4);
+  } else if (TIMx == TIM8) {
+    LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_TIM8);
+  }
 }
 
 void stm32_pulse_deinit(const stm32_pulse_timer_t* tim)
@@ -62,6 +94,7 @@ void stm32_pulse_deinit(const stm32_pulse_timer_t* tim)
     LL_DMA_DeInit(tim->DMAx, tim->DMA_Stream);
   }
   LL_TIM_DeInit(tim->TIMx);
+  disable_tim_clock(tim->TIMx);
 
   // Reconfigure pin as input
   LL_GPIO_InitTypeDef pinInit;

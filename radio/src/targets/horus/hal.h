@@ -845,7 +845,7 @@
 #define EXTERNAL_MODULE_PWR_OFF()          GPIO_ResetBits(EXTMODULE_PWR_GPIO, EXTMODULE_PWR_GPIO_PIN)
 #if (defined(PCBX10) && defined(PCBREV_EXPRESS)) || defined(HARDWARE_EXTERNAL_ACCESS_MOD)
   #define EXTMODULE_RCC_AHB1Periph         (RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_DMA1)
-  #define EXTMODULE_RCC_APB1Periph         (RCC_APB1Periph_TIM2 | RCC_APB1Periph_USART3)
+  #define EXTMODULE_RCC_APB1Periph         (RCC_APB1Periph_USART3)
   #define EXTMODULE_RCC_APB2Periph         0
   #define EXTMODULE_TX_GPIO                GPIOB
   #define EXTMODULE_USART_GPIO             EXTMODULE_TX_GPIO
@@ -885,7 +885,6 @@
 #elif defined(PCBX10) || PCBREV >= 13
   #define EXTMODULE_RCC_AHB1Periph         (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_DMA2)
   #define EXTMODULE_RCC_APB1Periph         0
-  #define EXTMODULE_RCC_APB2Periph         RCC_APB2Periph_TIM1
   #define EXTMODULE_TX_GPIO                GPIOA
   #define EXTMODULE_TX_GPIO_PIN            GPIO_Pin_10 // PA.10 (TIM1_CH3)
   #define EXTMODULE_TX_GPIO_PinSource      GPIO_PinSource10
@@ -905,7 +904,6 @@
   #define EXTMODULE_TIMER_DMA_FLAG_TC      DMA_IT_TCIF5
 #else
   #define EXTMODULE_RCC_AHB1Periph         (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_DMA1)
-  #define EXTMODULE_RCC_APB1Periph         RCC_APB1Periph_TIM2
   #define EXTMODULE_RCC_APB2Periph         0
   #define EXTMODULE_TX_GPIO                GPIOA
   #define EXTMODULE_TX_GPIO_PIN            GPIO_Pin_15 // PA.15 (TIM2_CH1)
@@ -949,7 +947,6 @@
 
 // Trainer Port
 #define TRAINER_RCC_AHB1Periph          (RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_DMA1)
-#define TRAINER_RCC_APB1Periph          RCC_APB1Periph_TIM3
 #define TRAINER_GPIO                    GPIOC
 
 #define TRAINER_IN_GPIO_PIN             LL_GPIO_PIN_6  // PC.06
