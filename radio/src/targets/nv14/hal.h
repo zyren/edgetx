@@ -176,8 +176,6 @@
 // Serial Port (DEBUG)
 // We will temporarily used the PPM and the HEARTBEAT PINS
 #define AUX_SERIAL_RCC_AHB1Periph       (RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOE)
-#define AUX_SERIAL_RCC_APB1Periph       0
-#define AUX_SERIAL_RCC_APB2Periph       RCC_APB2Periph_USART6
 #define AUX_SERIAL_GPIO                 GPIOC
 #define AUX_SERIAL_GPIO_PIN_TX          GPIO_Pin_6  // PC.06
 #define AUX_SERIAL_GPIO_PIN_RX          GPIO_Pin_7  // PC.07
@@ -406,8 +404,6 @@
 #define INTMODULE_TX_DMA_Stream_IRQHandler DMA1_Stream1_IRQHandler
 #define INTMODULE_TX_DMA_FLAG_TC        DMA_IT_TCIF1*/
 
-#define INTMODULE_RCC_APB1Periph        (RCC_APB1Periph_UART7)
-#define INTMODULE_RCC_APB2Periph        0
 #define INTMODULE_TIMER                 TIM3
 #define INTMODULE_TIMER_IRQn            TIM3_IRQn
 #define INTMODULE_TIMER_IRQHandler      TIM3_IRQHandler
@@ -424,8 +420,6 @@
 #define EXTMODULE_RCC_AHB1Periph                                        \
   (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOD | RCC_AHB1Periph_GPIOC | \
    RCC_AHB1Periph_GPIOI | RCC_AHB1Periph_GPIOE | RCC_AHB1Periph_DMA2)
-#define EXTMODULE_RCC_APB1Periph 0
-#define EXTMODULE_RCC_APB2Periph        (RCC_APB2Periph_USART6)
 #define EXTMODULE_TX_GPIO               GPIOC
 #define EXTMODULE_TX_GPIO_PIN           GPIO_Pin_6 // PC.06
 #define EXTMODULE_TX_GPIO_PIN_LL        LL_GPIO_PIN_6

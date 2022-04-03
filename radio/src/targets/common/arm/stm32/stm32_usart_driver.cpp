@@ -34,6 +34,8 @@ static void enable_usart_clock(USART_TypeDef* USARTx)
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_UART4);
   } else if (USARTx == USART6) {
     LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART6);
+  } else if (USARTx == UART7) {
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_UART7);
   }
 }
 
@@ -49,6 +51,8 @@ static void disable_usart_clock(USART_TypeDef* USARTx)
     LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_UART4);
   } else if (USARTx == USART6) {
     LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_USART6);
+  } else if (USARTx == UART7) {
+    LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_UART7);
   }
 }
 

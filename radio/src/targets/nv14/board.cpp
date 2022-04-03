@@ -88,21 +88,14 @@ void delay_self(int count)
                               )
 
 #define RCC_APB1PeriphOther   (TELEMETRY_RCC_APB1Periph |\
-                               TRAINER_RCC_APB1Periph |\
-                               INTMODULE_RCC_APB1Periph |\
                                FLYSKY_HALL_RCC_APB1Periph |\
-                               EXTMODULE_RCC_APB1Periph |\
-                               INTMODULE_RCC_APB1Periph |\
-                               AUX_SERIAL_RCC_APB1Periph |\
                                MIXER_SCHEDULER_TIMER_RCC_APB1Periph \
                               )
 #define RCC_APB2PeriphMinimum (LCD_RCC_APB2Periph)
 
 #define RCC_APB2PeriphOther   (ADC_RCC_APB2Periph |\
                                HAPTIC_RCC_APB2Periph |\
-                               AUX_SERIAL_RCC_APB2Periph |\
-                               AUDIO_RCC_APB2Periph |\
-                               EXTMODULE_RCC_APB2Periph \
+                               AUDIO_RCC_APB2Periph \
                               )
 
 void boardInit()
