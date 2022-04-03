@@ -63,7 +63,7 @@ void watchdogInit(unsigned int duration)
   IWDG->KR = 0xCCCC;      // start
 }
 
-#if HAS_SPORT_UPDATE_CONNECTOR()
+#if HAS_SPORT_UPDATE_CONNECTOR() && !defined(BOOT)
 void sportUpdateInit()
 {
   GPIO_InitTypeDef GPIO_InitStructure;
@@ -258,7 +258,7 @@ void boardInit()
   usbChargerInit();
 #endif
 
-#if HAS_SPORT_UPDATE_CONNECTOR()
+#if HAS_SPORT_UPDATE_CONNECTOR() && !defined(BOOT)
   sportUpdateInit();
 #endif
 
