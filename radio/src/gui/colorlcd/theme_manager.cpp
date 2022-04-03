@@ -297,12 +297,14 @@ void ThemeFile::applyBackground()
   std::string backgroundImageFileName(getPath());
   auto pos = backgroundImageFileName.rfind('/');
   if (pos != std::string::npos) {
+    VirtualFS& vfs = VirtualFS::instance();
     auto rootDir = backgroundImageFileName.substr(0, pos + 1);
     rootDir = rootDir + "background_" + std::to_string(LCD_W) + "x" + std::to_string(LCD_H) + ".png";
 
-    FIL file;
-    FRESULT result = f_open(&file, rootDir.c_str(), FA_OPEN_EXISTING);
-    if (result == FR_OK) {
+    VfsFile file;
+    VfsError result = vfs.openFile(file, rootDir, VfsOpenFlags::OPEN_EXISTING);
+    if (result == VfsError::OK) {
+      file.close();
       instance->setBackgroundImageFileName((char *)rootDir.c_str());
     } else {
       // TODO: This needs to be made user configurable, not
@@ -311,8 +313,9 @@ void ThemeFile::applyBackground()
       fileName[FF_MAX_LFN] = '\0';
       strncpy(fileName, THEMES_PATH, FF_MAX_LFN);
       strcat(fileName, "/EdgeTX/background.png");
-      result = f_open(&file, fileName, FA_OPEN_EXISTING);
-      if (result == FR_OK) {
+      result = vfs.openFile(file, fileName, VfsOpenFlags::OPEN_EXISTING);
+      if (result == VfsError::OK) {
+        file.close();
         instance->setBackgroundImageFileName(fileName);
       } else {
         instance->setBackgroundImageFileName("");

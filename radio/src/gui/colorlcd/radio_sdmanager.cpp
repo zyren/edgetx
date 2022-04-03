@@ -269,7 +269,7 @@ void RadioSdManagerPage::build(FormWindow * window)
                 MultiFirmwareUpdate(name, EXTERNAL_MODULE, MULTI_TYPE_ELRS);
               });
             }
-            else if (isExtensionMatching(ext, BITMAPS_EXT)) {
+            else if (vfs->isFileExtensionMatching(ext, BITMAPS_EXT)) {
                menu->addLine(STR_ASSIGN_BITMAP, [=]() {
                  memcpy(g_model.header.bitmap, name.c_str(),
                         sizeof(g_model.header.bitmap));

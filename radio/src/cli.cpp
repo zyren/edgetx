@@ -23,7 +23,7 @@
 #include <stream_buffer.h>
 
 #include "opentx.h"
-#include "VirtualFS.h
+#include "VirtualFS.h"
 #include "diskio.h"
 #include "timers_driver.h"
 
@@ -268,7 +268,7 @@ int cliLs(const char ** argv)
       res = dir.read(fno);                   /* Read a directory item */
       std::string name = fno.getName();
       if (res != VfsError::OK || name.length() == 0) break;  /* Break on error or end of dir */
-      cliSerialPrint(fno.fname);
+      cliSerialPrint(name.c_str());
     }
     dir.close();
   }
@@ -1048,6 +1048,7 @@ int cliSet(const char **argv)
 }
 
 #if defined(ENABLE_SERIAL_PASSTHROUGH)
+#if defined(HARDWARE_INTERNAL_MODULE)
 static void spInternalModuleTx(uint8_t* buf, uint32_t len)
 {
   while (len > 0) {
@@ -1072,6 +1073,7 @@ static void spInternalModuleSetBaudRate(uint32_t baud)
   // re-configure serial port
   IntmoduleSerialDriver.init(&params);
 }
+#endif // HARDWARE_INTERNAL_MODULE
 
 // TODO: use proper method instead
 extern bool cdcConnected;
