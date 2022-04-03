@@ -34,9 +34,12 @@ static void enable_usart_clock(USART_TypeDef* USARTx)
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_UART4);
   } else if (USARTx == USART6) {
     LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART6);
-  } else if (USARTx == UART7) {
+  }
+#if defined(UART7) // does not exist on F2
+  else if (USARTx == UART7) {
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_UART7);
   }
+#endif
 }
 
 static void disable_usart_clock(USART_TypeDef* USARTx)
@@ -51,9 +54,12 @@ static void disable_usart_clock(USART_TypeDef* USARTx)
     LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_UART4);
   } else if (USARTx == USART6) {
     LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_USART6);
-  } else if (USARTx == UART7) {
+  }
+#if defined(UART7) // does not exist on F2
+  else if (USARTx == UART7) {
     LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_UART7);
   }
+#endif
 }
 
 void stm32_usart_init_rx_dma(const stm32_usart_t* usart, void* buffer, uint32_t length)
