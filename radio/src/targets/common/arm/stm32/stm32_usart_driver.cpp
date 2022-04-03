@@ -22,6 +22,36 @@
 #include "stm32_usart_driver.h"
 #include <string.h>
 
+static void enable_usart_clock(USART_TypeDef* USARTx)
+{
+  if (USARTx == USART1) {
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART1);
+  } else if (USARTx == USART2) {
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_USART2);
+  } else if (USARTx == USART3) {
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_USART3);
+  } else if (USARTx == UART4) {
+    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_UART4);
+  } else if (USARTx == USART6) {
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART6);
+  }
+}
+
+static void disable_usart_clock(USART_TypeDef* USARTx)
+{
+  if (USARTx == USART1) {
+    LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_USART1);
+  } else if (USARTx == USART2) {
+    LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_USART2);
+  } else if (USARTx == USART3) {
+    LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_USART3);
+  } else if (USARTx == UART4) {
+    LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_UART4);
+  } else if (USARTx == USART6) {
+    LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_USART6);
+  }
+}
+
 void stm32_usart_init_rx_dma(const stm32_usart_t* usart, void* buffer, uint32_t length)
 {
   if (!usart->rxDMA) return;
@@ -65,6 +95,7 @@ void stm32_usart_deinit_rx_dma(const stm32_usart_t* usart)
 
 void stm32_usart_init(const stm32_usart_t* usart, const etx_serial_init* params)
 {
+  enable_usart_clock(usart->USARTx);
   LL_USART_DeInit(usart->USARTx);
   LL_GPIO_Init(usart->GPIOx, (LL_GPIO_InitTypeDef*)usart->pinInit);
   
@@ -140,6 +171,7 @@ void stm32_usart_deinit(const stm32_usart_t* usart)
   }
   NVIC_DisableIRQ(usart->IRQn);
   LL_USART_DeInit(usart->USARTx);
+  disable_usart_clock(usart->USARTx);
 
   // Reconfigure pin as output
   LL_GPIO_InitTypeDef pinInit;

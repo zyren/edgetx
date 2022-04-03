@@ -1356,8 +1356,6 @@
 #define EXTERNAL_ANTENNA
 #endif
 #if defined(PCBXLITE) || defined(PCBX9LITE)
-  #define INTMODULE_RCC_APB1Periph      0
-  #define INTMODULE_RCC_APB2Periph      RCC_APB2Periph_USART1
   #if defined(PCBXLITES) || defined(PCBX9LITE)
     #define INTMODULE_RCC_AHB1Periph    (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_DMA2)
     #define INTMODULE_PWR_GPIO          GPIOA
@@ -1390,8 +1388,6 @@
     #define INIT_INTMODULE_BOOTCMD_PIN()   GPIO_SetBits(INTMODULE_BOOTCMD_GPIO, INTMODULE_BOOTCMD_GPIO_PIN);
   #endif
 #elif defined(RADIO_X9DP2019)
-  #define INTMODULE_RCC_APB1Periph      0
-  #define INTMODULE_RCC_APB2Periph      RCC_APB2Periph_USART1
   #define INTMODULE_RCC_AHB1Periph      (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_DMA2)
   #define INTMODULE_PWR_GPIO            GPIOA
   #define INTMODULE_PWR_GPIO_PIN        GPIO_Pin_7  // PA.07
@@ -1413,8 +1409,6 @@
   #define INTMODULE_DMA_FLAG_TC         DMA_IT_TCIF7
   #define INTMODULE_DMA_CHANNEL         DMA_Channel_4
 #elif defined(RADIO_X7ACCESS)
-  #define INTMODULE_RCC_APB1Periph      0
-  #define INTMODULE_RCC_APB2Periph      RCC_APB2Periph_USART1
   #define INTMODULE_RCC_AHB1Periph      (RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_DMA2)
   #define INTMODULE_PWR_GPIO            GPIOC
   #define INTMODULE_PWR_GPIO_PIN        GPIO_Pin_5  // PC.05
@@ -1436,8 +1430,6 @@
   #define INTMODULE_DMA_FLAG_TC         DMA_IT_TCIF7
   #define INTMODULE_DMA_CHANNEL         DMA_Channel_4
 #elif defined(RADIO_ZORRO)
-  #define INTMODULE_RCC_APB1Periph      0
-  #define INTMODULE_RCC_APB2Periph      RCC_APB2Periph_USART1
   #define INTMODULE_RCC_AHB1Periph      (RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_DMA2)
   #define INTMODULE_PWR_GPIO            GPIOC
   #define INTMODULE_PWR_GPIO_PIN        GPIO_Pin_4  // PC.04
@@ -1464,7 +1456,6 @@
 #elif defined(PCBX9E) || defined(PCBX9DP) || defined(RADIO_X7)
   #define INTMODULE_PULSES
   #define INTMODULE_RCC_AHB1Periph      (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_DMA2)
-  #define INTMODULE_RCC_APB1Periph      0
   #define INTMODULE_PWR_GPIO            GPIOC
   #define INTMODULE_PWR_GPIO_PIN        GPIO_Pin_6  // PC.06
   #define INTMODULE_TX_GPIO             GPIOA
@@ -1484,8 +1475,6 @@
   #define INTMODULE_TIMER_FREQ          (PERI2_FREQUENCY * TIMER_MULT_APB2)
 #elif (defined(RADIO_FAMILY_JUMPER_T12) && defined(HARDWARE_INTERNAL_MODULE)) || defined(RADIO_TX12) || defined(RADIO_T8) || defined(RADIO_TPRO)
   #define INTMODULE_RCC_AHB1Periph        (RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOF | RCC_AHB1Periph_DMA1)
-  #define INTMODULE_RCC_APB1Periph        (RCC_APB1Periph_USART3)
-  #define INTMODULE_RCC_APB2Periph        0
   #define INTMODULE_PWR_GPIO              GPIOC
   #define INTMODULE_PWR_GPIO_PIN          GPIO_Pin_6  // PC.06
   #define INTMODULE_GPIO                  GPIOB
@@ -1505,7 +1494,6 @@
 #else
   #define INTMODULE_PULSES
   #define INTMODULE_RCC_AHB1Periph      (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOD | RCC_AHB1Periph_DMA2)
-  #define INTMODULE_RCC_APB1Periph      0
   #define INTMODULE_PWR_GPIO            GPIOD
   #define INTMODULE_PWR_GPIO_PIN        GPIO_Pin_15 // PD.15
   #define INTMODULE_TX_GPIO             GPIOA
@@ -1527,7 +1515,6 @@
 
 // External Module
 #if defined(PCBXLITE) || defined(PCBX9LITE) || defined(RADIO_X9DP2019) || defined(PCBX7ACCESS) || defined(RADIO_ZORRO)
-  #define EXTMODULE_RCC_APB2Periph      (RCC_APB2Periph_USART6)
   #if defined(RADIO_X9DP2019) || defined(RADIO_X7ACCESS) || defined(RADIO_ZORRO)
     #define EXTMODULE_RCC_AHB1Periph    (RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOD | RCC_AHB1Periph_DMA2)
     #define EXTMODULE_PWR_GPIO          GPIOD
@@ -1656,13 +1643,9 @@
 // Serial Port
 #if (defined(PCBX7) && !defined(RADIO_ZORRO)) || defined(PCBXLITE) || defined(PCBX9LITE) || defined(RADIO_X9DP2019)
   #define AUX_SERIAL_RCC_AHB1Periph         0
-  #define AUX_SERIAL_RCC_APB1Periph         0
-  #define AUX_SERIAL_RCC_APB2Periph         0
 #else
   #define HARDWARE_TRAINER_AUX_SERIAL
   #define AUX_SERIAL_RCC_AHB1Periph         (RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_DMA1)
-  #define AUX_SERIAL_RCC_APB1Periph         RCC_APB1Periph_USART3
-  #define AUX_SERIAL_RCC_APB2Periph         0
   #define AUX_SERIAL_GPIO                   GPIOB
   #define AUX_SERIAL_GPIO_PIN_TX            GPIO_Pin_10 // PB.10
   #define AUX_SERIAL_GPIO_PIN_RX            GPIO_Pin_11 // PB.11
@@ -1870,7 +1853,6 @@
     defined(PCBX7ACCESS) || defined(RADIO_ZORRO)
   #define TRAINER_MODULE_CPPM
   #define TRAINER_MODULE_RCC_AHB1Periph        0
-  #define TRAINER_MODULE_RCC_APB2Periph        0
   #define TRAINER_MODULE_CPPM_TIMER            TIM3
   #define TRAINER_MODULE_CCPM_FREQ             (PERI1_FREQUENCY * TIMER_MULT_APB1)
   #define TRAINER_MODULE_CPPM_GPIO             EXTMODULE_USART_GPIO
@@ -1894,7 +1876,6 @@
   // Trainer CPPM input on heartbeat pin
   #define TRAINER_MODULE_CPPM
   #define TRAINER_MODULE_RCC_AHB1Periph           RCC_AHB1Periph_GPIOC
-  #define TRAINER_MODULE_RCC_APB2Periph           RCC_APB2Periph_USART6
   #define TRAINER_MODULE_CPPM_TIMER               TRAINER_TIMER
   #define TRAINER_MODULE_CCPM_FREQ                (PERI1_FREQUENCY * TIMER_MULT_APB1)
   #define TRAINER_MODULE_CPPM_GPIO                INTMODULE_HEARTBEAT_GPIO
@@ -1915,7 +1896,6 @@
 #else
   // TODO: replace SBUS trainer with S.PORT pin
   #define TRAINER_MODULE_RCC_AHB1Periph           0
-  #define TRAINER_MODULE_RCC_APB2Periph           0
   #define TRAINER_MODULE_RCC_APB1Periph           0
 #endif
 #endif

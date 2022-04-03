@@ -416,8 +416,6 @@
 // Serial Port (DEBUG)
 #if defined(AUX_SERIAL)
   #define AUX_SERIAL_RCC_AHB1Periph           (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_DMA1)
-  #define AUX_SERIAL_RCC_APB1Periph           RCC_APB1Periph_USART3
-  #define AUX_SERIAL_RCC_APB2Periph           0
   #define AUX_SERIAL_GPIO                     GPIOB
   #define AUX_SERIAL_GPIO_PIN_TX              GPIO_Pin_10 // PB.10
   #define AUX_SERIAL_GPIO_PIN_RX              GPIO_Pin_11 // PB.11
@@ -438,15 +436,11 @@
   #endif
 #else
   #define AUX_SERIAL_RCC_AHB1Periph           0
-  #define AUX_SERIAL_RCC_APB1Periph           0
-  #define AUX_SERIAL_RCC_APB2Periph           0
 #endif
 
 #if defined(AUX2_SERIAL)
 #if defined(PCBX12S)
   #define AUX2_SERIAL_RCC_AHB1Periph           RCC_AHB1Periph_GPIOA
-  #define AUX2_SERIAL_RCC_APB1Periph           RCC_APB1Periph_UART4
-  #define AUX2_SERIAL_RCC_APB2Periph           0
   #define AUX2_SERIAL_USART                    UART4
   #define AUX2_SERIAL_GPIO_AF                  GPIO_AF_UART4
   #define AUX2_SERIAL_GPIO_AF_LL               LL_GPIO_AF_8
@@ -463,8 +457,6 @@
   #define AUX2_SERIAL_DMA_Stream_RX_LL         LL_DMA_STREAM_2
 #else
   #define AUX2_SERIAL_RCC_AHB1Periph           (RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOG | RCC_AHB1Periph_DMA2)
-  #define AUX2_SERIAL_RCC_APB1Periph           0
-  #define AUX2_SERIAL_RCC_APB2Periph           RCC_APB2Periph_USART6
   #define AUX2_SERIAL_USART                    USART6
   #define AUX2_SERIAL_GPIO_AF                  GPIO_AF_USART6
   #define AUX2_SERIAL_GPIO_AF_LL               LL_GPIO_AF_8
@@ -484,8 +476,6 @@
 #endif
 #else // AUX2_SERIAL
   #define AUX2_SERIAL_RCC_AHB1Periph           0
-  #define AUX2_SERIAL_RCC_APB1Periph           0
-  #define AUX2_SERIAL_RCC_APB2Periph           0
 #endif
 
 // Telemetry
@@ -836,8 +826,6 @@
   #define INTMODULE_BOOTCMD_GPIO_PIN    GPIO_Pin_9  // PI.09
 #endif
 #define INIT_INTMODULE_BOOTCMD_PIN() GPIO_ResetBits(INTMODULE_BOOTCMD_GPIO, INTMODULE_BOOTCMD_GPIO_PIN);
-#define INTMODULE_RCC_APB1Periph      0
-#define INTMODULE_RCC_APB2Periph      RCC_APB2Periph_USART1
 
 // External Module
 #define EXTMODULE_PWR_GPIO                 GPIOB
@@ -845,8 +833,6 @@
 #define EXTERNAL_MODULE_PWR_OFF()          GPIO_ResetBits(EXTMODULE_PWR_GPIO, EXTMODULE_PWR_GPIO_PIN)
 #if (defined(PCBX10) && defined(PCBREV_EXPRESS)) || defined(HARDWARE_EXTERNAL_ACCESS_MOD)
   #define EXTMODULE_RCC_AHB1Periph         (RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_DMA1)
-  #define EXTMODULE_RCC_APB1Periph         (RCC_APB1Periph_USART3)
-  #define EXTMODULE_RCC_APB2Periph         0
   #define EXTMODULE_TX_GPIO                GPIOB
   #define EXTMODULE_USART_GPIO             EXTMODULE_TX_GPIO
   #define EXTMODULE_TX_GPIO_PIN            GPIO_Pin_10 // PB.10 (TIM2_CH3)
@@ -884,7 +870,6 @@
   #define EXTMODULE_USART_RX_DMA_STREAM    DMA1_Stream1
 #elif defined(PCBX10) || PCBREV >= 13
   #define EXTMODULE_RCC_AHB1Periph         (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_DMA2)
-  #define EXTMODULE_RCC_APB1Periph         0
   #define EXTMODULE_TX_GPIO                GPIOA
   #define EXTMODULE_TX_GPIO_PIN            GPIO_Pin_10 // PA.10 (TIM1_CH3)
   #define EXTMODULE_TX_GPIO_PinSource      GPIO_PinSource10
@@ -904,7 +889,6 @@
   #define EXTMODULE_TIMER_DMA_FLAG_TC      DMA_IT_TCIF5
 #else
   #define EXTMODULE_RCC_AHB1Periph         (RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_DMA1)
-  #define EXTMODULE_RCC_APB2Periph         0
   #define EXTMODULE_TX_GPIO                GPIOA
   #define EXTMODULE_TX_GPIO_PIN            GPIO_Pin_15 // PA.15 (TIM2_CH1)
   #define EXTMODULE_TX_GPIO_PinSource      GPIO_PinSource15

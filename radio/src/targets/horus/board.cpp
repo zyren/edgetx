@@ -133,14 +133,9 @@ void boardInit()
 #endif
 #if defined(IMU_LSM6DS33)
                          I2C_B2_RCC_APB1Periph |
-#else
-                         AUX_SERIAL_RCC_APB1Periph |
 #endif
-                         AUX2_SERIAL_RCC_APB1Periph |
                          TELEMETRY_RCC_APB1Periph |
                          AUDIO_RCC_APB1Periph |
-                         INTMODULE_RCC_APB1Periph |
-                         EXTMODULE_RCC_APB1Periph |
                          I2C_B1_RCC_APB1Periph |
                          MIXER_SCHEDULER_TIMER_RCC_APB1Periph |
                          BACKLIGHT_RCC_APB1Periph,
@@ -150,12 +145,8 @@ void boardInit()
                          LCD_RCC_APB2Periph |
                          ADC_RCC_APB2Periph |
                          HAPTIC_RCC_APB2Periph |
-                         INTMODULE_RCC_APB2Periph |
-                         EXTMODULE_RCC_APB2Periph |
                          TELEMETRY_RCC_APB2Periph |
                          BT_RCC_APB2Periph |
-                         AUX_SERIAL_RCC_APB2Periph |
-                         AUX2_SERIAL_RCC_APB2Periph |
                          BACKLIGHT_RCC_APB2Periph,
                          ENABLE);
 
