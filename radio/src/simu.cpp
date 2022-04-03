@@ -40,6 +40,11 @@
   #define LCD_ZOOM 2
 #endif
 
+#if !defined(COLORLCD)
+#define LCD_PHYS_W LCD_W
+#define LCD_PHYS_H LCD_H
+#endif
+
 #define W2 LCD_PHYS_W*LCD_ZOOM
 #define H2 LCD_PHYS_H*LCD_ZOOM
 
@@ -579,7 +584,9 @@ void OpenTxSim::refreshDisplay()
     bmf->setImage(bmp);
 
     simuLcdRefresh = false;
+#if defined(COLORLCD)
     lcdFlushed();
+#endif
   }
 }
 
