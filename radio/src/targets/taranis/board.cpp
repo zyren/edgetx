@@ -117,7 +117,6 @@ void boardInit()
                          I2C_B1_RCC_APB1Periph |
                          SD_RCC_APB1Periph |
                          TELEMETRY_RCC_APB1Periph |
-                         TRAINER_MODULE_RCC_APB1Periph |
                          MIXER_SCHEDULER_TIMER_RCC_APB1Periph |
                          BT_RCC_APB1Periph |
                          I2C_B2_RCC_APB1Periph,
