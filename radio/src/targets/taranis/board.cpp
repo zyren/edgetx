@@ -141,7 +141,7 @@ void boardInit()
   bluetoothInit(BLUETOOTH_DEFAULT_BAUDRATE, true);
 #endif
 
-#if defined (RADIO_ZORRO)
+#if defined (RADIO_ZORRO) || defined (RADIO_TX12MK2) 
     
   if (FLASH_OB_GetBOR() != OB_BOR_LEVEL3)
   {
@@ -303,6 +303,7 @@ void boardOff()
   }
 #endif
 
+  lcdInit();
   lcdOff();
   SysTick->CTRL = 0; // turn off systick
   pwrOff();
@@ -337,13 +338,13 @@ void boardOff()
   #define BATTERY_DIVIDER 22830
 #elif defined (RADIO_T8)
   #define BATTERY_DIVIDER 50000
-#elif defined (RADIO_ZORRO)
+#elif defined (RADIO_ZORRO) || defined(RADIO_TX12MK2)
   #define BATTERY_DIVIDER 23711 // = 2047*128*BATT_SCALE/(100*(VREF*(160+499)/160))
 #else
   #define BATTERY_DIVIDER 26214
 #endif 
 
-#if defined(RADIO_ZORRO)
+#if defined(RADIO_ZORRO) || defined(RADIO_TX12MK2)
   #define VOLTAGE_DROP 45
 #else
   #define VOLTAGE_DROP 20

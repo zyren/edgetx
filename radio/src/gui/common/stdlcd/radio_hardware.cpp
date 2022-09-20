@@ -209,6 +209,8 @@ enum {
   #define SWITCH_TYPE_MAX(sw)            ((MIXSRC_SF - MIXSRC_FIRST_SWITCH == sw || MIXSRC_SH - MIXSRC_FIRST_SWITCH == sw) ? SWITCH_2POS : SWITCH_3POS)
 #elif defined(RADIO_ZORRO)
   #define SWITCH_TYPE_MAX(sw)            ((MIXSRC_SB - MIXSRC_FIRST_SWITCH == sw || MIXSRC_SC - MIXSRC_FIRST_SWITCH == sw) ? SWITCH_3POS : SWITCH_2POS)
+#elif defined(RADIO_TX12MK2)
+  #define SWITCH_TYPE_MAX(sw)            ((MIXSRC_SA - MIXSRC_FIRST_SWITCH == sw || MIXSRC_SD - MIXSRC_FIRST_SWITCH == sw) ? SWITCH_2POS : SWITCH_3POS)
 #elif defined(RADIO_T8)
   #define SWITCH_TYPE_MAX(sw)            ((MIXSRC_SA - MIXSRC_FIRST_SWITCH == sw || MIXSRC_SD - MIXSRC_FIRST_SWITCH == sw) ? SWITCH_2POS : SWITCH_3POS)
 #elif defined(RADIO_TX12)
@@ -532,6 +534,11 @@ void menuRadioHardware(event_t event)
           memclear(&g_model.moduleData[INTERNAL_MODULE], sizeof(ModuleData));
           storageDirty(EE_MODEL);
           storageDirty(EE_GENERAL);
+        #if defined(CROSSFIRE) && defined(USB_SERIAL)
+          // If USB-VCP was off, set it to CLI to enable passthrough flashing
+          if (isInternalModuleCrossfire() && serialGetMode(SP_VCP) ==  UART_MODE_NONE)
+            serialSetMode(SP_VCP, UART_MODE_CLI);
+        #endif
         }
       } break;
 #endif

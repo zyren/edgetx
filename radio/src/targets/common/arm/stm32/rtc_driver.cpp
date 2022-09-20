@@ -62,7 +62,7 @@ void rtcInit()
 {
   RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
   PWR_BackupAccessCmd(ENABLE);
-  RCC_LSEConfig(RCC_LSE_ON);
+  RCC_LSEConfig(RCC_LSE_Bypass);
   
   // Prevent lockup in case of 32kHz oscillator failure
   uint32_t i = 0;

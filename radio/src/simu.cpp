@@ -361,7 +361,7 @@ void OpenTxSim::updateKeysAndSwitches(bool start)
     KEY_Left,      KEY_LEFT,
     KEY_Up,        KEY_UP,
     KEY_Down,      KEY_DOWN,
-#elif defined(RADIO_TX12) || defined(RADIO_ZORRO)
+#elif defined(RADIO_TX12) || defined(RADIO_ZORRO) || defined(RADIO_TX12MK2)
     KEY_Page_Up,   KEY_PAGEUP,
     KEY_Page_Down, KEY_PAGEDN,
     KEY_Return,    KEY_ENTER,

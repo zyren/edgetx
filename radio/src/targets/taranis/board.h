@@ -31,7 +31,7 @@
 
 #include "watchdog_driver.h"
 
-#if defined(RADIO_TX12) || defined(RADIO_ZORRO)
+#if defined(RADIO_TX12) || defined(RADIO_ZORRO) || defined(RADIO_TX12MK2)
   #define  NAVIGATION_X7_TX12
 #endif
 
@@ -309,6 +309,8 @@ enum EnumSwitches
   #define IS_3POS(x)                      ((x) != SW_SA && (x) != SW_SD)
 #elif defined(RADIO_ZORRO)
   #define IS_3POS(x)                      ((x) == SW_SB || (x) == SW_SC)
+#elif defined(RADIO_TX12MK2)
+  #define IS_3POS(x)                      ((x) != SW_SA && (x) != SW_SD)
 #else
   #define IS_3POS(x)                      ((x) != SW_SF && (x) != SW_SH)
 #endif
@@ -355,7 +357,7 @@ enum EnumSwitchesPositions
   SW_SI0,
   SW_SI1,
   SW_SI2,
-#elif defined(PCBX7) && !defined(RADIO_ZORRO)
+#elif defined(PCBX7) && (!defined(RADIO_ZORRO) || !defined(RADIO_TX12MK2))
   SW_SI0,
   SW_SI1,
   SW_SI2,
@@ -437,6 +439,11 @@ enum EnumSwitchesPositions
   #define NUM_SWITCHES                  8
   #define STORAGE_NUM_SWITCHES          NUM_SWITCHES
   #define DEFAULT_SWITCH_CONFIG         (SWITCH_TOGGLE << 14) + (SWITCH_TOGGLE << 12) + (SWITCH_2POS << 10) + (SWITCH_2POS << 8) + (SWITCH_TOGGLE << 6) + (SWITCH_3POS << 4) + (SWITCH_3POS << 2) + (SWITCH_TOGGLE << 0)
+  #define DEFAULT_POTS_CONFIG           (POT_WITHOUT_DETENT << 0) + (POT_WITHOUT_DETENT << 2);
+#elif defined(RADIO_TX12MK2)
+  #define NUM_SWITCHES                  6
+  #define STORAGE_NUM_SWITCHES          8
+  #define DEFAULT_SWITCH_CONFIG         (SWITCH_3POS << 10) + (SWITCH_3POS << 8) + (SWITCH_TOGGLE << 6) + (SWITCH_3POS << 4) + (SWITCH_3POS << 2) + (SWITCH_TOGGLE << 0)
   #define DEFAULT_POTS_CONFIG           (POT_WITHOUT_DETENT << 0) + (POT_WITHOUT_DETENT << 2);
 #elif defined(RADIO_T8)
   #define NUM_SWITCHES                  4
@@ -725,6 +732,10 @@ uint8_t isBacklightEnabled();
   #define USB_NAME                     "Radiomaster Zorro"
   #define USB_MANUFACTURER             'R', 'M', '_', 'T', 'X', ' ', ' ', ' '  /* 8 bytes */
   #define USB_PRODUCT                  'R', 'M', ' ', 'Z', 'O', 'R', 'R', 'O'  /* 8 Bytes */
+#elif defined(RADIO_TX12MK2)
+  #define USB_NAME                     "Radiomaster TX12 MK2"
+  #define USB_MANUFACTURER             'R', 'M', '_', 'T', 'X', ' ', ' ', ' '  /* 8 bytes */
+  #define USB_PRODUCT                  'T', 'X', '1', '2', ' ', 'M', 'K', '2'  /* 8 Bytes */
 #elif defined(RADIO_T8)
   #define USB_NAME                     "Radiomaster T8"
   #define USB_MANUFACTURER             'R', 'M', '_', 'T', 'X', ' ', ' ', ' '  /* 8 bytes */
@@ -975,6 +986,8 @@ void setTopBatteryValue(uint32_t volts);
 
 extern Fifo<uint8_t, TELEMETRY_FIFO_SIZE> telemetryFifo;
 #endif
+
+#define INTMODULE_FIFO_SIZE            128
 
 // Gyro driver
 #define GYRO_VALUES_COUNT               6
