@@ -67,10 +67,6 @@
   _DEFINE_EXTI_IRQ_HANDLER(EXTI1_IRQ, 1, 1);
 #endif
 
-#if defined(USE_EXTI2_IRQ)
-  _DEFINE_EXTI_IRQ_HANDLER(EXTI2_IRQ, 2, 2);
-#endif
-
 #if defined(USE_EXTI9_5_IRQ)
   _DEFINE_EXTI_IRQ_HANDLER(EXTI9_5_IRQ, 5, 9);
 #endif
@@ -106,10 +102,6 @@ void stm32_exti_enable(uint32_t line, uint8_t trigger, stm32_exti_handler_t cb)
   _SET_EXTI_IRQ_HANDLER(EXTI1_IRQ, 1, 1, line_pos, cb);
 #endif
 
-#if defined(USE_EXTI2_IRQ)
-  _SET_EXTI_IRQ_HANDLER(EXTI2_IRQ, 2, 2, line_pos, cb);
-#endif
-
 #if defined(USE_EXTI9_5_IRQ)
   _SET_EXTI_IRQ_HANDLER(EXTI9_5_IRQ, 5, 9, line_pos, cb);
 #endif
@@ -125,10 +117,6 @@ void stm32_exti_disable(uint32_t line)
 
 #if defined(USE_EXTI1_IRQ)
   _CLEAR_EXTI_IRQ_HANDLER(EXTI1_IRQ, 1, 1, line_pos);
-#endif
-
-#if defined(USE_EXTI2_IRQ)
-  _CLEAR_EXTI_IRQ_HANDLER(EXTI2_IRQ, 2, 2, line_pos);
 #endif
 
 #if defined(USE_EXTI9_5_IRQ)

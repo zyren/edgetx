@@ -309,11 +309,6 @@ enum TelemetryUnit {
   UNIT_KM,
   UNIT_DBM,
   UNIT_MAX = UNIT_DBM,
-  UNIT_SPARE6,
-  UNIT_SPARE7,
-  UNIT_SPARE8,
-  UNIT_SPARE9,
-  UNIT_SPARE10,
   UNIT_HOURS,
   UNIT_MINUTES,
   UNIT_SECONDS,
@@ -405,11 +400,7 @@ enum PotsWarnMode {
 #define MAX_CALIB_ANALOG_INPUTS (MAX_STICKS + MAX_POTS + MAX_AXIS)
 
 #define MAX_SWITCHES      20
-#if defined(RADIO_T20)
-#define MAX_TRIMS         8
-#else
 #define MAX_TRIMS         6
-#endif
 
 #define MAX_XPOTS_POSITIONS (MAX_POTS * XPOTS_MULTIPOS_COUNT)
 
@@ -583,7 +574,9 @@ enum Functions {
   FUNC_PLAY_SOUND = FUNC_FIRST_WITHOUT_ENABLE,
   FUNC_PLAY_TRACK,
   FUNC_PLAY_VALUE,
+  FUNC_RESERVE4,
   FUNC_PLAY_SCRIPT,
+  FUNC_RESERVE5,
   FUNC_BACKGND_MUSIC,
   FUNC_BACKGND_MUSIC_PAUSE,
   FUNC_VARIO,
@@ -592,16 +585,14 @@ enum Functions {
   FUNC_BACKLIGHT,
   FUNC_SCREENSHOT,
   FUNC_RACING_MODE,
-#if defined(COLORLCD)
   FUNC_DISABLE_TOUCH,
   FUNC_SET_SCREEN,
-#endif
+  FUNC_RGB_LED,
 #if defined(DEBUG)
   FUNC_TEST,  // should remain the last before MAX as not added in Companion
 #endif
   FUNC_MAX SKIP
 };
-
 enum TimerModes {
   TMRMODE_OFF,
   TMRMODE_ON,
@@ -675,6 +666,16 @@ enum ModelOverridableEnable {
   OVERRIDE_ON
 };
 
+// List of modes available for RGB leds
+enum FunctionRgbLedsParams {
+  FUNC_RGBLEDS_LUA,
+  FUNC_RGBLEDS_WHITE,
+  FUNC_RGBLEDS_BLUE,
+  FUNC_RGBLEDS_RED,
+  FUNC_RGBLEDS_YELLOW,
+  FUNC_RGBLEDS_GREEN,
+  FUNC_RGBLEDS_MAX SKIP = FUNC_RGBLEDS_GREEN
+};
 #define SELECTED_THEME_NAME_LEN 26
 
 #endif // _DATACONSTANTS_H_

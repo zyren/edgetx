@@ -102,7 +102,7 @@
 #define TR_SF_FAILSAFE                 "SetFailsafe"
 #define TR_SF_RANGE_CHECK              "RangeCheck"
 #define TR_SF_MOD_BIND                 "BindModulo"
- 
+
 #define TR_SOUND                       "Suona"
 #define TR_PLAY_TRACK                  "Suona Traccia"
 #define TR_PLAY_VALUE                  TR("LeggiVal","Leggi Valore")
@@ -133,6 +133,7 @@
 
 #define TR_VFSWRESET                     TR_FSW_RESET_TIMERS,TR("All","Tutto"),TR_FSW_RESET_TELEM
 
+#define TR_FUNCRGBLEDS                 "LUA","White","Blue","Red","Yellow","Green"
 #define TR_FUNCSOUNDS                    TR("Bp1","Beep1"),TR("Bp2","Beep2"),TR("Bp3","Beep3"),TR("Wrn1","Warn1"),TR("Wrn2","Warn2"),TR("Chee","Cheep"),TR("Rata","Ratata"),"Tick",TR("Sirn","Siren"),"Ring",TR("SciF","SciFi"),TR("Robt","Robot"),TR("Chrp","Chirp"),"Tada",TR("Crck","Crickt"),TR("Alrm","AlmClk")
 
 #define LENGTH_UNIT_IMP                 "ft"
@@ -269,7 +270,6 @@
 #define TR_WARN_5VOLTS                  "Attenzione: il livello d'uscita è 5 Volts"
 #define TR_MS                           "ms"
 #define TR_SWITCH                       "Inter."
-#define TR_FUNCTION_SWITCHES            "Interruttori personalizzabili"
 #define TR_SF_SWITCH                    "Trigger"
 #define TR_TRIMS                        "Trims"
 #define TR_FADEIN                       "Diss.In"
@@ -433,7 +433,11 @@
 #define TR_PPM_TRAINER                  "TR"
 #define TR_CH                           "CH"
 #define TR_MODEL                        "MODELLO"
+#if defined(SURFACE_RADIO)
+#define TR_FM                          "DM"
+#else
 #define TR_FM                           "FV"
+#endif
 #define TR_EEPROMLOWMEM                 "EEPROM quasi piena!"
 #define TR_PRESS_ANY_KEY_TO_SKIP        "\010Premi un tasto"
 #define TR_THROTTLE_NOT_IDLE            "Gas non a minimo"
@@ -455,7 +459,7 @@
 #define TR_MENU_RADIO_ANALOGS_CALIB     "ANALOGICI CALIBRATI"
 #define TR_MENU_RADIO_ANALOGS_RAWLOWFPS "ANALOGICI RAW (5 Hz)"
 #define TR_MENUCALIBRATION              "CALIBRAZIONE"
-#define TR_MENU_FSWITCH                 "INTERRUTTORI PERSONALIZZABILI"
+#define TR_MENU_FSWITCH                 "FUNCTION SWITCHES"
 #if defined(COLORLCD)
   #define TR_TRIMS2OFFSETS              "Trims => Subtrims"
 #else
@@ -465,8 +469,13 @@
 #define TR_CHANNEL2FAILSAFE             "Canale => Failsafe"
 #define TR_MENUMODELSEL                 "MODELLI"
 #define TR_MENU_MODEL_SETUP             "CONFIGURA"
+#if defined(SURFACE_RADIO)
+#define TR_MENUFLIGHTMODES             "DRIVE MODES"
+#define TR_MENUFLIGHTMODE              "DRIVE MODE"
+#else
 #define TR_MENUFLIGHTMODES              "FASI DI VOLO"
 #define TR_MENUFLIGHTMODE               "FASE DI VOLO"
+#endif
 #define TR_MENUHELISETUP                "CONFIGURA ELI"
 #define TR_MENUINPUTS                   "INGRESSI"
 #define TR_MENULIMITS                   "USCITE"
@@ -840,7 +849,6 @@
 #define TR_DEBUG                        "Debug"
 #define TR_KEYS_BTN                     BUTTON(TR("SW", "Tasti"))
 #define TR_ANALOGS_BTN                  BUTTON("Analogici")
-#define TR_FS_BTN                       BUTTON(TR("Int. pers.", TR_FUNCTION_SWITCHES))
 #define TR_TOUCH_NOTFOUND               "Schermo touch non trovato"
 #define TR_TOUCH_EXIT                   "Tocca lo schermo per uscire"
 #define TR_SET                          BUTTON("Set")
@@ -1107,7 +1115,6 @@
 #define TR_MENU_DISPLAY                 "DISPLAY"
 #define TR_MENU_OTHER                   "Altro"
 #define TR_MENU_INVERT                  "Inverti"
-#define TR_AUDIO_MUTE                   TR("Audio muto","Muto senza suono")
 #define TR_JITTER_FILTER                "Filtro ADC"
 #define TR_DEAD_ZONE                    "Zona morta"
 #define TR_RTC_CHECK                    TR("Controllo RTC", "Controllo volt. RTC")

@@ -4600,8 +4600,8 @@ Sie verwenden gerade:
     </message>
     <message>
         <location filename="../modeledit/setup_function_switches.ui" line="47"/>
-        <source>Customizable Switches</source>
-        <translation>Anpassbare Schalter</translation>
+        <source>Function Switches</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../modeledit/setup_function_switches.ui" line="69"/>
@@ -6178,11 +6178,6 @@ Sind Sie sicher?</translation>
         <location filename="../generaledit/hardware.cpp" line="170"/>
         <source>ADC Filter</source>
         <translation type="unfinished">ADC-Filter</translation>
-    </message>
-    <message>
-        <location filename="../generaledit/hardware.cpp" line="178"/>
-        <source>Mute if no sound</source>
-        <translation>Geräuschunterdrückung</translation>
     </message>
     <message>
         <location filename="../generaledit/hardware.cpp" line="198"/>
@@ -10471,8 +10466,8 @@ If blank then the mix is considered to be &quot;ON&quot; all the time.</source>
     </message>
     <message>
         <location filename="../multimodelprinter.cpp" line="968"/>
-        <source>Customizable Switches</source>
-        <translation>Anpassbare Schalter</translation>
+        <source>Function Switches</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../multimodelprinter.cpp" line="970"/>

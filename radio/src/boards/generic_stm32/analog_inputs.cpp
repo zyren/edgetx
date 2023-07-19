@@ -22,7 +22,6 @@
 #include "analog_inputs.h"
 #include "stm32_adc.h"
 #include "stm32_spi_adc.h"
-#include "sticks_pwm_driver.h"
 
 #include "hal.h"
 
@@ -39,7 +38,6 @@
 
 // generated files
 #include "stm32_adc_inputs.inc"
-#include "stm32_pwm_inputs.inc"
 #include "hal_adc_inputs.inc"
 
 constexpr uint8_t n_ADC = DIM(_ADC_adc);
@@ -85,35 +83,3 @@ const etx_hal_adc_driver_t _adc_driver = {
   adc_wait_completion
 };
 
-#if defined(PWM_STICKS)
-
-static const stick_pwm_timer_t _sticks_timer = {
-  PWM_GPIO,
-  PWM_GPIOA_PINS,
-  PWM_GPIO_AF,
-  PWM_TIMER,
-  PWM_IRQn,
-};
-
-#if !defined(PWM_IRQHandler)
-  #error "Missing PWM_IRQHandler"
-#endif
-
-extern "C" void PWM_IRQHandler(void)
-{
-  sticks_pwm_isr(&_sticks_timer, _PWM_inputs, DIM(_PWM_inputs));
-}
-
-bool sticksPwmDetect()
-{
-  return sticks_pwm_detect(&_sticks_timer, _PWM_inputs, DIM(_PWM_inputs));
-}
-
-#else
-
-bool sticksPwmDetect()
-{
-  return false;
-}
-
-#endif

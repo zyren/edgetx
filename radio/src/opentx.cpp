@@ -19,6 +19,11 @@
  * GNU General Public License for more details.
  */
 
+#if !defined(SIMU)
+#include "stm32_ws2812.h"
+#include "boards/generic_stm32/rgb_leds.h"
+#endif
+
 #include "opentx.h"
 #include "io/frsky_firmware_update.h"
 #include "hal/adc_driver.h"
@@ -32,10 +37,6 @@
 
 #include "tasks.h"
 #include "tasks/mixer_task.h"
-
-#if defined(BLUETOOTH)
-  #include "bluetooth_driver.h"
-#endif
 
 #if defined(LIBOPENUI)
   #include "libopenui.h"
@@ -99,14 +100,9 @@ void toggleLatencySwitch()
 
 void checkValidMCU(void)
 {
-#if !defined(SIMU) && !defined(BOOT)
+#if !defined(SIMU)
   // Checks the radio MCU type matches intended firmware type
   uint32_t idcode = DBGMCU->IDCODE & 0xFFF;
-
-#if defined(RADIO_TLITE)
-  #define TARGET_IDCODE_SECONDARY   0x413
-  // Tlite ELRS have a CKS F4 run as an F2 (F4 firmware won't run on those)
-#endif
 
 #if defined(STM32F205xx)
   #define TARGET_IDCODE   0x411
@@ -121,15 +117,9 @@ void checkValidMCU(void)
   #define TARGET_IDCODE   0x0
 #endif
 
-#if defined(TARGET_IDCODE_SECONDARY)
-  if(idcode != TARGET_IDCODE && idcode != TARGET_IDCODE_SECONDARY) {
-    runFatalErrorScreen("Wrong MCU");
-  }
-#else
   if(idcode != TARGET_IDCODE) {
     runFatalErrorScreen("Wrong MCU");
   }
-#endif
 #endif
 }
 
@@ -269,6 +259,10 @@ void generalDefault()
   g_eeGeneral.contrast = LCD_CONTRAST_DEFAULT;
 #endif
 
+#if defined(LCD_BRIGHTNESS_DEFAULT)
+  g_eeGeneral.backlightBright = LCD_BRIGHTNESS_DEFAULT;
+#endif
+
 #if defined(DEFAULT_INTERNAL_MODULE)
     g_eeGeneral.internalModule = DEFAULT_INTERNAL_MODULE;
 #endif
@@ -343,10 +337,6 @@ void generalDefault()
   g_eeGeneral.splashMode = 3;
   g_eeGeneral.pwrOnSpeed = 2;
   g_eeGeneral.pwrOffSpeed = 2;
-#endif
-
-#if defined(RADIO_TPROV2)
-  g_eeGeneral.rotEncMode = ROTARY_ENCODER_MODE_INVERT_BOTH;
 #endif
 
   g_eeGeneral.chkSum = 0xFFFF;
@@ -918,9 +908,7 @@ void alert(const char * title, const char * msg , uint8_t sound)
 }
 
 #if defined(GVARS)
-#if MAX_TRIMS == 8
-int8_t trimGvar[MAX_TRIMS] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-#elif MAX_TRIMS == 6
+#if MAX_TRIMS == 6
   int8_t trimGvar[MAX_TRIMS] = { -1, -1, -1, -1, -1, -1 };
 #elif MAX_TRIMS == 4
   int8_t trimGvar[MAX_TRIMS] = { -1, -1, -1, -1 };
@@ -956,7 +944,7 @@ void checkTrims()
 #else
     phase = getTrimFlightMode(mixerCurrentFlightMode, idx);
     before = getTrimValue(phase, idx);
-    thro = (idx==inputMappingConvertMode(inputMappingGetThrottle()) && g_model.thrTrim);
+    thro = (idx==THR_STICK && g_model.thrTrim);
 #endif
     int8_t trimInc = g_model.trimInc + 1;
     int8_t v = (trimInc==-1) ? min(32, abs(before)/4+1) : (1 << trimInc); // TODO flash saving if (trimInc < 0)
@@ -1093,12 +1081,6 @@ void opentxStart(const uint8_t startOptions = OPENTX_START_DEFAULT_ARGS)
 
   uint8_t calibration_needed = !(startOptions & OPENTX_START_NO_CALIBRATION) && (g_eeGeneral.chkSum != evalChkSum());
 
-#if defined(BLUETOOTH_PROBE)
-  extern volatile uint8_t btChipPresent;
-  auto oldBtMode = g_eeGeneral.bluetoothMode;
-  g_eeGeneral.bluetoothMode = BLUETOOTH_TELEMETRY;
-#endif
-
 #if defined(GUI)
   if (!calibration_needed && !(startOptions & OPENTX_START_NO_SPLASH)) {
     AUDIO_HELLO();
@@ -1134,12 +1116,6 @@ void opentxStart(const uint8_t startOptions = OPENTX_START_DEFAULT_ARGS)
     checkAll();
     PLAY_MODEL_NAME();
   }
-#endif
-
-#if defined(BLUETOOTH_PROBE)
-  if (bluetooth.localAddr[0] != '\0')
-    btChipPresent = 1;
-  g_eeGeneral.bluetoothMode = oldBtMode;
 #endif
 }
 
@@ -1252,7 +1228,7 @@ void instantTrim()
 
   auto controls = adcGetMaxInputs(ADC_INPUT_MAIN);
   for (uint8_t stick = 0; stick < controls; stick++) {
-    if (stick != inputMappingConvertMode(inputMappingGetThrottle())) { // don't instant trim the throttle stick
+    if (stick != THR_STICK) { // don't instant trim the throttle stick
       bool addTrim = false;
       int16_t delta = 0;
       uint8_t trimFlightMode = getTrimFlightMode(mixerCurrentFlightMode, stick);
@@ -1593,6 +1569,10 @@ void opentxInit()
 #endif
 
   resetBacklightTimeout();
+
+#if defined(LED_STRIP_GPIO) && !defined(SIMU)
+  rgbLedStart();
+#endif
 
   pulsesStart();
   WDG_ENABLE(WDG_DURATION);

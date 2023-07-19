@@ -31,7 +31,6 @@ class AbstractStaticItemModel;
 constexpr char AIM_BOARDS_POT_TYPE[]        {"boards.pottype"};
 constexpr char AIM_BOARDS_SLIDER_TYPE[]     {"boards.slidertype"};
 constexpr char AIM_BOARDS_SWITCH_TYPE[]     {"boards.switchtype"};
-constexpr char AIM_BOARDS_MODULE_SIZE[]     {"boards.extmodulesize"};
 
 // TODO create a Board class with all these functions
 
@@ -71,7 +70,6 @@ namespace Board {
     BOARD_JUMPER_TPRO,
     BOARD_BETAFPV_LR3PRO,
     BOARD_IFLIGHT_COMMANDO8,
-    BOARD_FLYSKY_EL18,
     BOARD_TYPE_COUNT,
     BOARD_TYPE_MAX = BOARD_TYPE_COUNT - 1
   };
@@ -158,7 +156,6 @@ namespace Board {
     HasSDCard,
     HasInternalModuleSupport,
     HasExternalModuleSupport,
-    HasAudioMuteGPIO,
     SportMaxBaudRate
   };
 
@@ -183,14 +180,6 @@ namespace Board {
     SwitchTypeFlag3Pos    = 0x02,
     SwitchTypeContext2Pos = SwitchTypeFlag2Pos,
     SwitchTypeContext3Pos = SwitchTypeFlag2Pos | SwitchTypeFlag3Pos
-  };
-
-  enum ExternalModuleSizes {
-    EXTMODSIZE_NONE,
-    EXTMODSIZE_STD,
-    EXTMODSIZE_SMALL,
-    EXTMODSIZE_BOTH,
-    EXTMODSIZE_COUNT
   };
 
 }
@@ -239,9 +228,6 @@ class Boards
     static StringTagMappingTable getTrimSourcesLookupTable(Board::Type board);
     static QList<int> getSupportedInternalModules(Board::Type board);
     static int getDefaultInternalModules(Board::Type board);
-    static int getDefaultExternalModuleSize(Board::Type board);
-    static QString externalModuleSizeToString(int value);
-    static AbstractStaticItemModel * externalModuleSizeItemModel();
 
   protected:
 
@@ -349,11 +335,6 @@ inline bool IS_FAMILY_T12(Board::Type board)
 inline bool IS_FLYSKY_NV14(Board::Type board)
 {
   return (board == Board::BOARD_FLYSKY_NV14);
-}
-
-inline bool IS_FLYSKY_EL18(Board::Type board)
-{
-  return (board == Board::BOARD_FLYSKY_EL18);
 }
 
 inline bool IS_TARANIS_XLITE(Board::Type board)

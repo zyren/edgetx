@@ -586,6 +586,7 @@ bool isAssignableFunctionAvailable(int function, CustomFunctionData * functions)
 #if !defined(HAPTIC)
     case FUNC_HAPTIC:
 #endif
+    case FUNC_RESERVE4:
 #if !defined(DANGEROUS_MODULE_FUNCTIONS)
     case FUNC_RANGECHECK:
     case FUNC_BIND:
@@ -593,6 +594,17 @@ bool isAssignableFunctionAvailable(int function, CustomFunctionData * functions)
 #endif
 #if !defined(LUA)
     case FUNC_PLAY_SCRIPT:
+#endif
+    case FUNC_RESERVE5:
+      return false;
+
+#if !defined(COLORLCD)
+    case FUNC_DISABLE_TOUCH:
+    case FUNC_SET_SCREEN:
+      return false;
+#endif
+#if !defined(LED_STRIP_GPIO)
+    case FUNC_RGB_LED:
       return false;
 #endif
 
@@ -889,18 +901,13 @@ bool isExternalModuleAvailable(int moduleType)
     return false;
 #endif
 
-#if defined(HARDWARE_EXTERNAL_MODULE_SIZE_SML) and !defined(EXTMODULE_USART_GPIO)
-  if (moduleType == MODULE_TYPE_XJT_LITE_PXX2 ||
-      moduleType == MODULE_TYPE_R9M_PXX2)
+#if !defined(XJT)
+  if (moduleType == MODULE_TYPE_XJT_PXX1)
     return false;
 #endif
 
 #if !defined(HARDWARE_EXTERNAL_MODULE_SIZE_STD)
-  if (moduleType == MODULE_TYPE_R9M_PXX1 ||
-      moduleType == MODULE_TYPE_R9M_PXX2 ||
-      moduleType == MODULE_TYPE_XJT_PXX1 ||
-      moduleType == MODULE_TYPE_DSM2 ||
-      moduleType == MODULE_TYPE_LEMON_DSMP )
+  if (moduleType == MODULE_TYPE_R9M_PXX1 || moduleType == MODULE_TYPE_R9M_PXX2)
     return false;
 #endif
 
@@ -1182,7 +1189,9 @@ const mm_protocol_definition *getMultiProtocolDefinition (uint8_t protocol)
   // Return the empty last protocol
   return pdef;
 }
+#endif
 
+#if defined(MULTIMODULE)
 const char * getMultiOptionTitleStatic(uint8_t moduleIdx)
 {
   const uint8_t multi_proto = g_model.moduleData[moduleIdx].multi.rfProtocol;
@@ -1202,18 +1211,5 @@ const char * getMultiOptionTitle(uint8_t moduleIdx)
   }
 
   return getMultiOptionTitleStatic(moduleIdx);
-}
-#endif
-
-#if !defined(COLORLCD)
-uint8_t expandableSection(coord_t y, const char* title, uint8_t value, uint8_t attr, event_t event)
-{
-  lcdDrawTextAlignedLeft(y, title);
-  lcdDrawText(LCD_W == 128 ? 120 : 200, y, value ? STR_CHAR_UP : STR_CHAR_DOWN, attr);
-  if (attr && (event == EVT_KEY_BREAK(KEY_ENTER))) {
-    value = !value;
-    s_editMode = 0;
-  }
-  return value;
 }
 #endif

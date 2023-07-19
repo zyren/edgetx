@@ -38,7 +38,11 @@
 
 #include <string.h>
 
-#if defined(FLYSKY_GIMBAL)
+#if defined(PWM_STICKS)
+  #include "sticks_pwm_driver.h"
+#endif
+
+#if defined(RADIO_FAMILY_T16) || defined(PCBNV14)
   #include "flysky_gimbal_driver.h"
 #endif
 
@@ -95,6 +99,13 @@ void boardInit()
                          KEYS_BACKLIGHT_RCC_AHB1Periph |
                          SD_RCC_AHB1Periph |
                          AUDIO_RCC_AHB1Periph |
+                         KEYS_RCC_AHB1Periph |
+                         ADC_RCC_AHB1Periph |
+#if defined(RADIO_FAMILY_T16)
+                         FLYSKY_HALL_RCC_AHB1Periph |
+#endif
+                         AUX_SERIAL_RCC_AHB1Periph |
+                         AUX2_SERIAL_RCC_AHB1Periph |
                          TELEMETRY_RCC_AHB1Periph |
                          TRAINER_RCC_AHB1Periph |
                          BT_RCC_AHB1Periph |
@@ -107,8 +118,12 @@ void boardInit()
 
   RCC_APB1PeriphClockCmd(ROTARY_ENCODER_RCC_APB1Periph |
                          INTERRUPT_xMS_RCC_APB1Periph |
+                         ADC_RCC_APB1Periph |
                          TIMER_2MHz_RCC_APB1Periph |
                          AUDIO_RCC_APB1Periph |
+#if defined(RADIO_FAMILY_T16)
+                         FLYSKY_HALL_RCC_APB1Periph |
+#endif
                          TELEMETRY_RCC_APB1Periph |
                          AUDIO_RCC_APB1Periph |
                          MIXER_SCHEDULER_TIMER_RCC_APB1Periph |
@@ -117,6 +132,7 @@ void boardInit()
 
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG |
                          LCD_RCC_APB2Periph |
+                         ADC_RCC_APB2Periph |
                          HAPTIC_RCC_APB2Periph |
                          TELEMETRY_RCC_APB2Periph |
                          BT_RCC_APB2Periph |
@@ -164,8 +180,8 @@ void boardInit()
 #if defined(PWM_STICKS)
   sticksPwmDetect();
 #endif
-  
-#if defined(FLYSKY_GIMBAL)
+
+#if defined(RADIO_FAMILY_T16)
   flysky_gimbal_init();
 #endif
 

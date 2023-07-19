@@ -1,5 +1,5 @@
 /*
- * Copyright (C) EdgeTX
+ * Copyright (C) EdgeTx
  *
  * Based on code named
  *   opentx - https://github.com/opentx/opentx
@@ -21,5 +21,9 @@
 
 #pragma once
 
-// returns 'true' if PWM sticks have been detected
-bool sticksPwmDetect();
+void rgbLedStart();
+void rgbLedStop();
+void rgbSetLedColor(unsigned char, unsigned char, unsigned char, unsigned char);
+void rgbLedColorApply();
+
+// void boardInitRGBLed();

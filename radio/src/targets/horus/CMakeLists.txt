@@ -7,7 +7,6 @@ option(AFHDS3 "AFHDS3 TX Module" ON)
 option(MULTIMODULE "DIY Multiprotocol TX Module (https://github.com/pascallanger/DIY-Multiprotocol-TX-Module)" ON)
 option(GHOST "Ghost TX Module" ON)
 option(SPACEMOUSE "Support for SpaceMouse" OFF)
-option(MODULE_SIZE_STD "Standard size TX Module" ON)
 
 set(PWR_BUTTON "PRESS" CACHE STRING "Pwr button type (PRESS/SWITCH)")
 set(CPU_TYPE STM32F4)
@@ -104,6 +103,7 @@ if (PCB STREQUAL X10)
     set(USB_CHARGER YES)
     set(DEFAULT_THEME "DARKBLUE")
     add_definitions(-DMANUFACTURER_RADIOMASTER)
+    set(AUX_SERIAL OFF) # WS2812
     if (NOT BLUETOOTH)
       set(AUX2_SERIAL ON)
     endif()
@@ -264,6 +264,11 @@ set(FIRMWARE_TARGET_SRC
 set(FIRMWARE_SRC
   ${FIRMWARE_SRC}
   hal/adc_driver.cpp
+  boards/generic_stm32/module_ports.cpp
+  boards/generic_stm32/aux_ports.cpp
+  boards/generic_stm32/sport_update.cpp
+  boards/generic_stm32/intmodule_heartbeat.cpp
+  boards/generic_stm32/rgb_leds.cpp
   targets/common/arm/stm32/stm32_exti_driver.cpp
   targets/common/arm/stm32/timers_driver.cpp
   targets/common/arm/stm32/stm32_pulse_driver.cpp
@@ -272,6 +277,7 @@ set(FIRMWARE_SRC
   targets/common/arm/stm32/pwr_driver.cpp
   targets/common/arm/stm32/heartbeat_driver.cpp
   targets/common/arm/stm32/trainer_driver.cpp
+  targets/common/arm/stm32/stm32_ws2812.cpp
   targets/common/arm/stm32/ads79xx.cpp
   targets/common/arm/stm32/sdio_sd.c
   )

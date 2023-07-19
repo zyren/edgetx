@@ -151,7 +151,7 @@ void postModelLoad(bool alarms)
 if(g_model.rssiSource) {
   g_model.rssiSource = 0;
 
-  storageDirty(EE_MODEL);  
+  storageDirty(EE_MODEL);
 }
 
 #if defined(PXX2)

@@ -26,6 +26,7 @@
 
 
 struct stm32_adc_input_t {
+  const char*   name;
   GPIO_TypeDef* GPIOx;
   uint32_t      GPIO_Pin;
   uint32_t      ADC_Channel;
@@ -65,5 +66,3 @@ void stm32_hal_adc_disable_oversampling();
 
 void stm32_hal_adc_dma_isr(const stm32_adc_t* adc);
 void stm32_hal_adc_isr(const stm32_adc_t* adc);
-
-void stm32_hal_mask_inputs(uint32_t inputs);

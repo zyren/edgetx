@@ -690,8 +690,14 @@ void MainWindow::updateMenus()
   compareAct->setEnabled(activeChild);
   writeSettingsAct->setEnabled(activeChild);
   readSettingsAct->setEnabled(true);
-  writeBUToRadioAct->setEnabled(false);
-  readBUToFileAct->setEnabled(false);
+  if (IS_FAMILY_HORUS_OR_T16(getCurrentBoard())) {
+    writeBUToRadioAct->setEnabled(false);
+    readBUToFileAct->setEnabled(false);
+  }
+  else {
+    writeBUToRadioAct->setEnabled(true);
+    readBUToFileAct->setEnabled(true);
+  }
   editSplashAct->setDisabled(IS_FAMILY_HORUS_OR_T16(getCurrentBoard()));
 
   foreach (QAction * act, fileWindowActions) {
@@ -1266,7 +1272,6 @@ int MainWindow::newProfile(bool loadProfile)
   g.profile[i].name("New Radio");
   g.profile[i].fwType(newfw->getId());
   g.profile[i].defaultInternalModule(Boards::getDefaultInternalModules(newfw->getBoard()));
-  g.profile[i].externalModuleSize(Boards::getDefaultExternalModuleSize(newfw->getBoard()));
 
   if (loadProfile) {
     if (loadProfileId(i))

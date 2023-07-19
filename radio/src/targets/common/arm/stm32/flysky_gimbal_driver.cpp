@@ -21,8 +21,6 @@
 
 #include "flysky_gimbal_driver.h"
 #include "stm32_serial_driver.h"
-#include "stm32_adc.h"
-
 #include "delays_driver.h"
 #include "hal/adc_driver.h"
 
@@ -170,8 +168,6 @@ bool flysky_gimbal_init()
   for (uint8_t i = 0; i < 70; i++) {
     delay_ms(1);
     if (_fs_gimbal_detected) {
-      // Mask the first 4 inputs (sticks)
-      stm32_hal_mask_inputs(0xF);
       return true;
     }
   }

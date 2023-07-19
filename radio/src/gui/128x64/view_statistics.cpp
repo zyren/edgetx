@@ -21,7 +21,6 @@
 
 #include "opentx.h"
 #include "tasks.h"
-#include "mixer_scheduler.h"
 
 #include "hal/adc_driver.h"
 
@@ -205,9 +204,6 @@ void menuStatisticsDebug(event_t event)
   lcdDrawTextAlignedLeft(y, STR_TMIXMAXMS);
   lcdDrawNumber(MENU_DEBUG_COL1_OFS, y, DURATION_MS_PREC2(maxMixerDuration), PREC2|LEFT);
   lcdDrawText(lcdLastRightPos, y, STR_MS);
-  lcdDrawText(lcdLastRightPos, y, " (");
-  lcdDrawNumber(lcdLastRightPos, y, getMixerSchedulerPeriod() / 1000, LEFT);
-  lcdDrawText(lcdLastRightPos, y, "ms)");
   y += FH;
 
   lcdDrawTextAlignedLeft(y, STR_FREE_STACK);

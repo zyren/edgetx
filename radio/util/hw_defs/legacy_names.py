@@ -1,8 +1,6 @@
-"""Legacy names used for each analog input in previous EdgeTx versions."""
-
 LEGACY_NAMES = [
     {
-        "targets": {"x10", "x10express", "t16", "tx16s", "t18"},
+        "targets": {"x10","x10express","t16","tx16s","t18"},
         "inputs": {
             "LH": {
                 "yaml": "Rud"
@@ -176,15 +174,29 @@ LEGACY_NAMES = [
                 "yaml": "POT1",
                 "lua": "s1",
                 "label": "F1",
-                "short_label": "F1",
+                "short_label": "1",
                 "description": "Potentiometer 1"
             },
             "P2": {
                 "yaml": "POT2",
                 "lua": "s2",
                 "label": "F2",
-                "short_label": "F2",
+                "short_label": "2",
                 "description": "Potentiometer 2"
+            },
+            "P3": {
+                "yaml": "POT3",
+                "lua": "s3",
+                "label": "EXT3",
+                "short_label": "3",
+                "description": "Potentiometer 3"
+            },
+            "P4": {
+                "yaml": "POT4",
+                "lua": "s4",
+                "label": "EXT4",
+                "short_label": "4",
+                "description": "Potentiometer 4"
             },
             "SL1": {
                 "yaml": "SLIDER1",
@@ -204,16 +216,16 @@ LEGACY_NAMES = [
                 "yaml": "SLIDER3",
                 "lua": "lcs",
                 "label": "S1",
-                "short_label": "S1",
-                "description": "Left center slider"
+                "short_label": "1",
+                "description": "Left center slider (X9E only)"
             },
             "SL4": {
                 "yaml": "SLIDER4",
                 "lua": "rcs",
                 "label": "S2",
-                "short_label": "S2",
-                "description": "Right center slider"
-            }
+                "short_label": "2",
+                "description": "Right center slider (X9E only)"
+            }            
         }
     },
     {
@@ -255,12 +267,37 @@ LEGACY_NAMES = [
         }
     },
     {
+        "targets": {"mt12"},
+        "inputs": {
+            "ST": {
+                "yaml": "ST"
+            },
+            "TH": {
+                "yaml": "TH"
+            },
+            "P1": {
+                "yaml": "POT1",
+                "lua": "s1",
+                "label": "S1",
+                "short_label": "1",
+                "description": "Potentiometer 1"
+            },
+            "P2": {
+                "yaml": "POT2",
+                "lua": "s2",
+                "label": "S2",
+                "short_label": "2",
+                "description": "Potentiometer 2"
+            }
+        }
+    },
+    {
         "targets": {
             "commando8",
             "lr3pro",
             "nv14",
             "t8", "t12",
-            "tlite", "tlitef4", "tpro", "tprov2",
+            "tlite", "tlitef4", "tpro",
             "tx12", "tx12mk2",
             "x7", "x7access",
             "xlite", "xlites",
@@ -296,66 +333,7 @@ LEGACY_NAMES = [
         }
     },
     {
-        "targets": {"t20"},
-        "inputs": {
-            "LH": {
-                "yaml": "Rud"
-            },
-            "LV": {
-                "yaml": "Ele"
-            },
-            "RV": {
-                "yaml": "Thr"
-            },
-            "RH": {
-                "yaml": "Ail"
-            },
-            "P1": {
-                "yaml": "POT1",
-                "lua": "s1",
-                "label": "S1",
-                "short_label": "1",
-                "description": "Potentiometer 1"
-            },
-            "P2": {
-                "yaml": "POT2",
-                "lua": "s2",
-                "label": "S2",
-                "short_label": "2",
-                "description": "Potentiometer 2"
-            },
-            "SL1": {
-                "yaml": "SLIDER1",
-                "lua": "s3",
-                "label": "S3",
-                "short_label": "3",
-                "description": "Potentiometer 3"
-            },
-            "SL2": {
-                "yaml": "SLIDER2",
-                "lua": "s4",
-                "label": "S4",
-                "short_label": "4",
-                "description": "Potentiometer 4"
-            },
-            "SL3": {
-                "yaml": "SLIDER3",
-                "lua": "sl",
-                "label": "SL",
-                "short_label": "L",
-                "description": "Right finger slider"
-            },
-            "SL4": {
-                "yaml": "SLIDER4",
-                "lua": "sr",
-                "label": "SR",
-                "short_label": "R",
-                "description": "Right finger slider"
-            }
-        }
-    },
-    {
-        "targets": {"x9lite", "x9lites"},
+        "targets": {"x9lite","x9lites"},
         "inputs": {
             "LH": {
                 "yaml": "Rud"
@@ -379,7 +357,7 @@ LEGACY_NAMES = [
         }
     },
     {
-        "targets": {"x9d", "x9d+", "x9d+2019"},
+        "targets": {"x9d","x9d+","x9d+2019"},
         "inputs": {
             "LH": {
                 "yaml": "Rud"
@@ -432,21 +410,8 @@ LEGACY_NAMES = [
     }
 ]
 
-
 def inputs_by_target(target):
-    """Retrieve legacy definitions by target.
 
-    Parameters
-    ----------
-    target: str
-        Name of the target
-
-    Returns
-    -------
-    dict
-        a dictionary with the basic attributes needed to generate
-        compatibility mappings
-    """
     for d in LEGACY_NAMES:
         if target in d['targets']:
             return d['inputs']

@@ -45,9 +45,6 @@
   #include "hitec.h"
   #include "hott.h"
   #include "multi.h"
-#endif
-
-#if  defined(MULTIMODULE) || defined(PPM)
   #include "mlink.h"
 #endif
 
@@ -569,7 +566,7 @@ int setTelemetryValue(TelemetryProtocol protocol, uint16_t id, uint8_t subId,
         break;
 #endif
 
-#if defined(MULTIMODULE) || defined(PPM)
+#if defined(MULTIMODULE) or defined(PPM)
       case PROTOCOL_TELEMETRY_MLINK:
         mlinkSetDefault(index, id, subId, instance);
         break;

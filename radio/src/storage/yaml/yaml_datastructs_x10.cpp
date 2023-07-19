@@ -72,7 +72,9 @@ const struct YamlIdStr enum_Functions[] = {
   {  FUNC_PLAY_SOUND, "PLAY_SOUND"  },
   {  FUNC_PLAY_TRACK, "PLAY_TRACK"  },
   {  FUNC_PLAY_VALUE, "PLAY_VALUE"  },
+  {  FUNC_RESERVE4, "RESERVE4"  },
   {  FUNC_PLAY_SCRIPT, "PLAY_SCRIPT"  },
+  {  FUNC_RESERVE5, "RESERVE5"  },
   {  FUNC_BACKGND_MUSIC, "BACKGND_MUSIC"  },
   {  FUNC_BACKGND_MUSIC_PAUSE, "BACKGND_MUSIC_PAUSE"  },
   {  FUNC_VARIO, "VARIO"  },
@@ -83,6 +85,7 @@ const struct YamlIdStr enum_Functions[] = {
   {  FUNC_RACING_MODE, "RACING_MODE"  },
   {  FUNC_DISABLE_TOUCH, "DISABLE_TOUCH"  },
   {  FUNC_SET_SCREEN, "SET_SCREEN"  },
+  {  FUNC_RGB_LED, "RGB_LED"  },
   {  0, NULL  }
 };
 const struct YamlIdStr enum_ZoneOptionValueEnum[] = {
@@ -301,8 +304,7 @@ static const struct YamlNode struct_OpenTxTheme__PersistentData[] = {
 };
 static const struct YamlNode struct_RadioData[] = {
   YAML_UNSIGNED( "manuallyEdited", 1 ),
-  YAML_SIGNED( "timezoneMinutes", 3 ),
-  YAML_PADDING( 4 ),
+  YAML_PADDING( 7 ),
   YAML_CUSTOM("semver",nullptr,w_semver),
   YAML_CUSTOM("board",nullptr,w_board),
   YAML_ARRAY("calib", 48, 22, struct_CalibData, NULL),
@@ -385,7 +387,7 @@ static const struct YamlNode struct_RadioData[] = {
   YAML_UNSIGNED( "rotEncMode", 2 ),
   YAML_SIGNED( "uartSampleMode", 2 ),
   YAML_PADDING( 3 ),
-  YAML_UNSIGNED( "audioMuteEnable", 1 ),
+  YAML_PADDING( 1 ),
   YAML_SIGNED( "imuMax", 8 ),
   YAML_SIGNED( "imuOffset", 8 ),
   YAML_STRING("selectedTheme", 26),

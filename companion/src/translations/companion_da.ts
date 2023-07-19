@@ -3646,8 +3646,8 @@ Du anvender aktuelt:
         <translation>Formular</translation>
     </message>
     <message>
-        <source>Customizable Switches</source>
-        <translation>Kontakter der kan tilpasses</translation>
+        <source>Function Switches</source>
+        <translation>Funktion kontakt</translation>
     </message>
     <message>
         <source>Type</source>
@@ -4982,11 +4982,6 @@ Er du sikker?</translation>
     <message>
         <source>ADC Filter</source>
         <translation>ADC-filter</translation>
-    </message>
-    <message>   
-        <location filename="../generaledit/hardware.cpp" line="178"/>
-        <source>Mute if no sound</source>
-        <translation>Audio fra, hvis der ikke gives lyd</translation>
     </message>
     <message>
         <source>S.Port Power</source>
@@ -8503,8 +8498,8 @@ p, li { white-space: pre-wrap; }
         <translation>Start</translation>
     </message>
     <message>
-        <source>Customizable Switches</source>
-        <translation>Kontakter der kan tilpasses</translation>
+        <source>Function Switches</source>
+        <translation>Funktion kontakt</translation>
     </message>
     <message>
         <source>Switch %1</source>

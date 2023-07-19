@@ -65,13 +65,6 @@
 #define CASE_BACKLIGHT(x)
 #endif
 
-#if defined(OLED_SCREEN)
-#define CASE_CONTRAST(x)
-#else
-#define CASE_CONTRAST(x) x,
-#endif
-
-
 #if defined(LUA)
   #define CASE_LUA(x) x,
 #else
@@ -300,7 +293,7 @@ void memswap(void * a, void * b, uint8_t size);
 #include "pulses/pulses.h"
 #include "pulses/modules_helpers.h"
 
-#define MASK_CFN_TYPE  uint64_t  // current max = 64 customizable switches
+#define MASK_CFN_TYPE  uint64_t  // current max = 64 function switches
 #define MASK_FUNC_TYPE uint32_t  // current max = 32 functions
 
 struct CustomFunctionsContext {
@@ -672,6 +665,9 @@ enum FunctionsActive {
 #if defined(HARDWARE_TOUCH)
   FUNCTION_DISABLE_TOUCH,
 #endif
+#if defined(LED_STRIP_GPIO)
+  FUNCTION_RGBLED,
+#endif
 };
 
 #define VARIO_FREQUENCY_ZERO   700/*Hz*/
@@ -818,7 +814,7 @@ constexpr uint8_t OPENTX_START_NO_CHECKS = 0x04;
 #if defined(STATUS_LEDS)
   #define LED_ERROR_BEGIN()            ledRed()
 // Green is preferred "ready to use" color for these radios
-#if defined(MANUFACTURER_RADIOMASTER) || defined(MANUFACTURER_JUMPER) || defined(RADIO_COMMANDO8)
+#if defined(MANUFACTURER_RADIOMASTER) || defined(MANUFACTURER_JUMPER) || defined(RADIO_COMMANDO8) || defined(RADIO_MT12)
 #define LED_ERROR_END() ledGreen()
 #define LED_BIND() ledBlue()
 #else

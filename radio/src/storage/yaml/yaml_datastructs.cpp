@@ -35,10 +35,8 @@
 #elif defined(PCBNV14)
  #include "yaml_datastructs_nv14.cpp"
 #elif defined(PCBX7)
- #if defined(RADIO_TPRO) || defined(RADIO_TPROV2)
+ #if defined(RADIO_TPRO)
   #include "yaml_datastructs_tpro.cpp"
- #elif defined(RADIO_T20)
-  #include "yaml_datastructs_t20.cpp"
  #else
   #include "yaml_datastructs_128x64.cpp"
  #endif

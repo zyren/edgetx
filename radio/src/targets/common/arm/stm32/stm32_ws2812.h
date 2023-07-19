@@ -1,5 +1,5 @@
 /*
- * Copyright (C) EdgeTX
+ * Copyright (C) EdgeTx
  *
  * Based on code named
  *   opentx - https://github.com/opentx/opentx
@@ -21,5 +21,17 @@
 
 #pragma once
 
-// returns 'true' if PWM sticks have been detected
-bool sticksPwmDetect();
+#include "stm32_pulse_driver.h"
+
+// RGB
+#define WS2812_BYTES_PER_LED 3
+#define WS2812_MAX_LEDS 8
+
+// Number of LED periods used for trailing reset
+#define WS2812_TRAILING_RESET  10
+
+void ws2812_init(const stm32_pulse_timer_t* timer, uint8_t strip_len);
+void ws2812_update(const stm32_pulse_timer_t* timer);
+void ws2812_dma_isr(const stm32_pulse_timer_t* timer);
+
+void ws2812_set_color(uint8_t led, uint8_t r, uint8_t g, uint8_t b);

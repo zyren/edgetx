@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>858</width>
+    <width>810</width>
     <height>880</height>
    </rect>
   </property>
@@ -927,7 +927,17 @@
      <item row="18" column="1">
       <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
-        <widget class="TimezoneEdit" name="timezoneLE"/>
+        <widget class="QSpinBox" name="timezoneSB">
+         <property name="minimum">
+          <number>-14</number>
+         </property>
+         <property name="maximum">
+          <number>12</number>
+         </property>
+         <property name="value">
+          <number>0</number>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QCheckBox" name="adjustRTC">
@@ -2491,13 +2501,6 @@ p, li { white-space: pre-wrap; }
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>TimezoneEdit</class>
-   <extends>QLineEdit</extends>
-   <header>timezoneedit.h</header>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>

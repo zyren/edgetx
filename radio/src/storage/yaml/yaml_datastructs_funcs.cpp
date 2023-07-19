@@ -310,6 +310,11 @@ static bool w_mixSrcRaw(const YamlNode* node, uint32_t val, yaml_writer_func wf,
         if (!wf(opaque, "CYC", 3)) return false;
         str = yaml_unsigned2str(val - MIXSRC_FIRST_HELI + 1);
     }
+    else if (val >= MIXSRC_FIRST_TRIM
+             && val <= MIXSRC_LAST_TRIM) {
+        if (!wf(opaque, "T", 1)) return false;
+        str = yaml_unsigned2str(val - MIXSRC_FIRST_TRIM + 1);
+    }
     else if (val >= MIXSRC_FIRST_SWITCH
              && val <= MIXSRC_LAST_SWITCH) {
         str = switchGetCanonicalName(val - MIXSRC_FIRST_SWITCH);
@@ -615,7 +620,7 @@ static bool _write_analog_name(uint8_t type, void* user, uint8_t* data,
   auto tw = reinterpret_cast<YamlTreeWalker*>(user);
   uint16_t idx = tw->getElmts(1);
 
-  const char* name = analogGetCustomLabel(type, idx);
+  const char* name = analogGetCustomLabel(ADC_INPUT_MAIN, idx);
   if (!wf(opaque, "\"", 1)) return false;
   if (!wf(opaque, name, strlen(name))) return false;
   return wf(opaque, "\"", 1);
@@ -794,16 +799,6 @@ static const struct YamlNode struct_potConfig[] = {
 
 extern const struct YamlIdStr enum_SwitchSources[];
 
-// Trim switch names
-static const char* trimSwitchNames[] = {
-  "TrimRudLeft", "TrimRudRight",
-  "TrimEleDown", "TrimEleUp",
-  "TrimThrDown", "TrimThrUp",
-  "TrimAilLeft", "TrimAilRight",
-  "TrimT5Down", "TrimT5Up",
-  "TrimT6Down", "TrimT6Up"
-};
-
 static uint32_t r_swtchSrc(const YamlNode* node, const char* val, uint8_t val_len)
 {
     int32_t ival=0;
@@ -844,17 +839,9 @@ static uint32_t r_swtchSrc(const YamlNode* node, const char* val, uint8_t val_le
              && val[0] == 'T' && val[1] == 'R'
              && val[2] >= '1' && val[2] <= '9') {
 
-      ival = SWSRC_FIRST_TRIM + (yaml_str2int(val + 2, val_len - 3) - 1) * 2;
+      ival = SWSRC_FIRST_TRIM + (yaml_str2int(val + 2, val_len - 3)- 1) * 2;
       if (val[val_len - 1] == '+') ival++;
-    }
-    else if (val_len > 4 && (strncmp(val, trimSwitchNames[0], 4) == 0)) {
 
-      for (int i = 0; i < sizeof(trimSwitchNames)/sizeof(const char*); i += 1) {
-        if (strncmp(val, trimSwitchNames[i], val_len) == 0) {
-          ival = SWSRC_FIRST_TRIM + i;
-          break;
-        }
-      }
     }
     else if (val_len >= 2
              && val[0] == 'L'
@@ -919,9 +906,12 @@ static bool w_swtchSrc_unquoted(const YamlNode* node, uint32_t val,
       return wf(opaque,str, strlen(str));
 
     } else if (sval <= SWSRC_LAST_TRIM) {
-
-      auto trim = trimSwitchNames[sval - SWSRC_FIRST_TRIM];
-      return wf(opaque, trim, strlen(trim));
+      
+      wf(opaque, "TR", 2);
+      auto trim = (sval - SWSRC_FIRST_TRIM) / 2;
+      str = yaml_unsigned2str(trim + 1);
+      wf(opaque, str, strlen(str));
+      return wf(opaque, sval & 1 ? "-" : "+", 1);
         
     } else if (sval <= SWSRC_LAST_LOGICAL_SWITCH) {
 
@@ -1302,6 +1292,11 @@ static const char* const _func_sound_lookup[] = {
   "SciF","Robt","Chrp","Tada","Crck","Alrm"
 };
 
+static const char* const _func_rgbled_lookup[] = {
+    "LUA","White","Blue","Red","Yellow",
+    "Green"
+};
+
 static const char* const _adjust_gvar_mode_lookup[] = {
   "Cst", "Src", "GVar", "IncDec"
 };
@@ -1396,6 +1391,16 @@ static void r_customFn(void* user, uint8_t* data, uint32_t bitoffs,
     // find "," and cut val_len
     for (unsigned i=0; i < DIM(_func_sound_lookup); i++) {
       if (!strncmp(_func_sound_lookup[i],val,l_sep)) {
+        CFN_PARAM(cfn) = i;
+        break;
+      }
+    }
+    break;
+
+  case FUNC_RGB_LED:
+    // find "," and cut val_len
+    for (unsigned i=0; i < DIM(_func_rgbled_lookup); i++) {
+      if (!strncmp(_func_rgbled_lookup[i],val,l_sep)) {
         CFN_PARAM(cfn) = i;
         break;
       }
@@ -1605,6 +1610,12 @@ static bool w_customFn(void* user, uint8_t* data, uint32_t bitoffs,
   case FUNC_PLAY_SOUND:
     // Bp1,Bp2,Bp3,Wrn1,Wrn2,Chee,Rata,Tick,Sirn,Ring,SciF,Robt,Chrp,Tada,Crck,Alrm
     str = _func_sound_lookup[CFN_PARAM(cfn)];
+    if (!wf(opaque, str, strlen(str))) return false;
+    break;
+
+  case FUNC_RGB_LED:
+    // Lua, WHite, Blue, Red, Yellow, Green
+    str = _func_rgbled_lookup[CFN_PARAM(cfn)];
     if (!wf(opaque, str, strlen(str))) return false;
     break;
 

@@ -965,7 +965,7 @@ QString MultiModelPrinter::printFunctionSwitches()
    int numFS = Boards::getCapability(firmware->getBoard(), Board::FunctionSwitches);
    int colwidth = 80 / numFS;
 
-   QStringList headings = { tr("Customizable Switches") };
+   QStringList headings = { tr("Function Switches") };
    for (int i = 0; i < numFS; i++) {
      headings << tr("Switch %1").arg(i + 1);
    }

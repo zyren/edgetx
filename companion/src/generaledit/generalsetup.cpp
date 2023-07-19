@@ -150,8 +150,7 @@ ui(new Ui::GeneralSetup)
   }
 
   ui->gpsFormatCB->setCurrentIndex(generalSettings.gpsFormat);
-
-  ui->timezoneLE->setTime((generalSettings.timezone * 3600) + (generalSettings.timezoneMinutes/*quarter hours*/ * 15 * 60));
+  ui->timezoneSB->setValue(generalSettings.timezone);
 
   if (IS_HORUS_OR_TARANIS(firmware->getBoard())) {
     ui->adjustRTC->setChecked(generalSettings.adjustRTC);
@@ -327,16 +326,6 @@ ui(new Ui::GeneralSetup)
 GeneralSetupPanel::~GeneralSetupPanel()
 {
   delete ui;
-}
-
-void GeneralSetupPanel::on_timezoneLE_textEdited(const QString &text)
-{
-  if (!lock) {
-    int secs = ui->timezoneLE->timeInSeconds();
-    generalSettings.timezone = secs / 3600;
-    generalSettings.timezoneMinutes = (secs % 3600) / (15 * 60); // timezoneMinutes in quarter hours
-    emit modified();
-  }
 }
 
 void GeneralSetupPanel::populateBacklightCB()
@@ -701,6 +690,12 @@ void GeneralSetupPanel::on_backlightautoSB_editingFinished()
 void GeneralSetupPanel::on_switchesDelay_valueChanged(int)
 {
   generalSettings.switchesDelay = (ui->switchesDelay->value() / 10) - 15;
+  emit modified();
+}
+
+void GeneralSetupPanel::on_timezoneSB_editingFinished()
+{
+  generalSettings.timezone = ui->timezoneSB->value();
   emit modified();
 }
 

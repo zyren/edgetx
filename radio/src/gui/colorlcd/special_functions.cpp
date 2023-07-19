@@ -232,8 +232,7 @@ class SpecialFunctionEditPage : public Page
         break;
 
       case FUNC_LOGS: {
-        if(CFN_PARAM(cfn) == 0)                           // use stored value if SF exists
-          CFN_PARAM(cfn) = SD_LOGS_PERIOD_DEFAULT;        // otherwise initialize with default value
+        CFN_PARAM(cfn) = SD_LOGS_PERIOD_DEFAULT;          // set default value
 
         auto edit = addNumberEdit(line, STR_INTERVAL, cfn, SD_LOGS_PERIOD_MIN, SD_LOGS_PERIOD_MAX);
         edit->setDefault(SD_LOGS_PERIOD_DEFAULT);         // set default period for DEF button

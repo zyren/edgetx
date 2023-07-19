@@ -44,7 +44,7 @@
         </font>
        </property>
        <property name="text">
-        <string>Customizable Switches</string>
+        <string>Function Switches</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
