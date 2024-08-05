@@ -211,15 +211,16 @@ class OutputLineButton : public ListLineButton
     if (value != newValue) {
       value = newValue;
 
-      int chanVal = calcRESXto100(ex_chans[index]);
+      const LimitData* output = limitAddress(index);
+      int chanZero = output->ppmCenter;
 
-      if (chanVal < -DEADBAND) {
+      if (value < chanZero - 5) {
         lv_obj_add_state(min, ETX_STATE_MINMAX_BOLD);
       } else {
         lv_obj_clear_state(min, ETX_STATE_MINMAX_BOLD);
       }
 
-      if (chanVal > DEADBAND) {
+      if (value > chanZero + 5) {
         lv_obj_add_state(max, ETX_STATE_MINMAX_BOLD);
       } else {
         lv_obj_clear_state(max, ETX_STATE_MINMAX_BOLD);
@@ -239,11 +240,7 @@ void ModelOutputsPage::build(Window* window)
   window->padBottom(PAD_LARGE);
 
   new TextButton(window, {ADD_TRIMS_X, ADD_TRIMS_Y, ADD_TRIMS_W, ADD_TRIMS_H}, STR_ADD_ALL_TRIMS_TO_SUBTRIMS, [=]() {
-    new ConfirmDialog(
-        window, STR_TRIMS2OFFSETS, STR_ADD_ALL_TRIMS_TO_SUBTRIMS,
-        [=] {
-          moveTrimsToOffsets();
-        });
+    moveTrimsToOffsets();
     return 0;
   });
 

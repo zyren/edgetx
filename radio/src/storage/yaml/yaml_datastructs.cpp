@@ -45,6 +45,8 @@
   #include "yaml_datastructs_tpro.cpp"
  #elif defined(RADIO_FAMILY_T20)
   #include "yaml_datastructs_t20.cpp"
+ #elif defined(RADIO_GX12)
+   #include "yaml_datastructs_gx12.cpp"
  #else
   #include "yaml_datastructs_128x64.cpp"
  #endif

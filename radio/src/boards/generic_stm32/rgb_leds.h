@@ -24,6 +24,7 @@
 void rgbLedStart();
 void rgbLedStop();
 void rgbSetLedColor(unsigned char, unsigned char, unsigned char, unsigned char);
+bool rgbGetState(unsigned char);
 void rgbLedColorApply();
 
 // void boardInitRGBLed();

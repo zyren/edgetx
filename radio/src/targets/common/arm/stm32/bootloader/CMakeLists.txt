@@ -35,7 +35,6 @@ if(NOT NO_LTO)
   target_compile_options(stm32usb_device_bl PRIVATE -flto)
   target_compile_options(stm32usb_device_fw PRIVATE -flto)
   target_compile_options(stm32_drivers PRIVATE -flto)
-  target_compile_options(stm32_drivers_w_dbg_fw PRIVATE -flto)
   target_compile_options(stm32_drivers_w_dbg_bl PRIVATE -flto)
 endif()
 
@@ -67,11 +66,7 @@ if (DEFINED TARGET_SDRAM_SIZE)
 endif()
 
 if (ENABLE_BOOTLOADER_DEBUG)
-  target_compile_definitions(board_bl PRIVATE -DDEBUG)
-  target_compile_definitions(bootloader PRIVATE -DDEBUG)
-  target_sources(bootloader PRIVATE
-    ${RADIO_SRC_DIR}/serial.cpp
-  )
+  target_compile_definitions(bootloader PUBLIC -DDEBUG)
   # uncomment to enable TRACE in drivers
   # target_compile_definitions(stm32_drivers_w_dbg_bl PRIVATE -DDEBUG)
 endif()

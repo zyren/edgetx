@@ -26,7 +26,7 @@
 #include "audio.h"
 #include "translations.h"
 
-#include "widgets_container_impl.h"
+#include "widgets/widgets_container_impl.h"
 #include "view_main_decoration.h"
 #include "layout.h"
 
@@ -79,23 +79,23 @@ class Layout: public LayoutBase
     }
   
     virtual bool hasTopbar() const {
-      return getOptionValue(LAYOUT_OPTION_TOPBAR)->boolValue;
+      return ((uint8_t*)(&getOptionValue(LAYOUT_OPTION_TOPBAR)->boolValue))[0];
     }
 
     virtual bool hasFlightMode() const {
-      return getOptionValue(LAYOUT_OPTION_FM)->boolValue;
+      return ((uint8_t*)(&getOptionValue(LAYOUT_OPTION_FM)->boolValue))[0];
     }
 
     virtual bool hasSliders() const {
-      return getOptionValue(LAYOUT_OPTION_SLIDERS)->boolValue;
+      return ((uint8_t*)(&getOptionValue(LAYOUT_OPTION_SLIDERS)->boolValue))[0];
     }
 
     virtual bool hasTrims() const {
-      return getOptionValue(LAYOUT_OPTION_TRIMS)->boolValue;
+      return ((uint8_t*)(&getOptionValue(LAYOUT_OPTION_TRIMS)->boolValue))[0];
     }
 
     virtual bool isMirrored() const {
-      return getOptionValue(LAYOUT_OPTION_MIRRORED)->boolValue;
+      return ((uint8_t*)(&getOptionValue(LAYOUT_OPTION_MIRRORED)->boolValue))[0];
     }
 
     virtual bool isAppMode() const { return false; }

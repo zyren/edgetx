@@ -110,7 +110,7 @@ BitmapBuffer *BitmapBuffer::loadBitmap(const char *filename, BitmapFormats fmt)
   f_close(&imgFile);
 
   if (!img) {
-    TRACE("loadBitmap(%s) failed: %s", filename, stbi_failure_reason());
+    TRACE("load_stb(%s) failed: %s", filename, stbi_failure_reason());
     return nullptr;
   }
 
@@ -122,7 +122,7 @@ BitmapBuffer *BitmapBuffer::loadBitmap(const char *filename, BitmapFormats fmt)
 
   BitmapBuffer *bmp = new BitmapBuffer(dst_fmt, w, h);
   if (bmp == nullptr) {
-    TRACE("loadBitmap: malloc failed");
+    TRACE("convert_stn_bitmap: malloc failed");
     return nullptr;
   }
 

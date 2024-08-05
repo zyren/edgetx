@@ -21,6 +21,7 @@
 
 #include "hal/switch_driver.h"
 #include "hal/adc_driver.h"
+#include "hal/rgbleds.h"
 
 #include "myeeprom.h"
 #include "opentx.h"
@@ -162,7 +163,7 @@ void evalFunctionSwitches()
   uint8_t fct_switches = switchGetMaxFctSwitches();
   for (uint8_t i = 0; i < fct_switches; i++) {
     if (FSWITCH_CONFIG(i) == SWITCH_NONE) {
-      fsLedOff(i);
+      setFSLedOFF(i);
       continue;
     }
 
@@ -195,9 +196,9 @@ void evalFunctionSwitches()
 
     if (!pwrPressed()) {
       if (getFSLogicalState(i))
-        fsLedOn(i);
+        setFSLedON(i);
       else
-        fsLedOff(i);
+        setFSLedOFF(i);
     }
   }
 }

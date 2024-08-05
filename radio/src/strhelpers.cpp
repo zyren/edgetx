@@ -437,12 +437,8 @@ char *getValueOrSrcVarString(char *dest, size_t len, gvar_t value, gvar_t vmin,
   SourceNumVal v;
   v.rawValue = value;
   if (v.isSource) {
-    if (v.value >= MIXSRC_FIRST_GVAR && v.value <= MIXSRC_LAST_GVAR) {
-      getGVarString(dest, v.value - MIXSRC_FIRST_GVAR);
-    } else {
-      const char* s = getSourceString(v.value);
-      strncpy(dest, s, len);
-    }
+    const char* s = getSourceString(v.value);
+    strncpy(dest, s, len);
   } else {
     v.value += offset;
     if (usePPMUnit && g_eeGeneral.ppmunit == PPM_US)

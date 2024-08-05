@@ -72,11 +72,11 @@ static inline void check_struct()
   CHKSIZE(LimitData, 13);
   CHKSIZE(TimerData, 17);
   CHKSIZE(ModelHeader, 131);
-  CHKSIZE(CustomScreenData, 1452);
+  CHKSIZE(CustomScreenData, 852);
   #if defined(PCBNV14)
-    CHKTYPE(TopBarPersistentData, 540);
+    CHKTYPE(TopBarPersistentData, 300);
   #else
-    CHKTYPE(TopBarPersistentData, 804);
+    CHKTYPE(TopBarPersistentData, 444);
   #endif
 #else
   #error CHKSIZE not set up
@@ -96,6 +96,8 @@ static inline void check_struct()
   CHKSIZE(ModelData, 6329);
 #elif defined(RADIO_FAMILY_T20)
   CHKSIZE(ModelData, 6390);
+#elif defined(RADIO_GX12)
+  CHKSIZE(ModelData, 6390);
 #elif defined(PCBX9E)
   CHKSIZE(ModelData, 6771);
 #elif defined(PCBX9D) || defined(PCBX9DP)
@@ -103,13 +105,13 @@ static inline void check_struct()
 #elif defined(PCBX7) || defined(PCBXLITE) || defined(PCBX9LITE)
   CHKSIZE(ModelData, 6329);
 #elif defined(PCBNV14)
-  CHKSIZE(ModelData, 21899);
+  CHKSIZE(ModelData, 15659);
 #elif defined(PCBPL18)
-  CHKSIZE(ModelData, 22201);
+  CHKSIZE(ModelData, 15841);
 #elif defined(RADIO_T15)
-  CHKSIZE(ModelData, 22190);
+  CHKSIZE(ModelData, 15830);
 #elif defined(PCBHORUS)
-  CHKSIZE(ModelData, 22165);
+  CHKSIZE(ModelData, 15805);
 #else
   #error CHKSIZE not set up
 #endif

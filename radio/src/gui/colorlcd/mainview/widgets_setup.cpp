@@ -91,14 +91,8 @@ void SetupWidgetsPageSlot::setFocusState()
 void SetupWidgetsPageSlot::addNewWidget(WidgetsContainer* container,
                                         uint8_t slotIndex)
 {
-  const char* cur = nullptr;
-  auto w = container->getWidget((slotIndex));
-  if (w) cur = w->getFactory()->getDisplayName();
-
   Menu* menu = new Menu(parent);
   menu->setTitle(STR_SELECT_WIDGET);
-  int selected = -1;
-  int index = 0;
   for (auto factory : WidgetFactory::getRegisteredWidgets()) {
     menu->addLine(factory->getDisplayName(), [=]() {
       container->createWidget(slotIndex, factory);
@@ -106,13 +100,7 @@ void SetupWidgetsPageSlot::addNewWidget(WidgetsContainer* container,
       if (widget->getOptions() && widget->getOptions()->name)
         new WidgetSettings(parent, widget);
     });
-    if (cur && strcmp(cur, factory->getDisplayName()) == 0)
-      selected = index;
-    index += 1;
   }
-
-  if (selected >= 0)
-    menu->select(selected);
 }
 
 SetupWidgetsPage::SetupWidgetsPage(uint8_t customScreenIdx) :
@@ -142,8 +130,6 @@ SetupWidgetsPage::SetupWidgetsPage(uint8_t customScreenIdx) :
 #if defined(HARDWARE_TOUCH)
   addBackButton();
 #endif
-
-  screen->show();
 }
 
 void SetupWidgetsPage::onClicked()

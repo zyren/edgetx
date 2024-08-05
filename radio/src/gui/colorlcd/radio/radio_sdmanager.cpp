@@ -239,48 +239,20 @@ void RadioSdManagerPage::build(Window * window)
   // Adjust file browser width
   browser->adjustWidth();
 
-  auto box = new Window(form, {0, 0, PREVIEW_W, PREVIEW_H});
-  grid.add(box);
-  grid.nextCell();
-
-  loading = new StaticText(box, {0, 0, LV_SIZE_CONTENT, LV_SIZE_CONTENT}, STR_LOADING);
-  loading->hide();
-  lv_obj_center(loading->getLvObj());
-
-  preview = new FilePreview(box, {0, 0, PREVIEW_W, PREVIEW_H});
+  preview = new FilePreview(form, rect_t{0, 0, PREVIEW_W, PREVIEW_H});
   preview->padAll(PAD_SMALL);
+  grid.add(preview);
+  grid.nextCell();
 
   browser->setFileAction([=](const char* path, const char* name, const char* fullpath) {
       fileAction(path, name, fullpath);
   });
   browser->setFileSelected([=](const char* path, const char* name, const char* fullpath) {
-      preview->setFile(nullptr);
-      loading->hide();
-      auto ext = getFileExtension(fullpath);
-      if (strcasecmp(ext, ".bmp") == 0 || strcasecmp(ext, ".png") == 0 ||
-          strcasecmp(ext, ".jpg") == 0 || strcasecmp(ext, ".jpeg") == 0) {
-        previewFilename = fullpath;
-        loadPreview = 10;
-        loading->show();
-      }
+      preview->setFile(fullpath);
   });
   browser->refresh();
 }
 
-void RadioSdManagerPage::checkEvents()
-{
-  PageTab::checkEvents();
-
-  if (loadPreview) {
-    loadPreview -= 1;
-    if (loadPreview == 0) {
-      loading->hide();
-      auto filename = previewFilename;
-      previewFilename = nullptr;
-      preview->setFile(filename);
-    }
-  }
-}
 void RadioSdManagerPage::fileAction(const char* path, const char* name,
                                     const char* fullpath)
 {

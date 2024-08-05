@@ -24,11 +24,6 @@
 #include "page.h"
 #include "gvar_numberedit.h"
 
-// deadband in % for switching direction of Min/Max text and value field highlighting
-// 0 = no deadband
-// 1..100 = [-DEADBAND; DEADBAND]
-#define DEADBAND 0
-
 class OutputEditStatusBar;
 
 class OutputEditWindow : public Page

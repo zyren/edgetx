@@ -32,7 +32,7 @@
 #include "hal.h"
 
 
-#if defined(STORAGE_USE_SDIO)
+#if !defined(SD_SPI)
 
 // #include "delays_driver.h"
 #include "debug.h"
