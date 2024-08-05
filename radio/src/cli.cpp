@@ -1045,7 +1045,7 @@ int cliSet(const char **argv)
 }
 
 #if defined(ENABLE_SERIAL_PASSTHROUGH)
-#if defined(HARDWARE_INTERNAL_MODULE) || defined(FLYSKY_HALL_SERIAL_USART)
+#if defined(HARDWARE_INTERNAL_MODULE)
 static etx_module_state_t *spInternalModuleState = nullptr;
 
 static void spInternalModuleTx(uint8_t* buf, uint32_t len)
@@ -1102,17 +1102,11 @@ int cliSerialPassthrough(const char **argv)
     }
   }
 
-  if (!strcmp("rfmod", port_type) || !strcmp("rmstick", port_type)) {
+  if (!strcmp("rfmod", port_type)) {
 
     if (port_n >= NUM_MODULES
         // only internal module supported for now
-        && port_n != INTERNAL_MODULE ) {
-      cliSerialPrint("%s: invalid port # '%s'", port_num);
-      return -1;
-    }
-    if (port_n >= NUM_MODULES
-        // only internal module supported for now
-        && port_n != FLYSKY_HALL_SERIAL_USART ) {
+        && port_n != INTERNAL_MODULE) {
       cliSerialPrint("%s: invalid port # '%s'", port_num);
       return -1;
     }
@@ -1124,8 +1118,8 @@ int cliSerialPassthrough(const char **argv)
     // suspend RTOS scheduler
     vTaskSuspendAll();
 
-#if defined(HARDWARE_INTERNAL_MODULE) || defined(FLYSKY_HALL_SERIAL_USART)
-    if (port_n == INTERNAL_MODULE || port_n == FLYSKY_HALL_SERIAL_USART) {
+#if defined(HARDWARE_INTERNAL_MODULE)
+    if (port_n == INTERNAL_MODULE) {
 
       // setup serial com
 
