@@ -11,8 +11,16 @@ set(TESTS_BUILD_PATH ${CMAKE_CURRENT_BINARY_DIR})
 configure_file(${RADIO_SRC_DIR}/tests/location.h.in ${CMAKE_CURRENT_BINARY_DIR}/location.h @ONLY)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS_DEBUG} -O0 -fsanitize=address")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} -O0 ${WARNING_FLAGS} -fsanitize=address")
+if(WIN32)
+  # clang-cl/MSVC STL annotation and ASan settings must match every linked
+  # simulator object. This target neither instruments those objects nor links
+  # the Windows ASan runtime, so keep the native Windows tests uninstrumented.
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS_DEBUG} -O0")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} -O0 ${WARNING_FLAGS}")
+else()
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS_DEBUG} -O0 -fsanitize=address")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} -O0 ${WARNING_FLAGS} -fsanitize=address")
+endif()
 
 file(GLOB TEST_SRC_FILES ${RADIO_SRC_DIR}/tests/*.cpp
   CONFIGURE_DEPENDS "${RADIO_SRC_DIR}/tests/*.cpp")
@@ -25,6 +33,9 @@ set(TEST_SRC_FILES ${TEST_SRC_FILES}
 add_executable(gtests-radio EXCLUDE_FROM_ALL
   ${TEST_SRC_FILES}
 )
+if(PCBREV STREQUAL GX12 AND TRANSLATIONS STREQUAL CN)
+  target_compile_definitions(gtests-radio PRIVATE EDGETX_CN_STDLCD)
+endif()
 target_compile_options(gtests-radio PRIVATE ${SIMU_SRC_OPTIONS})
 
 target_link_libraries(gtests-radio gtests-radio-lib)

@@ -114,6 +114,16 @@ void lcdClear();
 
 void lcdDrawChar(coord_t x, coord_t y, uint8_t c);
 void lcdDrawChar(coord_t x, coord_t y, uint8_t c, LcdFlags flags);
+#if defined(EDGETX_CN_STDLCD)
+void lcdDrawCodepoint(coord_t x, coord_t y, uint16_t codepoint, LcdFlags flags);
+uint8_t getCodepointAdvance(uint16_t codepoint, LcdFlags flags);
+#if defined(SIMU)
+// Test hook for the production fixed-cell renderer. Data is column-major,
+// top-to-bottom bytes, bit 0 at the top; no legacy 0xff sentinel is applied.
+void lcdDrawRawFixedCellForTest(coord_t x, coord_t y, const uint8_t * data,
+                                uint8_t width, uint8_t height, LcdFlags flags);
+#endif
+#endif
 void lcdDrawCenteredText(coord_t y, const char * s, LcdFlags flags = 0);
 void lcdDrawText(coord_t x, coord_t y, const char * s, LcdFlags flags);
 void lcdDrawTextAtIndex(coord_t x, coord_t y, const char *const *s, uint8_t idx, LcdFlags flags);
@@ -172,4 +182,4 @@ void drawTelemetryTopBar();
 
 void lcdDraw1bitBitmap(coord_t x, coord_t y, const unsigned char * img, uint8_t idx, LcdFlags att=0);
 
-uint8_t getTextWidth(const char * s, uint8_t len=0, LcdFlags flags=0);
+coord_t getTextWidth(const char * s, uint8_t len=0, LcdFlags flags=0);

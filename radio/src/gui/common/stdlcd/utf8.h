@@ -22,3 +22,16 @@
 #pragma once
 
 unsigned char map_utf8_char(const char*& s, uint8_t& len);
+
+#if defined(EDGETX_CN_STDLCD)
+struct Utf8Codepoint
+{
+  uint16_t value;
+  uint8_t consumed;
+  bool valid;
+};
+
+// Strict BMP decoder. It never consumes zero bytes for non-empty input.
+Utf8Codepoint decodeNextUtf8(const char * s, uint8_t len);
+uint16_t mapDecodedCodepoint(uint16_t codepoint, bool valid);
+#endif

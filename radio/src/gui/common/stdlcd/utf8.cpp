@@ -22,6 +22,7 @@
 
 #include <stdint.h>
 #include "fonts.h"
+#include "utf8.h"
 #include "definitions.h"
 #include "translations/translations.h"
 
@@ -228,4 +229,75 @@ unsigned char map_utf8_char(const char*& s, uint8_t& len)
 
   return c;
 }
+
+#if defined(EDGETX_CN_STDLCD)
+Utf8Codepoint decodeNextUtf8(const char * s, uint8_t len)
+{
+  if (!s || !len || !*s)
+    return { 0, 0, true };
+
+  const uint8_t c0 = static_cast<uint8_t>(s[0]);
+  if (c0 < 0x80)
+    return { c0, 1, true };
+
+  uint32_t value;
+  uint8_t count;
+  if (c0 >= 0xC2 && c0 <= 0xDF) {
+    value = c0 & 0x1F;
+    count = 2;
+  }
+  else if (c0 >= 0xE0 && c0 <= 0xEF) {
+    value = c0 & 0x0F;
+    count = 3;
+  }
+  else {
+    return { 0, 1, false }; // continuation, overlong lead, or non-BMP lead
+  }
+
+  if (len < count)
+    return { 0, 1, false };
+  for (uint8_t i = 1; i < count; ++i) {
+    const uint8_t c = static_cast<uint8_t>(s[i]);
+    if ((c & 0xC0) != 0x80)
+      return { 0, 1, false };
+    value = (value << 6) | (c & 0x3F);
+  }
+  if ((count == 2 && value < 0x80) || (count == 3 && value < 0x800) ||
+      (value >= 0xD800 && value <= 0xDFFF) || value > 0xFFFF)
+    return { 0, 1, false };
+  return { static_cast<uint16_t>(value), count, true };
+}
+
+uint16_t mapDecodedCodepoint(uint16_t codepoint, bool valid)
+{
+  if (!valid) {
+#if defined(EDGETX_CN_STDLCD)
+    return 0xFFFF; // guaranteed CN fallback miss
+#else
+    return 0x20;
+#endif
+  }
+  if (codepoint < 0x80)
+    return codepoint;
+  if (codepoint >= FONT_SYMS_START && codepoint < FONT_LANG_START)
+    return static_cast<uint8_t>(codepoint);
+  if (codepoint == L'≥') return CHAR_BW_GREATEREQUAL;
+  if (codepoint == L'°') return CHAR_BW_DEGREE;
+#if defined(UTF8_SUBS_LUT)
+  auto mapped = lookup_utf8_substitution(codepoint);
+  if (mapped != codepoint || mapped <= 0xFF) {
+    if (mapped > FONT_LANG_START) mapped = lookup_utf8_mapping(mapped);
+    return mapped;
+  }
+#elif !defined(NO_UTF8_LUT)
+  auto mapped = lookup_utf8_mapping(codepoint);
+  if (mapped != 0x20) return mapped;
+#endif
+#if defined(EDGETX_CN_STDLCD)
+  return codepoint > 0xFF ? codepoint : 0x20;
+#else
+  return 0x20;
+#endif
+}
+#endif
 

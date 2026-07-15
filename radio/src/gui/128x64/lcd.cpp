@@ -42,7 +42,11 @@ void lcdDrawSizedText(coord_t x, coord_t y, const char * s, uint8_t len, LcdFlag
   const uint8_t orig_len = len;
   uint32_t fontsize = FONTSIZE(flags);
 
+#if defined(EDGETX_CN_STDLCD)
+  coord_t width = 0;
+#else
   uint8_t width = 0;
+#endif
   if (flags & RIGHT) {
     width = getTextWidth(s, len, flags);
     x -= width;
@@ -53,7 +57,8 @@ void lcdDrawSizedText(coord_t x, coord_t y, const char * s, uint8_t len, LcdFlag
   }
 
   bool setx = false;
-  while (len--) {
+#if defined(EDGETX_CN_STDLCD)
+  while (len && *s) {
     unsigned char c = *s;
 
     if (setx) {
@@ -64,12 +69,18 @@ void lcdDrawSizedText(coord_t x, coord_t y, const char * s, uint8_t len, LcdFlag
       break;
     }
     else if (c >= 0x20) {
-      // UTF8 detection
-      c = map_utf8_char(s, len);
-      if (!c) break;
-
-      lcdDrawChar(x, y, c, flags);
+      Utf8Codepoint decoded = decodeNextUtf8(s, len);
+      if (!decoded.consumed) break;
+      uint16_t codepoint = mapDecodedCodepoint(decoded.value, decoded.valid);
+#if defined(EDGETX_CN_STDLCD)
+      lcdDrawCodepoint(x, y, codepoint, flags);
+#else
+      lcdDrawChar(x, y, static_cast<uint8_t>(codepoint), flags);
+#endif
       x = lcdNextPos;
+      s += decoded.consumed;
+      len -= decoded.consumed;
+      continue;
     }
     else if (c == 0x1F) {  //X-coord prefix
       setx = true;
@@ -94,7 +105,46 @@ void lcdDrawSizedText(coord_t x, coord_t y, const char * s, uint8_t len, LcdFlag
       x += (c*FW/2); // EXTENDED SPACE
     }
     s++;
+    len--;
   }
+#else
+  while (len--) {
+    unsigned char c = *s;
+    if (setx) {
+      x = c;
+      setx = false;
+    }
+    else if (!c) {
+      break;
+    }
+    else if (c >= 0x20) {
+      c = map_utf8_char(s, len);
+      if (!c) break;
+      lcdDrawChar(x, y, c, flags);
+      x = lcdNextPos;
+    }
+    else if (c == 0x1F) {
+      setx = true;
+    }
+    else if (c == 0x1E) {
+      len = orig_len;
+      x = orig_x;
+      y += FH;
+      if (fontsize == DBLSIZE) y += FH;
+      else if (fontsize == MIDSIZE) y += 4;
+      else if (fontsize == SMLSIZE) y--;
+      if (y >= LCD_H) break;
+    }
+    else if (c == 0x1D) {
+      x |= 0x3F;
+      x += 1;
+    }
+    else {
+      x += (c*FW/2);
+    }
+    s++;
+  }
+#endif
   lcdLastRightPos = x;
   lcdNextPos = x;
 #if !defined(BOOT)

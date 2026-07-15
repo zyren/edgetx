@@ -1,0 +1,47 @@
+{
+  "schema": 5,
+  "translation": "radio/src/translations/i18n/cn.h",
+  "fallback": "U+25A1",
+  "cn12_identifiers": [
+    "STR_ABOUTUS", "STR_ALARMSWARN", "STR_BATTERY", "STR_EMERGENCY_MODE",
+    "STR_FAILSAFEWARN", "STR_MODEL", "STR_NO_SDCARD", "STR_SD_CARD",
+    "STR_STORAGE_WARNING", "STR_SWITCHWARN", "STR_TEST_WARNING",
+    "STR_THROTTLE_UPPERCASE", "STR_WARNING", "STR_WRONG_PCBREV"
+  ],
+  "fonts": {
+    "CN_8": {"source":"fusion8", "policy":"all-cn-h", "expected_glyphs":625, "expected_translation_codepoints":624, "body":[8,8], "cell":[8,8], "top_offset":0},
+    "CN_10":{"source":"fusion10", "policy":"fallback-only", "expected_glyphs":1, "expected_translation_codepoints":0, "body":[10,10], "cell":[10,12], "top_offset":1},
+    "CN_12":{"source":"fusion12", "policy":"identifiers", "expected_glyphs":34, "expected_translation_codepoints":33, "body":[12,12], "cell":[12,16], "top_offset":2},
+    "CN_32":{"source":"ark16", "policy":"fallback-only", "expected_glyphs":1, "expected_translation_codepoints":0, "body":[32,32], "cell":[32,38], "top_offset":3}
+  },
+  "sources": {
+    "fusion8": {
+      "kind":"bdf-zip", "version":"2026.07.01",
+      "url":"https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.07.01/fusion-pixel-font-8px-monospaced-bdf-v2026.07.01.zip",
+      "zip_sha256":"1B9CAF565AEA3E6C0A69E3C3916CA7E43FDDFEE1DA03A9E293E5910D85A855C7",
+      "member":"fusion-pixel-8px-monospaced-zh_hans.bdf", "member_sha256":"2ADF588EDFAB185A8288B3060F2A1953438308166124D3480D75C7F55DEFEFBE",
+      "subset":"radio/src/fonts/cn/source/fusion-pixel-8px-zh_hans.subset.bdf", "subset_sha256":"3A10F0294630A40FF43F84312A07849270965260FFD5D3E05C18761AF9AA0476"
+    },
+    "fusion10": {
+      "kind":"bdf-zip", "version":"2026.07.01",
+      "url":"https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.07.01/fusion-pixel-font-10px-monospaced-bdf-v2026.07.01.zip",
+      "zip_sha256":"0F28B5850FA9B4B0F8DBB7C40F671A3574A97236A848D1E0ECF6ED302AE659C3",
+      "member":"fusion-pixel-10px-monospaced-zh_hans.bdf", "member_sha256":"A9FECDECBE42C93E8D6C0642CF1A1FABE29E7C4DCDAB43B4540FB23CC7E006B1",
+      "subset":"radio/src/fonts/cn/source/fusion-pixel-10px-zh_hans.subset.bdf", "subset_sha256":"37F38F0AECA3CDAA674DABA8D4186823CCB82ED4B95CD66D9E1D4900D2C272E2"
+    },
+    "fusion12": {
+      "kind":"bdf-zip", "version":"2026.07.01",
+      "url":"https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.07.01/fusion-pixel-font-12px-monospaced-bdf-v2026.07.01.zip",
+      "zip_sha256":"C461C312720E005F5A49843A965842E8749F196F00F97FACF1AD926F330296DF",
+      "member":"fusion-pixel-12px-monospaced-zh_hans.bdf", "member_sha256":"AEA441A489B18A93BB417BBA33A31917B1BEF90167B01ED9A63E2E9DF3E144F8",
+      "subset":"radio/src/fonts/cn/source/fusion-pixel-12px-zh_hans.subset.bdf", "subset_sha256":"4B6014A141D32526F99CFF56416F7EAFBED4F1F87831CC78BB3A11331C2E56B5"
+    },
+    "ark16": {
+      "kind":"bdf-zip", "version":"2026.07.01",
+      "url":"https://github.com/TakWolf/ark-pixel-font/releases/download/2026.07.01/ark-pixel-font-16px-monospaced-bdf-v2026.07.01.zip",
+      "zip_sha256":"C0B5E3AFECF6EBADBB10D36D712D3FF828D58657382004A1FE4EAE45DB31EC01",
+      "member":"ark-pixel-16px-monospaced-zh_cn.bdf", "member_sha256":"449AFF01631D6B585826EC2A1BBDBF0667C9B5DFFA0D3F8311C906C720384FC0",
+      "subset":"radio/src/fonts/cn/source/ark-pixel-16px-zh_cn.subset.bdf", "subset_sha256":"28659E4772983A967E003DFC2073137D370EB23E62AE2E099A1D8E254FBE0F6B"
+    }
+  }
+}
