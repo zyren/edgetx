@@ -50,7 +50,11 @@ void drawMessageBoxBackground(coord_t top, coord_t height)
 void drawMessageBox(const char * title)
 {
   // background + border
+#if defined(EDGETX_CN_STDLCD)
+  drawMessageBoxBackground(MESSAGEBOX_Y, LCD_H - MESSAGEBOX_Y - 1);
+#else
   drawMessageBoxBackground(MESSAGEBOX_Y, 48);
+#endif
 
   // title
   lcdDrawSizedText(WARNING_LINE_X, WARNING_LINE_Y, title, WARNING_LINE_LEN);
@@ -68,7 +72,48 @@ const char * runPopupMenu(event_t event)
 {
   const char * result = nullptr;
 
-  uint8_t display_count = min<uint8_t>(popupMenuItemsCount, MENU_MAX_DISPLAY_LINES);
+#if defined(EDGETX_CN_STDLCD)
+  constexpr uint8_t maxDisplayLines = NUM_BODY_LINES;
+#else
+  constexpr uint8_t maxDisplayLines = MENU_MAX_DISPLAY_LINES;
+#endif
+  uint8_t display_count = min<uint8_t>(popupMenuItemsCount, maxDisplayLines);
+
+#if defined(EDGETX_CN_STDLCD)
+  const coord_t bodyHeight = display_count * FH + 2;
+  uint8_t y = popupMenuTitle ? FH + 1 : (LCD_H - bodyHeight) / 2;
+
+  // White background, compact title row and five 10px body cells.
+  if (popupMenuTitle) {
+    lcdDrawFilledRect(MENU_X - 1, 0, MENU_W + 2, LCD_H, SOLID, ERASE);
+    lcdDrawText(MENU_X + 2, 0, popupMenuTitle, BOLD);
+    lcdDrawRect(MENU_X, 0,
+                min<coord_t>(lcdLastRightPos - MENU_X + 2, MENU_W), FH + 1);
+  }
+  else {
+    lcdDrawFilledRect(MENU_X - 1, y - 1, MENU_W + 2, bodyHeight + 2,
+                      SOLID, ERASE);
+  }
+
+  lcdDrawRect(MENU_X, y, MENU_W, bodyHeight, SOLID, FORCE);
+
+  for (uint8_t i=0; i<display_count; i++) {
+    coord_t itemY = y + i * FH + 1;
+    lcdDrawText(MENU_X + 6, itemY,
+                popupMenuItems[i + (popupMenuOffsetType == MENU_OFFSET_INTERNAL
+                                        ? popupMenuOffset
+                                        : 0)],
+                0);
+    if (i == popupMenuSelectedItem)
+      lcdDrawSolidFilledRect(MENU_X + 1, itemY, MENU_W - 2, FH);
+  }
+
+  if (popupMenuItemsCount > display_count) {
+    drawVerticalScrollbar(MENU_X + MENU_W - 1, y + 1,
+                          display_count * FH, popupMenuOffset,
+                          popupMenuItemsCount, display_count);
+  }
+#else
   uint8_t y = LCD_H / 2 - (popupMenuTitle ? 0 : 3) - (display_count * FH / 2);
 
   // white background
@@ -93,6 +138,7 @@ const char * runPopupMenu(event_t event)
   if (popupMenuItemsCount > display_count) {
     drawVerticalScrollbar(MENU_X+MENU_W-1, y+1, MENU_MAX_DISPLAY_LINES * (FH+1), popupMenuOffset, popupMenuItemsCount, display_count);
   }
+#endif
 
   event_t eventTemp = event;
 
@@ -116,8 +162,8 @@ const char * runPopupMenu(event_t event)
       result = STR_UPDATE_LIST;
     }
     else {
-      popupMenuSelectedItem = min<uint8_t>(display_count, MENU_MAX_DISPLAY_LINES) - 1;
-      if (popupMenuItemsCount > MENU_MAX_DISPLAY_LINES) {
+      popupMenuSelectedItem = min<uint8_t>(display_count, maxDisplayLines) - 1;
+      if (popupMenuItemsCount > maxDisplayLines) {
         popupMenuOffset = popupMenuItemsCount - display_count;
         result = STR_UPDATE_LIST;
       }
@@ -169,15 +215,27 @@ void runPopupWarning(event_t event)
       return;
 
     case WARNING_TYPE_INFO:
+#if defined(EDGETX_CN_STDLCD)
+      lcdDrawText(WARNING_LINE_X, LCD_H-FH-2, STR_OK);
+#else
       lcdDrawText(WARNING_LINE_X, WARNING_LINE_Y+4*FH+2, STR_OK);
+#endif
       break;
 
     case WARNING_TYPE_ASTERISK:
+#if defined(EDGETX_CN_STDLCD)
+      lcdDrawText(WARNING_LINE_X, LCD_H-FH-2, STR_EXIT_BTN);
+#else
       lcdDrawText(WARNING_LINE_X, WARNING_LINE_Y+4*FH+2, STR_EXIT_BTN);
+#endif
       break;
 
     default:
+#if defined(EDGETX_CN_STDLCD)
+      lcdDrawText(WARNING_LINE_X, LCD_H-FH-2, STR_POPUPS_ENTER_EXIT);
+#else
       lcdDrawText(WARNING_LINE_X, WARNING_LINE_Y+4*FH+2, STR_POPUPS_ENTER_EXIT);
+#endif
       break;
   }
 
@@ -229,14 +287,23 @@ void drawProgressScreen(const char * title, const char * message, int num, int d
     lcdDrawText(LCD_W / 2 - getTextWidth(title) / 2, 2*FH, title);
   }
   if (message) {
+#if defined(EDGETX_CN_STDLCD)
+    lcdDrawText(4, 4*FH, message);
+#else
     lcdDrawText(4, 5*FH, message);
+#endif
   }
-  lcdDrawRect(4, 6*FH+4, LCD_W-8, 7);
+#if defined(EDGETX_CN_STDLCD)
+  constexpr coord_t progressY = LCD_H - 10;
+#else
+  constexpr coord_t progressY = 6*FH + 4;
+#endif
+  lcdDrawRect(4, progressY, LCD_W-8, 7);
   if (num > 0 && den > 0) {
     int width = ((LCD_W-12)*num)/den;
-    lcdDrawSolidHorizontalLine(6, 6*FH+6, width, FORCE);
-    lcdDrawSolidHorizontalLine(6, 6*FH+7, width, FORCE);
-    lcdDrawSolidHorizontalLine(6, 6*FH+8, width, FORCE);
+    lcdDrawSolidHorizontalLine(6, progressY+2, width, FORCE);
+    lcdDrawSolidHorizontalLine(6, progressY+3, width, FORCE);
+    lcdDrawSolidHorizontalLine(6, progressY+4, width, FORCE);
   }
   lcdRefresh();
 }

@@ -22,6 +22,35 @@
 #include "edgetx.h"
 #include "hal/rotary_encoder.h"
 
+#if defined(EDGETX_CN_STDLCD)
+static constexpr coord_t CN_CURVE_NAME_Y = FH + 1;
+static constexpr coord_t CN_CURVE_TYPE_Y = 2 * FH + 1;
+static constexpr coord_t CN_CURVE_COUNT_Y = 3 * FH + 1;
+static constexpr coord_t CN_CURVE_SMOOTH_Y = 4 * FH + 1;
+static constexpr coord_t CN_CURVE_POINT_Y = 5 * FH + 1;
+
+static void drawCnCurveCursor()
+{
+  const int16_t src = abs(s_currSrcRaw);
+  int xValue = getValue(s_currSrcRaw);
+  if (src >= MIXSRC_FIRST_TELEM && s_currScale > 0) {
+    xValue = (xValue * RESX) /
+             convertTelemValue(src - MIXSRC_FIRST_TELEM + 1, s_currScale);
+  }
+
+  xValue = limit(-RESX, xValue, RESX);
+  int yValue = limit(-RESX, applyCurrentCurve(xValue), RESX);
+  coord_t x = CURVE_CENTER_X +
+              divRoundClosest(xValue * CURVE_SIDE_WIDTH, RESX);
+  coord_t y = CURVE_CENTER_Y -
+              divRoundClosest(yValue * CURVE_SIDE_WIDTH, RESX);
+  x = limit<coord_t>(3, x, LCD_W - 4);
+  y = limit<coord_t>(3, y, LCD_H - 4);
+  lcdDrawSolidVerticalLine(x, y - 3, 7);
+  lcdDrawSolidHorizontalLine(x - 3, y, 7);
+}
+#endif
+
 void runPopupCurvePreset(event_t event)
 {
   warningResult = false;
@@ -48,7 +77,12 @@ void runPopupCurvePreset(event_t event)
   }
 
   lcdDrawNumber(WARNING_LINE_X+FW*7, WARNING_LINE_Y, 45 * reusableBuffer.curveEdit.preset / 4, LEFT|INVERS);
+#if defined(EDGETX_CN_STDLCD)
+  lcdDrawCodepoint(lcdLastRightPos, WARNING_LINE_Y, CN_CODEPOINT_DEGREE,
+                   INVERS);
+#else
   lcdDrawChar(lcdLastRightPos, WARNING_LINE_Y, CHAR_BW_DEGREE, INVERS);
+#endif
 
   if (warningResult) {
     warningResult = 0;
@@ -87,21 +121,41 @@ void menuModelCurveOne(event_t event)
   CurveHeader & crv = g_model.curves[s_currIdxSubMenu];
   int8_t * points = curveAddress(s_currIdxSubMenu);
 
+#if defined(EDGETX_CN_STDLCD)
+  drawStringWithIndex(getTextWidth(STR_MENUCURVES) + FW, 0, STR_CV,
+                      s_currIdxSubMenu + 1);
+#else
   drawStringWithIndex(strlen(STR_MENUCURVES)*FW+FW, 0, STR_CV, s_currIdxSubMenu+1);
+#endif
 
   uint8_t old_editMode = s_editMode;
   
   SIMPLE_SUBMENU(STR_MENUCURVES, 4 + 5+crv.points + (crv.type==CURVE_TYPE_CUSTOM ? 5+crv.points-2 : 0));
 
   // Curve name
-  lcdDrawTextAlignedLeft(FH + 1, STR_NAME);
-  editName(INDENT_WIDTH, 2 * FH + 1, crv.name, sizeof(crv.name), event,
+#if defined(EDGETX_CN_STDLCD)
+  const coord_t nameX = getTextWidth(STR_NAME) + 2;
+  const coord_t typeX = getTextWidth(STR_TYPE) + 2;
+  const coord_t countX = getTextWidth(STR_COUNT) + 2;
+  const coord_t smoothX = getTextWidth(STR_SMOOTH) + 2;
+  lcdDrawTextAlignedLeft(CN_CURVE_NAME_Y, STR_NAME);
+  editName(nameX, CN_CURVE_NAME_Y, crv.name, sizeof(crv.name), event,
            menuVerticalPosition == 0, 0, old_editMode);
 
   // Curve type
+  lcdDrawTextAlignedLeft(CN_CURVE_TYPE_Y, STR_TYPE);
+#else
+  lcdDrawTextAlignedLeft(FH + 1, STR_NAME);
+  editName(INDENT_WIDTH, 2 * FH + 1, crv.name, sizeof(crv.name), event,
+           menuVerticalPosition == 0, 0, old_editMode);
   lcdDrawTextAlignedLeft(3 * FH + 1, STR_TYPE);
+#endif
   LcdFlags attr = (menuVerticalPosition == 1 ? (s_editMode > 0 ? INVERS | BLINK : INVERS) : 0);
+#if defined(EDGETX_CN_STDLCD)
+  lcdDrawTextAtIndex(typeX, CN_CURVE_TYPE_Y, STR_CURVE_TYPES, crv.type, attr);
+#else
   lcdDrawTextAtIndex(INDENT_WIDTH, 4 * FH + 1, STR_CURVE_TYPES, crv.type, attr);
+#endif
   if (attr) {
     uint8_t newType = checkIncDecModelZero(event, crv.type, CURVE_TYPE_LAST);
     if (newType != crv.type) {
@@ -119,9 +173,15 @@ void menuModelCurveOne(event_t event)
 
   // Curve points
   attr = (menuVerticalPosition==2 ? (s_editMode>0 ? INVERS|BLINK : INVERS) : 0);
+#if defined(EDGETX_CN_STDLCD)
+  lcdDrawTextAlignedLeft(CN_CURVE_COUNT_Y, STR_COUNT);
+  lcdDrawNumber(countX, CN_CURVE_COUNT_Y, 5+crv.points, LEFT|attr);
+  lcdDrawText(lcdLastRightPos, CN_CURVE_COUNT_Y, STR_PTS, attr);
+#else
   lcdDrawTextAlignedLeft(5*FH+1, STR_COUNT);
   lcdDrawNumber(INDENT_WIDTH, 6*FH+1, 5+crv.points, LEFT|attr);
   lcdDrawText(lcdLastRightPos, 6*FH+1, STR_PTS, attr);
+#endif
   if (attr) {
     rotaryEncoderResetAccel();
     int8_t count = checkIncDecModel(event, crv.points, -3, 12); // 2pts - 17pts
@@ -143,8 +203,14 @@ void menuModelCurveOne(event_t event)
   }
 
   // Curve smooth
+#if defined(EDGETX_CN_STDLCD)
+  lcdDrawTextAlignedLeft(CN_CURVE_SMOOTH_Y, STR_SMOOTH);
+  drawCheckBox(smoothX, CN_CURVE_SMOOTH_Y, crv.smooth,
+               menuVerticalPosition == 3 ? INVERS : 0);
+#else
   lcdDrawTextAlignedLeft(7*FH+1, STR_SMOOTH);
   drawCheckBox(7 * FW, 7 * FH + 1, crv.smooth, menuVerticalPosition == 3 ? INVERS : 0);
+#endif
   if (menuVerticalPosition==3) crv.smooth = checkIncDecModel(event, crv.smooth, 0, 1);
 
   if (event == EVT_KEY_LONG(KEY_ENTER)) {
@@ -157,7 +223,11 @@ void menuModelCurveOne(event_t event)
 
   drawCurve();
   if (s_currSrcRaw != MIXSRC_NONE)
+#if defined(EDGETX_CN_STDLCD)
+    drawCnCurveCursor();
+#else
     drawCursor(applyCurrentCurve);
+#endif
 
   attr = (s_editMode > 0 ? INVERS|BLINK : INVERS);
   for (uint8_t i=0; i<5+crv.points; i++) {
@@ -180,6 +250,21 @@ void menuModelCurveOne(event_t event)
       }
   
       // Selection X / Y
+#if defined(EDGETX_CN_STDLCD)
+      lcdDrawFilledRect(0, CN_CURVE_POINT_Y - 1, LCD_W, FH + 2, SOLID,
+                        ERASE);
+      drawStringWithIndex(1, CN_CURVE_POINT_Y, STR_PT, i + 1, LEFT);
+      coord_t fieldX = lcdLastRightPos + 2;
+      lcdDrawText(fieldX, CN_CURVE_POINT_Y, "x=");
+      fieldX = lcdNextPos;
+      lcdDrawNumber(fieldX, CN_CURVE_POINT_Y, x,
+                    LEFT | (selectionMode == 1 ? attr : 0));
+      fieldX = lcdLastRightPos + 4;
+      lcdDrawText(fieldX, CN_CURVE_POINT_Y, "y=");
+      fieldX = lcdNextPos;
+      lcdDrawNumber(fieldX, CN_CURVE_POINT_Y, points[i],
+                    LEFT | (selectionMode == 2 ? attr : 0));
+#else
       lcdDrawFilledRect(3, 2*FH+4, 7*FW-2, 4*FH-2, SOLID, ERASE);
       lcdDrawRect(3, 2*FH+4, 7*FW-2, 4*FH-2);
       drawStringWithIndex(7, 3*FH, STR_PT, i+1, LEFT);
@@ -187,10 +272,18 @@ void menuModelCurveOne(event_t event)
       lcdDrawNumber(7+2*FW+1, 4*FH, x, LEFT|(selectionMode==1?attr:0));
       lcdDrawText(7, 5*FH, "y=");
       lcdDrawNumber(7+2*FW+1, 5*FH, points[i], LEFT|(selectionMode==2?attr:0));
+#endif
       
       // Selection square
+#if defined(EDGETX_CN_STDLCD)
+      const coord_t pointX = limit<coord_t>(2, point.x, LCD_W - 3);
+      const coord_t pointY = limit<coord_t>(2, point.y, LCD_H - 3);
+      lcdDrawFilledRect(pointX - 2, pointY - 2, 5, 5, SOLID, FORCE);
+      lcdDrawFilledRect(pointX - 1, pointY - 1, 3, 3, SOLID);
+#else
       lcdDrawFilledRect(point.x - 2, point.y - 2, 5, 5, SOLID, FORCE);
       lcdDrawFilledRect(point.x - 1, point.y - 1, 3, 3, SOLID);
+#endif
       
       if (s_editMode > 0) {
         if (selectionMode == 1)

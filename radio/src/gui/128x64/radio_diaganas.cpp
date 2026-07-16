@@ -126,12 +126,20 @@ void menuRadioDiagAnalogs(event_t event)
   uint8_t x = INDENT_WIDTH;
   lcdDrawText(x, y, "X:");
   lcdDrawNumber(x+3*FW-1, y, gyroOutputs[0] * 180 / 1024);
+#if defined(EDGETX_CN_STDLCD)
+  lcdDrawCodepoint(lcdNextPos, y, CN_CODEPOINT_DEGREE, 0);
+#else
   lcdDrawChar(lcdNextPos, y, CHAR_BW_DEGREE);
+#endif
   lcdDrawNumber(x+10*FW-1, y, gyroScaledX(), RIGHT);
   x = LCD_W/2 + INDENT_WIDTH;
   lcdDrawText(x, y, "Y:");
   lcdDrawNumber(x+3*FW-1, y, gyroOutputs[1] * 180 / 1024);
+#if defined(EDGETX_CN_STDLCD)
+  lcdDrawCodepoint(lcdNextPos, y, CN_CODEPOINT_DEGREE, 0);
+#else
   lcdDrawChar(lcdNextPos, y, CHAR_BW_DEGREE);
+#endif
   lcdDrawNumber(x+10*FW-1, y, gyroScaledY(), RIGHT);
 #endif
 }

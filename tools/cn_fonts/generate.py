@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Deterministic offline GX12 Chinese fixed-cell font generator."""
 from __future__ import annotations
-import argparse, ast, hashlib, io, json, re, sys, zipfile
+import argparse, ast, hashlib, io, json, re, sys, tarfile, zipfile
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = Path(__file__).with_name("manifest.json")
@@ -14,10 +14,18 @@ IDS = ["STR_ABOUTUS","STR_ALARMSWARN","STR_BATTERY","STR_EMERGENCY_MODE",
        "STR_THROTTLE_UPPERCASE","STR_WARNING","STR_WRONG_PCBREV"]
 FONT_CONTRACT = {
  "CN_8":  {"source":"fusion8","policy":"all-cn-h","expected_glyphs":625,"expected_translation_codepoints":624,"body":[8,8],"cell":[8,8],"top_offset":0},
+ "CN_DEFAULT_10": {"source":"fusion10","policy":"all-cn-h-ascii","expected_glyphs":720,"expected_translation_codepoints":624,"body":[10,10],"cell":[10,10],"top_offset":0},
  "CN_10": {"source":"fusion10","policy":"fallback-only","expected_glyphs":1,"expected_translation_codepoints":0,"body":[10,10],"cell":[10,12],"top_offset":1},
  "CN_12": {"source":"fusion12","policy":"identifiers","expected_glyphs":34,"expected_translation_codepoints":33,"body":[12,12],"cell":[12,16],"top_offset":2},
- "CN_32": {"source":"ark16","policy":"fallback-only","expected_glyphs":1,"expected_translation_codepoints":0,"body":[32,32],"cell":[32,38],"top_offset":3}}
-SOURCE_KEYS = ["fusion8","fusion10","fusion12","ark16"]
+ "CN_16": {"source":"wqy16b","policy":"identifiers","expected_glyphs":34,"expected_translation_codepoints":33,"body":[16,16],"cell":[16,20],"top_offset":2,"source_advance":17},
+ "CN_32": {"source":"ark16","policy":"fallback-only","expected_glyphs":1,"expected_translation_codepoints":0,"body":[32,32],"cell":[32,38],"top_offset":3,"scale":2}}
+SOURCE_KEYS = ["fusion8","fusion10","fusion12","wqy16b","ark16"]
+WQY_BOLD_SOURCE_CONTRACT = {
+ "kind":"bdf-tar-gz", "version":"0.7.0-4",
+ "url":"https://sourceforge.net/projects/wqy/files/wqy-bitmapfont/0.7.0/wqy-bitmapfont-bdf-0.7.0-4.tar.gz/download",
+ "archive_size":5203506, "archive_sha256":"E1A9BF2D4E608EAADA9822F58F33626204B665A4A60A353DCEB0C5FC09A75D40",
+ "member":"wqy-bitmapfont/wenquanyi_12ptb.bdf", "member_size":5462992, "member_sha256":"26F493DC492BF64EB974E81C174BBCEDD2FF7FBD116428865992388B04A09042",
+ "subset":"radio/src/fonts/cn/source/wqy-16px-bold-zh.subset.bdf", "subset_sha256":"D8047A55DC1F456A41D87FEDDED4C9B8F83B408F12357EF1180F592E7AE804C3"}
 
 def fail(s): raise ValueError(s)
 def sha256(b): return hashlib.sha256(b).hexdigest().upper()
@@ -25,14 +33,22 @@ def cjk(c): return 0x3400<=c<=0x4DBF or 0x4E00<=c<=0x9FFF or 0xF900<=c<=0xFAFF
 def strings(s): return [ast.literal_eval(x) for x in re.findall(r'"(?:[^"\\]|\\.)*"',s)]
 
 def validate_manifest(m):
-    if m.get("schema") != 5 or m.get("translation") != "radio/src/translations/i18n/cn.h" or m.get("fallback") != "U+25A1": fail("immutable manifest schema/fallback/translation contract changed")
+    if m.get("schema") != 7 or m.get("translation") != "radio/src/translations/i18n/cn.h" or m.get("fallback") != "U+25A1": fail("immutable manifest schema/fallback/translation contract changed")
     if m.get("cn12_identifiers") != IDS or len(set(m["cn12_identifiers"])) != 14: fail("CN_12 ordered identifier contract changed")
-    if m.get("fonts") != FONT_CONTRACT: fail("immutable four-font geometry/policy/count/source contract changed")
+    if m.get("profiles") != FONT_CONTRACT: fail("immutable font profile geometry/policy/count/source contract changed")
     if list(m.get("sources",{})) != SOURCE_KEYS: fail("source contract changed")
+    common={"kind","version","url","member","member_sha256","subset","subset_sha256"}
     for key,s in m["sources"].items():
-        required={"kind","version","url","zip_sha256","member","member_sha256","subset","subset_sha256"}
-        if set(s)!=required or s["kind"]!="bdf-zip" or s["version"]!="2026.07.01": fail(f"{key}: source schema changed")
-        if not re.fullmatch(r"[0-9A-F]{64}",s["zip_sha256"]) or not re.fullmatch(r"[0-9A-F]{64}",s["member_sha256"]): fail(f"{key}: invalid source hash")
+        if s.get("kind")=="bdf-zip":
+            if set(s)!=common|{"zip_sha256"} or s["version"]!="2026.07.01": fail(f"{key}: ZIP source schema changed")
+            archive_hash=s["zip_sha256"]
+        elif s.get("kind")=="bdf-tar-gz":
+            if set(s)!=common|{"archive_size","archive_sha256","member_size"}: fail(f"{key}: tar.gz source schema changed")
+            if not isinstance(s["archive_size"],int) or s["archive_size"]<=0 or not isinstance(s["member_size"],int) or s["member_size"]<=0: fail(f"{key}: invalid archive/member size")
+            archive_hash=s["archive_sha256"]
+        else: fail(f"{key}: unsupported source kind")
+        if not re.fullmatch(r"[0-9A-F]{64}",archive_hash) or not re.fullmatch(r"[0-9A-F]{64}",s["member_sha256"]) or not re.fullmatch(r"[0-9A-F]{64}",s["subset_sha256"]): fail(f"{key}: invalid source hash")
+    if m["sources"].get("wqy16b") != WQY_BOLD_SOURCE_CONTRACT: fail("wqy16b source/hash contract changed")
 
 def resolve(expr):
     old=None
@@ -71,8 +87,11 @@ def codepoints(m):
         selected += [ord(ch) for s in vals for ch in s if cjk(ord(ch))]
     c12=sorted(set(selected))
     if len(allcp)!=624 or len(c12)!=33: fail(f"translation coverage changed ({len(allcp)}/{len(c12)})")
-    out={"CN_8":[FALLBACK]+allcp,"CN_10":[FALLBACK],
-         "CN_12":[FALLBACK]+c12,"CN_32":[FALLBACK]}
+    out={"CN_8":[FALLBACK]+allcp,
+         "CN_DEFAULT_10":[FALLBACK]+list(range(0x20,0x7F))+allcp,
+         "CN_10":[FALLBACK],
+         "CN_12":[FALLBACK]+c12,"CN_16":[FALLBACK]+c12,
+         "CN_32":[FALLBACK]}
     for n,v in out.items():
         if v[0]!=FALLBACK or v[1:]!=sorted(set(v[1:])) or len(v)!=FONT_CONTRACT[n]["expected_glyphs"]: fail(f"{n}: codepoint contract failed")
     return out
@@ -140,9 +159,9 @@ def parse_bdf(data):
             glyphs[cp]=Glyph(cp,dwidth,bbx,rows,rec.encode("ascii"))
     return int(ma.group(1)),int(md.group(1)),glyphs
 
-def bdf_body(g,ascent,descent,size):
-    expected_width=size//2 if 0x20<=g.cp<=0x7E else size
-    if ascent+descent!=size or g.dwidth!=(expected_width,0): fail(f"U+{g.cp:04X}: source metric mismatch")
+def bdf_body(g,ascent,descent,size,source_advance=None):
+    expected_width=source_advance if source_advance is not None else (size//2 if 0x20<=g.cp<=0x7E else size)
+    if ascent+descent<size or g.dwidth!=(expected_width,0): fail(f"U+{g.cp:04X}: source metric mismatch")
     w,h,xo,yo=g.bbx; top=ascent-(yo+h); bits=((w+7)//8)*8; out=[[0]*size for _ in range(size)]
     for sy,row in enumerate(g.rows):
         for sx in range(w):
@@ -150,9 +169,13 @@ def bdf_body(g,ascent,descent,size):
             if 0<=x<size and 0<=y<size and row&(1<<(bits-1-sx)): out[y][x]=1
     return out
 
+def scale_body(body,scale):
+    if scale<=0 or not body or any(len(r)!=len(body) for r in body): fail("source body must be square and scale positive")
+    size=len(body)*scale
+    return [[body[y//scale][x//scale] for x in range(size)] for y in range(size)]
+
 def scale2(body):
-    if len(body)!=16 or any(len(r)!=16 for r in body): fail("Ark source body must be exactly 16x16")
-    return [[body[y//2][x//2] for x in range(32)] for y in range(32)]
+    return scale_body(body,2)
 
 def validate_logical_width(name,cp,body,logical_width):
     body_width=len(body)
@@ -168,12 +191,33 @@ def pack(body,width,height,top):
             out.append(sum((1<<bit) for bit in range(8) if 0<=block*8+bit-top<len(body) and body[block*8+bit-top][x]))
     return bytes(out)
 
+def index_bdf_records(data):
+    try: text=data.decode("ascii")
+    except UnicodeDecodeError: fail("BDF is not ASCII")
+    if not text.startswith("STARTFONT ") or not text.endswith("ENDFONT\n"): fail("BDF must have STARTFONT and final ENDFONT")
+    cm=re.search(r"^CHARS\s+(\d+)\r?$",text,re.M)
+    if not cm: fail("BDF missing CHARS")
+    first=text.find("STARTCHAR "); end=text.rfind("ENDFONT")
+    if first<0: records=[]; middle=""
+    else:
+        middle=text[first:end]; records=list(re.finditer(r"^STARTCHAR .*?^ENDCHAR\r?\n",middle,re.M|re.S))
+        if not records or "".join(x.group(0) for x in records)!=middle: fail("BDF contains trailing/unparsed glyph content")
+    if len(records)!=int(cm.group(1)): fail(f"BDF CHARS says {cm.group(1)}, found {len(records)}")
+    indexed={}
+    for match in records:
+        rec=match.group(0); encoding=re.search(r"^ENCODING\s+(-?\d+)(?:\s+-?\d+)?\r?$",rec,re.M)
+        if not encoding: fail("glyph missing valid ENCODING")
+        cp=int(encoding.group(1))
+        if cp>=0:
+            if cp in indexed: fail("duplicate BDF encoding")
+            indexed[cp]=rec.encode("ascii")
+    return text,first,end,indexed
+
 def subset_bdf(full,wanted):
-    _,_,glyphs=parse_bdf(full); missing=sorted(set(wanted)-set(glyphs))
+    text,first,end,glyphs=index_bdf_records(full); missing=sorted(set(wanted)-set(glyphs))
     if missing: fail("missing BDF glyphs: "+", ".join(f"U+{x:04X}" for x in missing[:10]))
-    text=full.decode("ascii"); first=text.index("STARTCHAR "); end=text.rfind("ENDFONT")
     header=re.sub(r"^CHARS\s+\d+\r?$",f"CHARS {len(wanted)}",text[:first],flags=re.M)
-    result=header.encode("ascii")+b"".join(glyphs[x].record for x in wanted)+text[end:].encode("ascii")
+    result=header.encode("ascii")+b"".join(glyphs[x] for x in wanted)+text[end:].encode("ascii")
     parse_bdf(result)
     return result
 
@@ -188,32 +232,72 @@ def zip_member(blob,source):
     if sha256(data)!=source["member_sha256"]: fail("ZIP member hash mismatch")
     return data
 
-def extract_one(blob,source,wanted): return subset_bdf(zip_member(blob,source),wanted)
+def safe_tar_name(name):
+    path=PurePosixPath(name)
+    return bool(name) and "\\" not in name and not path.is_absolute() and ".." not in path.parts
+
+def tar_member(blob,source):
+    if len(blob)!=source["archive_size"]: fail("release tar.gz size mismatch")
+    if sha256(blob)!=source["archive_sha256"]: fail("release tar.gz hash mismatch")
+    try:
+        with tarfile.open(fileobj=io.BytesIO(blob),mode="r:gz") as archive:
+            members=archive.getmembers()
+            if any(not safe_tar_name(member.name) for member in members): fail("unsafe tar member path")
+            matches=[member for member in members if member.name==source["member"]]
+            if len(matches)!=1: fail("tar.gz does not contain exactly one specified member")
+            if not matches[0].isfile(): fail("specified tar.gz member is not a regular file")
+            if "member_size" in source and matches[0].size!=source["member_size"]: fail("tar.gz member size mismatch")
+            stream=archive.extractfile(matches[0])
+            if stream is None: fail("specified tar.gz member is unreadable")
+            data=stream.read()
+    except tarfile.TarError: fail("invalid release tar.gz")
+    if sha256(data)!=source["member_sha256"]: fail("tar.gz member hash mismatch")
+    return data
+
+def archive_member(blob,source):
+    if source.get("kind")=="bdf-zip": return zip_member(blob,source)
+    if source.get("kind")=="bdf-tar-gz": return tar_member(blob,source)
+    fail("unsupported source kind")
+
+def extract_one(blob,source,wanted): return subset_bdf(archive_member(blob,source),wanted)
 
 def extract(args,m,cps):
-    for key,name in zip(SOURCE_KEYS,("CN_8","CN_10","CN_12","CN_32")):
+    selected=[key for key in SOURCE_KEYS if getattr(args,key)]
+    if not selected: fail("--extract-subset requires at least one source archive")
+    for key in selected:
         path=getattr(args,key)
-        if not path: fail(f"--extract-subset requires --{key}")
-        subset=extract_one(Path(path).read_bytes(),m["sources"][key],cps[name]); target=ROOT/m["sources"][key]["subset"]
+        wanted=sorted(set().union(*(cps[name] for name,spec in FONT_CONTRACT.items() if spec["source"]==key)))
+        subset=extract_one(Path(path).read_bytes(),m["sources"][key],wanted); target=ROOT/m["sources"][key]["subset"]
         if m["sources"][key]["subset_sha256"] and sha256(subset)!=m["sources"][key]["subset_sha256"]: fail(f"{key}: extracted subset differs from manifest")
         target.parent.mkdir(parents=True,exist_ok=True); target.write_bytes(subset); print(f"{key}={sha256(subset)}")
 
 def generated(m,cps):
-    bodies={}; widths={}
-    for key,name in zip(SOURCE_KEYS,("CN_8","CN_10","CN_12","CN_32")):
+    parsed={}
+    for key in SOURCE_KEYS:
         s=m["sources"][key]; raw=(ROOT/s["subset"]).read_bytes()
         if sha256(raw)!=s["subset_sha256"]: fail(f"{key}: subset hash mismatch")
         asc,desc,glyphs=parse_bdf(raw)
-        if list(glyphs)!=cps[name]: fail(f"{key}: subset order/coverage mismatch")
-        source_size=16 if name=="CN_32" else FONT_CONTRACT[name]["body"][0]
+        wanted=sorted(set().union(*(cps[name] for name,spec in FONT_CONTRACT.items() if spec["source"]==key)))
+        if list(glyphs)!=wanted: fail(f"{key}: subset order/coverage mismatch")
+        parsed[key]=(asc,desc,glyphs)
+    bodies={}; widths={}
+    for name,spec in FONT_CONTRACT.items():
+        asc,desc,glyphs=parsed[spec["source"]]
+        scale=spec.get("scale",1)
+        body_width=spec["body"][0]
+        if body_width%scale: fail(f"{name}: body width is not divisible by scale")
+        source_size=body_width//scale
         logical_widths=[]
         for cp in cps[name]:
-            expected=source_size//2 if 0x20<=cp<=0x7E else source_size
+            logical_source_width=source_size//2 if 0x20<=cp<=0x7E else source_size
+            expected=spec.get("source_advance",logical_source_width)
             width=glyphs[cp].dwidth[0]
-            if glyphs[cp].dwidth!=(expected,0) or width<=0 or width>source_size: fail(f"U+{cp:04X}: invalid logical width")
-            logical_widths.append(width*2 if name=="CN_32" else width)
-        vals=[bdf_body(glyphs[x],asc,desc,source_size) for x in cps[name]]
-        rendered=[scale2(x) for x in vals] if name=="CN_32" else vals
+            if glyphs[cp].dwidth!=(expected,0) or width<=0: fail(f"U+{cp:04X}: invalid source advance")
+            gw,_,gx,_=glyphs[cp].bbx
+            if "source_advance" in spec and (gx<0 or gx+gw>source_size): fail(f"U+{cp:04X}: horizontal bitmap clipping")
+            logical_widths.append(logical_source_width*scale)
+        vals=[bdf_body(glyphs[x],asc,desc,source_size,spec.get("source_advance")) for x in cps[name]]
+        rendered=[scale_body(x,scale) for x in vals]
         for cp,body,logical_width in zip(cps[name],rendered,logical_widths):
             validate_logical_width(name,cp,body,logical_width)
         bodies[name]=rendered
@@ -222,7 +306,9 @@ def generated(m,cps):
     for name,spec in FONT_CONTRACT.items():
         source=m["sources"][spec["source"]]; width,height=spec["cell"]; bw,bh=spec["body"]; top=spec["top_offset"]; bpg=width*((height+7)//8)
         glyphs=[pack(x,width,height,top) for x in bodies[name]]; guard="EDGETX_CN_FONT_"+name+"_H"
-        provenance=f"// Source: {source['url']} version {source['version']} ZIP SHA256 {source['zip_sha256']} member {source['member']} SHA256 {source['member_sha256']}\n// Subset SHA256: {source['subset_sha256']}\n// Generator command: {command}\n"
+        if source["kind"]=="bdf-zip": archive_provenance=f"ZIP SHA256 {source['zip_sha256']}"
+        else: archive_provenance=f"tar.gz SHA256 {source['archive_sha256']}"
+        provenance=f"// Source: {source['url']} version {source['version']} {archive_provenance} member {source['member']} SHA256 {source['member_sha256']}\n// Subset SHA256: {source['subset_sha256']}\n// Generator command: {command}\n"
         constants=f"#define {name}_WIDTH {width}\n#define {name}_BODY_HEIGHT {bh}\n#define {name}_STORAGE_HEIGHT {height}\n#define {name}_TOP_OFFSET {top}\n#define {name}_BYTES_PER_GLYPH {bpg}\n#define {name}_GLYPH_COUNT {len(cps[name])}\n"
         h=f"// Generated; do not edit.\n{provenance}#ifndef {guard}\n#define {guard}\n#include <stdint.h>\n{constants}extern const uint16_t {name}_codepoints[{name}_GLYPH_COUNT];\nextern const uint8_t {name}_widths[{name}_GLYPH_COUNT];\nextern const uint8_t {name}_glyphs[{name}_GLYPH_COUNT][{name}_BYTES_PER_GLYPH];\n#endif\n"
         cptext=",\n  ".join(", ".join(f"0x{x:04X}" for x in cps[name][i:i+12]) for i in range(0,len(cps[name]),12)); rowtext=",\n".join("  {"+", ".join(f"0x{x:02X}" for x in g)+"}" for g in glyphs)
@@ -237,7 +323,7 @@ def generated(m,cps):
                     for yy in range(2):
                         for xx in range(2): pix[y*2+yy][ox+x*2+xx]=1
         ox+=len(body)*2+gap
-    outputs[outdir/"preview.pbm"]=(f"P1\n# CN_8 CN_10 CN_12 CN_32 U+25A1\n{pw} {ph}\n"+"\n".join(" ".join(map(str,r)) for r in pix)+"\n").encode()
+    outputs[outdir/"preview.pbm"]=(f"P1\n# {' '.join(FONT_CONTRACT)} U+25A1\n{pw} {ph}\n"+"\n".join(" ".join(map(str,r)) for r in pix)+"\n").encode()
     return outputs
 
 def main(argv=None):

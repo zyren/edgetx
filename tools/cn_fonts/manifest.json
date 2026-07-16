@@ -1,5 +1,5 @@
 {
-  "schema": 5,
+  "schema": 7,
   "translation": "radio/src/translations/i18n/cn.h",
   "fallback": "U+25A1",
   "cn12_identifiers": [
@@ -8,11 +8,13 @@
     "STR_STORAGE_WARNING", "STR_SWITCHWARN", "STR_TEST_WARNING",
     "STR_THROTTLE_UPPERCASE", "STR_WARNING", "STR_WRONG_PCBREV"
   ],
-  "fonts": {
+  "profiles": {
     "CN_8": {"source":"fusion8", "policy":"all-cn-h", "expected_glyphs":625, "expected_translation_codepoints":624, "body":[8,8], "cell":[8,8], "top_offset":0},
+    "CN_DEFAULT_10":{"source":"fusion10", "policy":"all-cn-h-ascii", "expected_glyphs":720, "expected_translation_codepoints":624, "body":[10,10], "cell":[10,10], "top_offset":0},
     "CN_10":{"source":"fusion10", "policy":"fallback-only", "expected_glyphs":1, "expected_translation_codepoints":0, "body":[10,10], "cell":[10,12], "top_offset":1},
     "CN_12":{"source":"fusion12", "policy":"identifiers", "expected_glyphs":34, "expected_translation_codepoints":33, "body":[12,12], "cell":[12,16], "top_offset":2},
-    "CN_32":{"source":"ark16", "policy":"fallback-only", "expected_glyphs":1, "expected_translation_codepoints":0, "body":[32,32], "cell":[32,38], "top_offset":3}
+    "CN_16":{"source":"wqy16b", "policy":"identifiers", "expected_glyphs":34, "expected_translation_codepoints":33, "body":[16,16], "cell":[16,20], "top_offset":2, "source_advance":17},
+    "CN_32":{"source":"ark16", "policy":"fallback-only", "expected_glyphs":1, "expected_translation_codepoints":0, "body":[32,32], "cell":[32,38], "top_offset":3, "scale":2}
   },
   "sources": {
     "fusion8": {
@@ -27,7 +29,7 @@
       "url":"https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.07.01/fusion-pixel-font-10px-monospaced-bdf-v2026.07.01.zip",
       "zip_sha256":"0F28B5850FA9B4B0F8DBB7C40F671A3574A97236A848D1E0ECF6ED302AE659C3",
       "member":"fusion-pixel-10px-monospaced-zh_hans.bdf", "member_sha256":"A9FECDECBE42C93E8D6C0642CF1A1FABE29E7C4DCDAB43B4540FB23CC7E006B1",
-      "subset":"radio/src/fonts/cn/source/fusion-pixel-10px-zh_hans.subset.bdf", "subset_sha256":"37F38F0AECA3CDAA674DABA8D4186823CCB82ED4B95CD66D9E1D4900D2C272E2"
+      "subset":"radio/src/fonts/cn/source/fusion-pixel-10px-zh_hans.subset.bdf", "subset_sha256":"29A020C73EC097A6B8BD10482FFB5E6DFB59118C79250A14E5558A66D0C99888"
     },
     "fusion12": {
       "kind":"bdf-zip", "version":"2026.07.01",
@@ -35,6 +37,13 @@
       "zip_sha256":"C461C312720E005F5A49843A965842E8749F196F00F97FACF1AD926F330296DF",
       "member":"fusion-pixel-12px-monospaced-zh_hans.bdf", "member_sha256":"AEA441A489B18A93BB417BBA33A31917B1BEF90167B01ED9A63E2E9DF3E144F8",
       "subset":"radio/src/fonts/cn/source/fusion-pixel-12px-zh_hans.subset.bdf", "subset_sha256":"4B6014A141D32526F99CFF56416F7EAFBED4F1F87831CC78BB3A11331C2E56B5"
+    },
+    "wqy16b": {
+      "kind":"bdf-tar-gz", "version":"0.7.0-4",
+      "url":"https://sourceforge.net/projects/wqy/files/wqy-bitmapfont/0.7.0/wqy-bitmapfont-bdf-0.7.0-4.tar.gz/download",
+      "archive_size":5203506, "archive_sha256":"E1A9BF2D4E608EAADA9822F58F33626204B665A4A60A353DCEB0C5FC09A75D40",
+      "member":"wqy-bitmapfont/wenquanyi_12ptb.bdf", "member_size":5462992, "member_sha256":"26F493DC492BF64EB974E81C174BBCEDD2FF7FBD116428865992388B04A09042",
+      "subset":"radio/src/fonts/cn/source/wqy-16px-bold-zh.subset.bdf", "subset_sha256":"D8047A55DC1F456A41D87FEDDED4C9B8F83B408F12357EF1180F592E7AE804C3"
     },
     "ark16": {
       "kind":"bdf-zip", "version":"2026.07.01",

@@ -36,7 +36,8 @@ constexpr coord_t MARKER_WIDTH      = 5;
 
 #include "lcd_common.h"
 
-void drawTimerWithMode(coord_t x, coord_t y, uint8_t index, LcdFlags att);
+void drawTimerWithMode(coord_t x, coord_t y, uint8_t index, LcdFlags att,
+                       coord_t labelOffset = FH);
 
 inline void lcdDrawBitmap(coord_t x, coord_t y, const uint8_t * bitmap)
 {

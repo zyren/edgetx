@@ -36,9 +36,11 @@
 
 void menuRadioTrainer(event_t event)
 {
-  uint8_t y;
+  coord_t y;
   bool slave = SLAVE_MODE();
   auto controls = adcGetMaxInputs(ADC_INPUT_MAIN);
+  const bool jackMode =
+      (g_model.trainerData.mode == TRAINER_MODE_MASTER_TRAINER_JACK);
 
   MENU(STR_MENUTRAINER, menuTabGeneral, MENU_RADIO_TRAINER, (slave ? HEADER_LINE : HEADER_LINE+6),
       {
@@ -47,7 +49,7 @@ void menuRadioTrainer(event_t event)
         NAVIGATION_LINE_BY_LINE|2,
         (uint8_t)((controls > 2) ? NAVIGATION_LINE_BY_LINE|2 : HIDDEN_ROW),
         (uint8_t)((controls > 2) ? NAVIGATION_LINE_BY_LINE|2 : HIDDEN_ROW),
-        (uint8_t)((g_model.trainerData.mode == TRAINER_MODE_MASTER_TRAINER_JACK) ? 0 : HIDDEN_ROW),
+        (uint8_t)(jackMode ? 0 : HIDDEN_ROW),
         0
       });
 
@@ -56,6 +58,26 @@ void menuRadioTrainer(event_t event)
     return;
   }
 
+#if defined(EDGETX_CN_STDLCD)
+  // The column headings consume one of the five 10-pixel body rows.
+  // Keep the selected trainer row in the remaining four-row window.
+  uint8_t selectedLine = 0;
+  for (uint8_t i = HEADER_LINE; i < menuVerticalPosition; i++) {
+    if (i < HEADER_LINE + controls ||
+        (i == HEADER_LINE + 4 && jackMode) ||
+        i == HEADER_LINE + 5) {
+      selectedLine++;
+    }
+  }
+  const uint8_t trainerDisplayOffset =
+      (selectedLine >= 4) ? selectedLine - 3 : 0;
+  const auto rowVisible = [](coord_t rowY) {
+    return rowY >= MENU_HEADER_HEIGHT + 1 + FH && rowY <= LCD_H - FH;
+  };
+#else
+  const auto rowVisible = [](coord_t) { return true; };
+#endif
+
   LcdFlags attr;
   LcdFlags blink = ((s_editMode>0) ? BLINK|INVERS : INVERS);
 
@@ -63,61 +85,75 @@ void menuRadioTrainer(event_t event)
   lcdDrawText(COL_THREE, MENU_HEADER_HEIGHT + 1, "%", RIGHT);
   lcdDrawText(COL_FOUR, MENU_HEADER_HEIGHT + 1, STR_SOURCE);
 
+#if defined(EDGETX_CN_STDLCD)
+  y = MENU_HEADER_HEIGHT + 1 + FH - trainerDisplayOffset * FH;
+#else
   y = MENU_HEADER_HEIGHT + 1 + FH;
+#endif
 
   for (uint8_t i = HEADER_LINE; i < HEADER_LINE + controls; i++) {
     uint8_t chan = inputMappingChannelOrder(i - HEADER_LINE);
     TrainerMix * td = &g_eeGeneral.trainer.mix[chan];
 
-    drawSource(0, y, MIXSRC_FIRST_STICK + chan,
-               (menuVerticalPosition==i && CURSOR_ON_LINE()) ? INVERS : 0);
+    if (rowVisible(y)) {
+      drawSource(0, y, MIXSRC_FIRST_STICK + chan,
+                 (menuVerticalPosition==i && CURSOR_ON_LINE()) ? INVERS : 0);
 
-    for (uint8_t j=0; j<3; j++) {
+      for (uint8_t j=0; j<3; j++) {
+        attr = ((menuVerticalPosition==i && menuHorizontalPosition==j) ? blink : 0);
 
-      attr = ((menuVerticalPosition==i && menuHorizontalPosition==j) ? blink : 0);
+        switch (j) {
+          case 0:
+            lcdDrawTextAtIndex(COL_TWO, y, STR_TRNMODE, td->mode, attr);
+            if (attr & BLINK) CHECK_INCDEC_GENVAR(event, td->mode, 0, 2);
+            break;
 
-      switch (j) {
-        case 0:
-          lcdDrawTextAtIndex(COL_TWO, y, STR_TRNMODE, td->mode, attr);
-          if (attr & BLINK) CHECK_INCDEC_GENVAR(event, td->mode, 0, 2);
-          break;
+          case 1:
+            lcdDrawNumber(COL_THREE, y, td->studWeight, attr | RIGHT);
+            if (attr & BLINK)
+              CHECK_INCDEC_GENVAR(event, td->studWeight, -125, 125);
+            break;
 
-        case 1:
-          lcdDrawNumber(COL_THREE, y, td->studWeight, attr | RIGHT);
-          if (attr & BLINK)
-            CHECK_INCDEC_GENVAR(event, td->studWeight, -125, 125);
-          break;
-
-        case 2:
-          lcdDrawTextAtIndex(COL_FOUR, y, STR_TRNCHN, td->srcChn, attr);
-          if (attr & BLINK) CHECK_INCDEC_GENVAR(event, td->srcChn, 0, 3);
-          break;
+          case 2:
+            lcdDrawTextAtIndex(COL_FOUR, y, STR_TRNCHN, td->srcChn, attr);
+            if (attr & BLINK) CHECK_INCDEC_GENVAR(event, td->srcChn, 0, 3);
+            break;
+        }
       }
     }
     y += FH;
   }
 
   attr = (menuVerticalPosition==HEADER_LINE+4) ? blink : 0;
-  if (g_model.trainerData.mode == TRAINER_MODE_MASTER_TRAINER_JACK) {
+  if (jackMode) {
+    if (rowVisible(y)) {
       lcdDrawTextAlignedLeft(y, STR_MULTIPLIER);
       lcdDrawNumber(strlen(STR_MULTIPLIER) * FW + 3 * FW, y, g_eeGeneral.PPM_Multiplier + 10, attr | PREC1 | RIGHT);
       if (attr) CHECK_INCDEC_GENVAR(event, g_eeGeneral.PPM_Multiplier, -10, 40);
+    }
+    y += FH;
   }
-  y += FH;
+#if !defined(EDGETX_CN_STDLCD)
+  else {
+    y += FH;
+  }
+#endif
 
   attr = (menuVerticalPosition==HEADER_LINE+5) ? INVERS : 0;
   if (attr)
     s_editMode = 0;
-  lcdDrawText(0*FW, y, STR_CAL, attr);
-  for (uint8_t i = 0; i < 4; i++) {
-    uint8_t x = 8*FW + (i * TRAINER_CALIB_COLUMN_WIDTH);
-    int32_t chVal = trainerInput[i] - g_eeGeneral.trainer.calib[i];
-    chVal *= g_eeGeneral.trainer.mix[i].studWeight * 10;
-    chVal /= 512;
-    if (g_eeGeneral.ppmunit == PPM_PERCENT_PREC1) {
-      lcdDrawNumber(x, y, chVal, PREC1|RIGHT);
-    } else {
-      lcdDrawNumber(x, y, chVal / 10, RIGHT);
+  if (rowVisible(y)) {
+    lcdDrawText(0*FW, y, STR_CAL, attr);
+    for (uint8_t i = 0; i < 4; i++) {
+      uint8_t x = 8*FW + (i * TRAINER_CALIB_COLUMN_WIDTH);
+      int32_t chVal = trainerInput[i] - g_eeGeneral.trainer.calib[i];
+      chVal *= g_eeGeneral.trainer.mix[i].studWeight * 10;
+      chVal /= 512;
+      if (g_eeGeneral.ppmunit == PPM_PERCENT_PREC1) {
+        lcdDrawNumber(x, y, chVal, PREC1|RIGHT);
+      } else {
+        lcdDrawNumber(x, y, chVal / 10, RIGHT);
+      }
     }
   }
 

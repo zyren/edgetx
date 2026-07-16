@@ -102,7 +102,7 @@ if (ENABLE_BOOTLOADER_DEBUG)
 endif()
 
 target_include_directories(bootloader
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
+  BEFORE PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 add_custom_command(
