@@ -7,12 +7,10 @@
 #include "hal/adc_driver.h"
 #include "lcd.h"
 #include "gui/common/stdlcd/utf8.h"
-#include "fonts/cn/generated/cn_8.h"
 #include "fonts/cn/generated/cn_default_10.h"
 #include "fonts/cn/generated/cn_10.h"
 #include "fonts/cn/generated/cn_12.h"
 #include "fonts/cn/generated/cn_16.h"
-#include "fonts/cn/generated/cn_32.h"
 #include "fonts/external_font.h"
 #include "debug.h"
 
@@ -162,6 +160,32 @@ TEST(CnStdLcd, StrictUtf8Decoder)
     EXPECT_EQ(item.consumed, decoded.consumed);
     EXPECT_EQ(item.valid, decoded.valid);
   }
+}
+
+TEST(CnStdLcd, Utf8PrefixDoesNotSplitCodepoint)
+{
+  char destination[10];
+  EXPECT_EQ(9u, copyCompleteUtf8Prefix(destination, sizeof(destination),
+                                       "\xE4\xB8\xAD\xE6\x96\x87\xE6\xA8\xA1\xE5\x9E\x8B"));
+  EXPECT_EQ(0, memcmp(destination,
+                      "\xE4\xB8\xAD\xE6\x96\x87\xE6\xA8\xA1\0", sizeof(destination)));
+
+  memset(destination, 0xA5, sizeof(destination));
+  EXPECT_EQ(10u, copyCompleteUtf8Prefix(destination, sizeof(destination),
+                                        "0123456789"));
+  EXPECT_EQ(0, memcmp(destination, "0123456789", sizeof(destination)));
+
+  memset(destination, 0xA5, sizeof(destination));
+  EXPECT_EQ(3u, copyCompleteUtf8Prefix(destination, sizeof(destination),
+                                       "ABC\xE4\x41\x80xyz"));
+  EXPECT_EQ(0, memcmp(destination, "ABC\0\0\0\0\0\0\0", sizeof(destination)));
+
+  memset(destination, 0xA5, sizeof(destination));
+  EXPECT_EQ(0u, copyCompleteUtf8Prefix(destination, sizeof(destination), nullptr));
+  EXPECT_TRUE(std::all_of(destination, destination + sizeof(destination),
+                          [](char c) { return c == 0; }));
+  EXPECT_EQ(0u, copyCompleteUtf8Prefix(nullptr, sizeof(destination), "ABC"));
+  EXPECT_EQ(0u, copyCompleteUtf8Prefix(destination, 0, "ABC"));
 }
 
 TEST(CnStdLcd, GlobalGeometryAndFontDispatch)
@@ -574,12 +598,6 @@ TEST(CnStdLcd, PhysicalPageInversionUsesEightPages)
 
 TEST(CnStdLcd, FullColumnIsRenderedWithoutSentinel)
 {
-  bool assetHasFullColumn = false;
-  for (uint16_t i = 0; i < CN_8_GLYPH_COUNT; ++i)
-    for (uint8_t x = 0; x < CN_8_WIDTH; ++x)
-      if (CN_8_glyphs[i][x] == 0xFF) assetHasFullColumn = true;
-  EXPECT_FALSE(assetHasFullColumn);
-
   const uint8_t synthetic[] = { 0xFF };
   lcdClear();
   lcdDrawRawFixedCellForTest(0, 0, synthetic, 1, 8, 0);

@@ -28,12 +28,10 @@ set(GUI_SRC
 # assembled separately and never receive these files or this feature macro.
 if(PCBREV STREQUAL GX12 AND TRANSLATIONS STREQUAL CN)
   set(GUI_SRC ${GUI_SRC}
-    ../../fonts/cn/generated/cn_8.cpp
     ../../fonts/cn/generated/cn_default_10.cpp
     ../../fonts/cn/generated/cn_10.cpp
     ../../fonts/cn/generated/cn_12.cpp
     ../../fonts/cn/generated/cn_16.cpp
-    ../../fonts/cn/generated/cn_32.cpp
   )
 endif()
 

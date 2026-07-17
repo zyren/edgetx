@@ -268,36 +268,24 @@ Utf8Codepoint decodeNextUtf8(const char * s, uint8_t len)
   return { static_cast<uint16_t>(value), count, true };
 }
 
-uint16_t mapDecodedCodepoint(uint16_t codepoint, bool valid)
+size_t copyCompleteUtf8Prefix(char * destination, size_t capacity,
+                              const char * source)
 {
-  if (!valid) {
-#if defined(EDGETX_CN_STDLCD)
-    return 0xFFFF; // guaranteed CN fallback miss
-#else
-    return 0x20;
-#endif
+  if (!destination || capacity == 0) return 0;
+  memset(destination, 0, capacity);
+  if (!source) return 0;
+
+  size_t copied = 0;
+  while (source[copied] != '\0' && copied < capacity) {
+    const size_t remaining = strlen(source + copied);
+    const Utf8Codepoint decoded = decodeNextUtf8(
+        source + copied,
+        static_cast<uint8_t>(remaining > UINT8_MAX ? UINT8_MAX : remaining));
+    if (!decoded.valid || decoded.consumed > capacity - copied) break;
+    memcpy(destination + copied, source + copied, decoded.consumed);
+    copied += decoded.consumed;
   }
-  if (codepoint < 0x80)
-    return codepoint;
-  if (codepoint >= FONT_SYMS_START && codepoint < FONT_LANG_START)
-    return static_cast<uint8_t>(codepoint);
-  if (codepoint == L'≥') return CHAR_BW_GREATEREQUAL;
-  if (codepoint == L'°') return CHAR_BW_DEGREE;
-#if defined(UTF8_SUBS_LUT)
-  auto mapped = lookup_utf8_substitution(codepoint);
-  if (mapped != codepoint || mapped <= 0xFF) {
-    if (mapped > FONT_LANG_START) mapped = lookup_utf8_mapping(mapped);
-    return mapped;
-  }
-#elif !defined(NO_UTF8_LUT)
-  auto mapped = lookup_utf8_mapping(codepoint);
-  if (mapped != 0x20) return mapped;
-#endif
-#if defined(EDGETX_CN_STDLCD)
-  return codepoint > 0xFF ? codepoint : 0x20;
-#else
-  return 0x20;
-#endif
+  return copied;
 }
 #endif
 

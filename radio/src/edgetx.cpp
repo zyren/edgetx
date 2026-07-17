@@ -1340,14 +1340,12 @@ static void stopStartupAfterFailedHold(StartupHoldResult result)
   boardOff();
 }
 
-void runStartupAnimation(bool initialFrameDrawn)
+void runStartupAnimation()
 {
   const tmr10ms_t start = get_tmr10ms();
   tmr10ms_t duration = 0;
   StartupHoldResult result = StartupHoldResult::Holding;
 
-  if (!initialFrameDrawn)
-    drawStartupAnimationBlocks(0);
   const bool fontPrepared = sdExternalFontPrepare();
 
   while (result == StartupHoldResult::Holding) {
@@ -1396,7 +1394,7 @@ void runStartupAnimation(bool initialFrameDrawn)
     sdExternalFontActivate();
 }
 #else
-void runStartupAnimation(bool)
+void runStartupAnimation()
 {
   tmr10ms_t start = get_tmr10ms();
   tmr10ms_t duration = 0;
@@ -1478,10 +1476,6 @@ uint8_t startOptions = 0;
 void edgeTxInit()
 {
   TRACE("edgeTxInit");
-#if defined(STARTUP_ANIMATION)
-  bool startupFrameDrawn = false;
-#endif
-
 #if defined(COLORLCD)
   // SD_CARD_PRESENT() does not work properly on most
   // B&W targets, so that we need to delay the detection
@@ -1508,13 +1502,6 @@ void edgeTxInit()
   lcdClear();
   lcdRefresh();
   lcdRefreshWait();
-#endif
-
-#if defined(STARTUP_ANIMATION) && defined(EDGETX_CN_STDLCD)
-  if (!WAS_RESET_BY_WATCHDOG_OR_SOFTWARE() && !UNEXPECTED_SHUTDOWN()) {
-    drawStartupAnimationBlocks(0);
-    startupFrameDrawn = true;
-  }
 #endif
 
   // Load radio.yml so radio settings can be used
@@ -1550,7 +1537,7 @@ void edgeTxInit()
 #endif
   }
   else {
-    runStartupAnimation(startupFrameDrawn);
+    runStartupAnimation();
   }
 #else // defined(STARTUP_ANIMATION)
   pwrOn();
@@ -1566,7 +1553,7 @@ void edgeTxInit()
 
     if (!sdMounted()) {
 #if defined(EDGETX_CN_STDLCD)
-      sdInit(false);
+      sdInit(SdMountMode::Normal);
 #else
       sdInit();
 #endif

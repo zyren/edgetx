@@ -18,19 +18,11 @@ IDS = ["STR_ABOUTUS","STR_ALARMSWARN","STR_BATTERY","STR_EMERGENCY_MODE",
        "STR_STORAGE_WARNING","STR_SWITCHWARN","STR_TEST_WARNING",
        "STR_THROTTLE_UPPERCASE","STR_WARNING","STR_WRONG_PCBREV"]
 FONT_CONTRACT = {
- "CN_8":  {"source":"fusion8","policy":"all-cn-h","expected_glyphs":625,"expected_translation_codepoints":624,"body":[8,8],"cell":[8,8],"top_offset":0},
  "CN_DEFAULT_10": {"source":"fusion10","policy":"all-cn-h-ascii","expected_glyphs":720,"expected_translation_codepoints":624,"body":[10,10],"cell":[10,10],"top_offset":0},
  "CN_10": {"source":"fusion10","policy":"fallback-only","expected_glyphs":1,"expected_translation_codepoints":0,"body":[10,10],"cell":[10,12],"top_offset":1},
  "CN_12": {"source":"fusion12","policy":"identifiers","expected_glyphs":34,"expected_translation_codepoints":33,"body":[12,12],"cell":[12,16],"top_offset":2},
- "CN_16": {"source":"wqy16b","policy":"identifiers","expected_glyphs":34,"expected_translation_codepoints":33,"body":[16,16],"cell":[16,20],"top_offset":2,"source_advance":17},
- "CN_32": {"source":"ark16","policy":"fallback-only","expected_glyphs":1,"expected_translation_codepoints":0,"body":[32,32],"cell":[32,38],"top_offset":3,"scale":2}}
-SOURCE_KEYS = ["fusion8","fusion10","fusion12","wqy16b","ark16"]
-WQY_BOLD_SOURCE_CONTRACT = {
- "kind":"bdf-tar-gz", "version":"0.7.0-4",
- "url":"https://sourceforge.net/projects/wqy/files/wqy-bitmapfont/0.7.0/wqy-bitmapfont-bdf-0.7.0-4.tar.gz/download",
- "archive_size":5203506, "archive_sha256":"E1A9BF2D4E608EAADA9822F58F33626204B665A4A60A353DCEB0C5FC09A75D40",
- "member":"wqy-bitmapfont/wenquanyi_12ptb.bdf", "member_size":5462992, "member_sha256":"26F493DC492BF64EB974E81C174BBCEDD2FF7FBD116428865992388B04A09042",
- "subset":"radio/src/fonts/cn/source/wqy-16px-bold-zh.subset.bdf", "subset_sha256":"D8047A55DC1F456A41D87FEDDED4C9B8F83B408F12357EF1180F592E7AE804C3"}
+ "CN_16": {"source":"wqy16b","policy":"identifiers","expected_glyphs":34,"expected_translation_codepoints":33,"body":[16,16],"cell":[16,20],"top_offset":2,"source_advance":17}}
+SOURCE_KEYS = ["fusion10","fusion12","wqy16b"]
 
 def fail(s): raise ValueError(s)
 def sha256(b): return hashlib.sha256(b).hexdigest().upper()
@@ -53,7 +45,6 @@ def validate_manifest(m):
             archive_hash=s["archive_sha256"]
         else: fail(f"{key}: unsupported source kind")
         if not re.fullmatch(r"[0-9A-F]{64}",archive_hash) or not re.fullmatch(r"[0-9A-F]{64}",s["member_sha256"]) or not re.fullmatch(r"[0-9A-F]{64}",s["subset_sha256"]): fail(f"{key}: invalid source hash")
-    if m["sources"].get("wqy16b") != WQY_BOLD_SOURCE_CONTRACT: fail("wqy16b source/hash contract changed")
     validate_external_manifest(m,pinned=True)
 
 def resolve(expr):
@@ -93,11 +84,9 @@ def codepoints(m):
         selected += [ord(ch) for s in vals for ch in s if cjk(ord(ch))]
     c12=sorted(set(selected))
     if len(allcp)!=624 or len(c12)!=33: fail(f"translation coverage changed ({len(allcp)}/{len(c12)})")
-    out={"CN_8":[FALLBACK]+allcp,
-         "CN_DEFAULT_10":[FALLBACK]+list(range(0x20,0x7F))+allcp,
+    out={"CN_DEFAULT_10":[FALLBACK]+list(range(0x20,0x7F))+allcp,
          "CN_10":[FALLBACK],
-         "CN_12":[FALLBACK]+c12,"CN_16":[FALLBACK]+c12,
-         "CN_32":[FALLBACK]}
+         "CN_12":[FALLBACK]+c12,"CN_16":[FALLBACK]+c12}
     for n,v in out.items():
         if v[0]!=FALLBACK or v[1:]!=sorted(set(v[1:])) or len(v)!=FONT_CONTRACT[n]["expected_glyphs"]: fail(f"{n}: codepoint contract failed")
     return out
@@ -323,73 +312,17 @@ def generated(m,cps):
         widthtext=",\n  ".join(", ".join(str(x) for x in widths[name][i:i+24]) for i in range(0,len(widths[name]),24))
         cpp=f"// Generated; do not edit.\n{provenance}#include \"{name.lower()}.h\"\nconst uint16_t {name}_codepoints[{name}_GLYPH_COUNT] = {{\n  {cptext}\n}};\nconst uint8_t {name}_widths[{name}_GLYPH_COUNT] = {{\n  {widthtext}\n}};\nconst uint8_t {name}_glyphs[{name}_GLYPH_COUNT][{name}_BYTES_PER_GLYPH] = {{\n{rowtext}\n}};\n"
         outputs[outdir/f"{name.lower()}.h"]=h.encode(); outputs[outdir/f"{name.lower()}.cpp"]=cpp.encode()
-    samples=[bodies[n][0] for n in FONT_CONTRACT]; scale=2; gap=4; pw=sum(len(x)*scale+gap for x in samples)-gap; ph=64; pix=[[0]*pw for _ in range(ph)]; ox=0
-    for body in samples:
-        for y,row in enumerate(body):
-            for x,v in enumerate(row):
-                if v:
-                    for yy in range(2):
-                        for xx in range(2): pix[y*2+yy][ox+x*2+xx]=1
-        ox+=len(body)*2+gap
-    outputs[outdir/"preview.pbm"]=(f"P1\n# {' '.join(FONT_CONTRACT)} U+25A1\n{pw} {ph}\n"+"\n".join(" ".join(map(str,r)) for r in pix)+"\n").encode()
     return outputs
 
 
 # ---------------------------------------------------------------------------
 # External CN_BASIC.FNT generation
 
-EXTERNAL_SOURCE_PINS = {
- "unifont17": {"kind":"bdf-gz", "archive":"unifont-17.0.04.bdf.gz",
-  "url":"https://www.nic.funet.fi/pub/gnu/gnu/unifont/unifont-17.0.04/unifont-17.0.04.bdf.gz",
-  "archive_sha256":"9A2DE4826388242771121C7FE00E412523C318318B8EE38E6BE6CD454E7EC802",
-  "member_sha256":"F2B2952312FA189F8963C85EB50FDA14606A6DF5D8DBE9E01651138EB2CECEA9",
-  "source_size":16, "coverage":["U+4E00","U+9FFF"], "required_coverage":["U+4E00","U+9FFF"]},
- "wqy9_medium": {"kind":"bdf-tar-gz", "archive":"wqy-bitmapfont-bdf-0.7.0-4.tar.gz",
-  "url":"https://sourceforge.net/projects/wqy/files/wqy-bitmapfont/0.7.0/wqy-bitmapfont-bdf-0.7.0-4.tar.gz/download",
-  "archive_sha256":"E1A9BF2D4E608EAADA9822F58F33626204B665A4A60A353DCEB0C5FC09A75D40",
-  "member":"wqy-bitmapfont/wenquanyi_9pt.bdf", "member_size":3229889,
-  "member_sha256":"9F3F52958E6542DB30CDEF15DEC8BA5F0BBC9E75BAF24B444E86B2FE9067461B",
-  "source_size":12, "coverage":["U+4E00","U+9FA5"], "required_coverage":["U+4E00","U+9FA5"],
-  "metric_crop":{"canvas":[12,14],"rect":[0,1,12,12],"require_zero_clipped":True}},
- "wqy_bold": {"kind":"bdf-tar-gz", "archive":"wqy-bitmapfont-bdf-0.7.0-4.tar.gz",
-  "url":"https://sourceforge.net/projects/wqy/files/wqy-bitmapfont/0.7.0/wqy-bitmapfont-bdf-0.7.0-4.tar.gz/download",
-  "archive_sha256":"E1A9BF2D4E608EAADA9822F58F33626204B665A4A60A353DCEB0C5FC09A75D40",
-  "member":"wqy-bitmapfont/wenquanyi_12ptb.bdf",
-  "member_sha256":"26F493DC492BF64EB974E81C174BBCEDD2FF7FBD116428865992388B04A09042",
-  "source_size":16, "coverage":["U+4E00","U+9FA5"], "required_coverage":["U+4E00","U+9FA5"]},
- "wqy_medium": {"kind":"bdf-tar-gz", "archive":"wqy-bitmapsong-bdf-1.0.0-RC1_GPLv2+.tar.gz",
-  "url":"https://sourceforge.net/projects/wqy/files/wqy-bitmapfont/1.0.0-RC1/wqy-bitmapsong-bdf-1.0.0-RC1_GPLv2+.tar.gz/download",
-  "archive_sha256":"C29B2C2F5DB73FF74D11A7DCA9608414813DA1C4240B7B6C829A58757B35EBE6",
-  "member":"wqy-bitmapsong/wenquanyi_12pt.bdf",
-  "member_sha256":"EB8E295F761F28691ED9F199BA74C222D3392C6144174CB0B66C78C89A97FA49", "source_size":16},
- "fusion12": {"kind":"bdf-zip", "archive":"fusion-pixel-font-12px-monospaced-bdf-v2026.07.01.zip",
-  "url":"https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.07.01/fusion-pixel-font-12px-monospaced-bdf-v2026.07.01.zip",
-  "archive_sha256":"C461C312720E005F5A49843A965842E8749F196F00F97FACF1AD926F330296DF",
-  "member":"fusion-pixel-12px-monospaced-zh_hans.bdf",
-  "member_sha256":"AEA441A489B18A93BB417BBA33A31917B1BEF90167B01ED9A63E2E9DF3E144F8", "source_size":12},
- "fusion10": {"kind":"bdf-zip", "archive":"fusion-pixel-font-10px-monospaced-bdf-v2026.07.01.zip",
-  "url":"https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.07.01/fusion-pixel-font-10px-monospaced-bdf-v2026.07.01.zip",
-  "archive_sha256":"0F28B5850FA9B4B0F8DBB7C40F671A3574A97236A848D1E0ECF6ED302AE659C3",
-  "member":"fusion-pixel-10px-monospaced-zh_hans.bdf",
-  "member_sha256":"A9FECDECBE42C93E8D6C0642CF1A1FABE29E7C4DCDAB43B4540FB23CC7E006B1", "source_size":10},
-}
 EXTERNAL_STRIKE_GEOMETRY = {
  10: {"width":10, "height":10},
  12: {"width":12, "height":12},
  16: {"width":16, "height":16},
 }
-EXTERNAL_PRIORITIES = {
- 10: ["fusion10","wqy9_medium","unifont17"],
- 12: ["fusion12","wqy_medium","unifont17"],
- 16: ["wqy_bold","unifont17"],
-}
-EXTERNAL_TRANSFORMS = {
- 10: {"wqy9_medium":"center-nearest", "unifont17":"center-nearest"},
- 12: {"wqy_medium":"center-nearest", "unifont17":"center-nearest"},
- 16: {"unifont17":"controlled-horizontal-embolden"},
-}
-
-
 @dataclass(frozen=True)
 class ExternalBuild:
     data: bytes
@@ -430,21 +363,24 @@ def validate_external_manifest(value, pinned=True):
         fail("external font glyph/slot contract changed")
     if ext.get("alignment")!=external_font.PAYLOAD_ALIGNMENT or ext.get("column_major") is not True or ext.get("bits_per_pixel")!=1:
         fail("external font packing/alignment contract changed")
+    if pinned:
+        release=ext.get("release")
+        if (not isinstance(release,dict) or set(release)!={"size","sha256"}
+                or not isinstance(release["size"],int) or isinstance(release["size"],bool)
+                or release["size"]<=0 or not isinstance(release["sha256"],str)
+                or not re.fullmatch(r"[0-9A-F]{64}",release["sha256"])):
+            fail("external font release contract is invalid")
     sources=ext.get("sources")
     if not isinstance(sources,dict): fail("external_font.sources must be an object")
-    if pinned and set(sources)!=set(EXTERNAL_SOURCE_PINS): fail("external source key contract changed")
-    for key,pin in EXTERNAL_SOURCE_PINS.items() if pinned else sources.items():
-        if key not in sources: fail(f"missing external source: {key}")
-        source=sources[key]
+    for key,source in sources.items():
         if not isinstance(source,dict): fail(f"external source {key} must be an object")
-        if pinned and source!=pin: fail(f"external source {key} contract changed")
-        if pinned:
-            for field in ("kind","archive","archive_sha256","member_sha256"):
-                if field not in source or not isinstance(source[field],str): fail(f"external source {key} missing {field}")
-            if not re.fullmatch(r"[0-9A-F]{64}",source["archive_sha256"]) or not re.fullmatch(r"[0-9A-F]{64}",source["member_sha256"]):
-                fail(f"external source {key} has invalid SHA256")
-            if source["kind"] in ("bdf-tar-gz","bdf-zip") and not source.get("member"):
-                fail(f"external source {key} missing member")
+        required=("kind","source_size") if not pinned else ("kind","source_size","archive","url","archive_sha256","member_sha256")
+        for field in required:
+            expected_type=int if field=="source_size" else str
+            if field not in source or not isinstance(source[field],expected_type): fail(f"external source {key} missing {field}")
+        if source["kind"] not in ("bdf-gz","bdf-tar-gz","bdf-zip"): fail(f"external source {key} has unsupported kind")
+        if pinned and (not re.fullmatch(r"[0-9A-F]{64}",source["archive_sha256"]) or not re.fullmatch(r"[0-9A-F]{64}",source["member_sha256"])): fail(f"external source {key} has invalid SHA256")
+        if source["kind"] in ("bdf-tar-gz","bdf-zip") and not source.get("member"): fail(f"external source {key} missing member")
         if source.get("source_size") not in (10,12,16): fail(f"external source {key} has invalid source_size")
         if "required_coverage" in source: _external_range(source["required_coverage"])
         if "coverage" in source: _external_range(source["coverage"])
@@ -467,14 +403,14 @@ def validate_external_manifest(value, pinned=True):
             fail(f"external strike {key} geometry changed")
         priority=spec.get("priority")
         if not isinstance(priority,list) or not priority or len(set(priority))!=len(priority): fail(f"external strike {key} priority is invalid")
-        if pinned and priority!=EXTERNAL_PRIORITIES[key]: fail(f"external strike {key} priority changed")
         if any(name not in sources for name in priority): fail(f"external strike {key} references unknown source")
         transforms=spec.get("transforms",{})
         if not isinstance(transforms,dict) or any(name not in priority for name in transforms): fail(f"external strike {key} transforms are invalid")
-        if pinned and transforms!=EXTERNAL_TRANSFORMS[key]: fail(f"external strike {key} transforms changed")
+        if any(value not in ("center-nearest","controlled-horizontal-embolden") for value in transforms.values()): fail(f"external strike {key} has unsupported transform")
         for name in priority:
             native=sources[name]["source_size"]; transform=transforms.get(name)
             if native==key:
+                if transform=="controlled-horizontal-embolden" and key!=16: fail(f"external strike {key} cannot embolden")
                 if transform not in (None,"controlled-horizontal-embolden"): fail(f"external strike {key} source {name} has invalid native transform")
             elif native>key:
                 if transform!="center-nearest": fail(f"external strike {key} source {name} requires center-nearest")
@@ -550,9 +486,6 @@ def nearest_neighbor(body, target_size):
     if source_height!=source_width or any(len(row)!=source_width for row in body): fail("nearest-neighbor body must be square")
     return [[body[((2*y+1)*source_height)//(2*target_size)][((2*x+1)*source_width)//(2*target_size)]
              for x in range(target_size)] for y in range(target_size)]
-
-
-nearest_neighbor_scale=nearest_neighbor
 
 
 def external_raster(glyph, ascent, descent, size):
@@ -681,6 +614,9 @@ def generate_external(m, output, cache_dir=None, source_dir=None, download=True)
     validate_manifest(m); ext=m["external_font"]
     bdfs=load_external_sources(ext,cache_dir,source_dir,download)
     result=build_external_font(ext,bdfs)
+    release=ext["release"]
+    if len(result.data)!=release["size"] or result.sha256!=release["sha256"]:
+        fail("generated external font differs from release contract")
     output=Path(output); output.parent.mkdir(parents=True,exist_ok=True); output.write_bytes(result.data)
     for strike in (10,12,16):
         counts=" ".join(f"{name}={count}" for name,count in result.source_counts[strike].items())
@@ -688,9 +624,6 @@ def generate_external(m, output, cache_dir=None, source_dir=None, download=True)
     print(f"external output={output} sha256={result.sha256}")
     return result
 
-
-external_generated=build_external_font
-generate_external_font=generate_external
 
 def main(argv=None):
     p=argparse.ArgumentParser(); p.add_argument("--check",action="store_true"); p.add_argument("--extract-subset",action="store_true")

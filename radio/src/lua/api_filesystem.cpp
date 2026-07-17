@@ -175,7 +175,7 @@ int luaDelete(lua_State* L)
 {
   const char* filename = luaL_optstring(L, 1, nullptr);
 
-  FRESULT res = f_unlink(filename);
+  FRESULT res = sdUnlink(filename);
   if (res != FR_OK) {
     TRACE("luaDelete cannot delete file/folder %s", filename);
   }
@@ -243,7 +243,7 @@ static int luaRename(lua_State * L)
 {
   const char * from_path = luaL_checkstring(L, 1);
   const char * to_path = luaL_checkstring(L, 2);
-  FRESULT res = f_rename(from_path, to_path);
+  FRESULT res = sdRename(from_path, to_path);
   lua_pushunsigned(L, res);
   return 1;
 }

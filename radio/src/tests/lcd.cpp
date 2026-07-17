@@ -97,6 +97,13 @@ bool checkScreenshot(const char* test)
   lcdRefresh();
 
   std::string filename = std::string(test);
+#if defined(EDGETX_CN_STDLCD)
+  if (!strcmp(test, "unsigned") || !strcmp(test, "big_numbers") ||
+      !strcmp(test, "invers_0_0") || !strcmp(test, "invers_0_1") ||
+      !strcmp(test, "prec2_left") || !strcmp(test, "line_wrap") ||
+      !strcmp(test, "stdsize"))
+    filename += "_gx12_cn";
+#endif
   filename += '_' + std::to_string(LCD_W);
   filename += 'x' + std::to_string(LCD_H);
   filename += ".png";

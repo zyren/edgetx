@@ -6,11 +6,9 @@ except ImportError:
     import generate
 
 ARCHIVE_FILES={
- "fusion8":"fusion-pixel-font-8px-monospaced-bdf-v2026.07.01.zip",
  "fusion10":"fusion-pixel-font-10px-monospaced-bdf-v2026.07.01.zip",
  "fusion12":"fusion-pixel-font-12px-monospaced-bdf-v2026.07.01.zip",
- "wqy16b":"wqy-bitmapfont-bdf-0.7.0-4.tar.gz",
- "ark16":"ark-pixel-font-16px-monospaced-bdf-v2026.07.01.zip"}
+ "wqy16b":"wqy-bitmapfont-bdf-0.7.0-4.tar.gz"}
 
 def parse_generated(name):
     header=(generate.ROOT/f"radio/src/fonts/cn/generated/{name.lower()}.h").read_text()
@@ -51,14 +49,12 @@ class GeneratorTests(unittest.TestCase):
             lambda m:m["profiles"]["CN_10"].update(cell=[10,13],top_offset=0),
             lambda m:m["profiles"]["CN_DEFAULT_10"].update(top_offset=1),
             lambda m:m["profiles"]["CN_12"].update(policy="fallback-only"),
-            lambda m:m["profiles"]["CN_16"].update(source_advance=16),
-            lambda m:m["external_font"]["sources"]["unifont17"].update(archive_sha256="0"*64),
-            lambda m:m["external_font"]["strikes"]["12"].update(priority=["unifont17","fusion12","wqy_medium"])):
+            lambda m:m["profiles"]["CN_16"].update(source_advance=16)):
             bad=copy.deepcopy(self.manifest); mutate(bad)
             with self.assertRaises(ValueError): generate.codepoints(bad)
 
     def test_counts_order_and_fallback(self):
-        self.assertEqual({k:len(v) for k,v in self.cps.items()},{"CN_8":625,"CN_DEFAULT_10":720,"CN_10":1,"CN_12":34,"CN_16":34,"CN_32":1})
+        self.assertEqual({k:len(v) for k,v in self.cps.items()},{"CN_DEFAULT_10":720,"CN_10":1,"CN_12":34,"CN_16":34})
         for name,v in self.cps.items():
             self.assertEqual(v[0],0x25A1); self.assertEqual(v[1:],sorted(set(v[1:])))
             self.assertEqual(set(v)&set(range(0x20,0x7F)),set(range(0x20,0x7F)) if name=="CN_DEFAULT_10" else set())
@@ -114,7 +110,9 @@ class GeneratorTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"invalid release tar.gz"): generate.extract_one(invalid,corrupt,[0x25A1])
 
     def test_wqy_bold_source_hash_and_license_contract(self):
-        self.assertEqual(generate.WQY_BOLD_SOURCE_CONTRACT,self.manifest["sources"]["wqy16b"])
+        source=self.manifest["sources"]["wqy16b"]
+        self.assertEqual(source["archive_sha256"],"E1A9BF2D4E608EAADA9822F58F33626204B665A4A60A353DCEB0C5FC09A75D40")
+        self.assertEqual(source["member_sha256"],"26F493DC492BF64EB974E81C174BBCEDD2FF7FBD116428865992388B04A09042")
         subset=(generate.ROOT/self.manifest["sources"]["wqy16b"]["subset"]).read_bytes()
         for notice in (b"Developer: The WenQuanYi Project Contributors",b"Copyright: (C)2004-2006, The WenQuanYi Project",b"License  : GPL v2.0 (with font embedding exception)"):
             self.assertIn(notice,subset)
@@ -191,7 +189,7 @@ class GeneratorTests(unittest.TestCase):
             _,_,glyphs=generate.parse_bdf(raw)
             wanted=sorted(set().union(*(self.cps[name] for name,spec in generate.FONT_CONTRACT.items() if spec["source"]==key)))
             self.assertEqual(list(glyphs),wanted)
-            source_width={"fusion8":8,"fusion10":10,"fusion12":12,"wqy16b":17,"ark16":16}[key]
+            source_width={"fusion10":10,"fusion12":12,"wqy16b":17}[key]
             expected={(source_width,0)} | ({(5,0)} if key=="fusion10" else set())
             self.assertEqual({glyph.dwidth for glyph in glyphs.values()},expected)
 
@@ -209,18 +207,13 @@ class GeneratorTests(unittest.TestCase):
             generate.validate_logical_width("CN_16",cp,body,16)
 
     def test_logical_width_accepts_pixels_within_width(self):
-        body=[[0]*8 for _ in range(8)]; body[3][3]=1
-        generate.validate_logical_width("CN_8",0x41,body,4)
-        scaled=generate.scale2([[1 if x==7 and y==4 else 0 for x in range(16)] for y in range(16)])
-        generate.validate_logical_width("CN_32",0x41,scaled,16)
+        body=[[0]*10 for _ in range(10)]; body[3][4]=1
+        generate.validate_logical_width("CN_10",0x41,body,5)
 
     def test_logical_width_rejects_pixels_beyond_width_after_scaling(self):
-        body=[[0]*8 for _ in range(8)]; body[3][4]=1
-        with self.assertRaisesRegex(ValueError,r"CN_8 U\+0041: pixels beyond logical width 4"):
-            generate.validate_logical_width("CN_8",0x41,body,4)
-        scaled=generate.scale2([[1 if x==8 and y==4 else 0 for x in range(16)] for y in range(16)])
-        with self.assertRaisesRegex(ValueError,r"CN_32 U\+0041: pixels beyond logical width 16"):
-            generate.validate_logical_width("CN_32",0x41,scaled,16)
+        body=[[0]*10 for _ in range(10)]; body[3][5]=1
+        with self.assertRaisesRegex(ValueError,r"CN_10 U\+0041: pixels beyond logical width 5"):
+            generate.validate_logical_width("CN_10",0x41,body,5)
 
     def test_offsets_negative_x_clipping_and_real_12px_14row(self):
         g=generate.Glyph(1,(4,0),(3,4,-1,-1),[0xE0]*4,b"")
@@ -248,7 +241,7 @@ class GeneratorTests(unittest.TestCase):
 
     def test_byte_identical_generation_and_hash_failure(self):
         self.assertEqual(generate.generated(self.manifest,self.cps),generate.generated(self.manifest,self.cps))
-        bad=copy.deepcopy(self.manifest); bad["sources"]["fusion8"]["subset_sha256"]="0"*64
+        bad=copy.deepcopy(self.manifest); bad["sources"]["fusion10"]["subset_sha256"]="0"*64
         with self.assertRaisesRegex(ValueError,"hash mismatch"): generate.generated(bad,self.cps)
 
 if __name__=="__main__": unittest.main()

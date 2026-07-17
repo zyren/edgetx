@@ -1,4 +1,3 @@
-import json
 import random
 import struct
 import subprocess
@@ -99,17 +98,17 @@ class ExternalFontTests(unittest.TestCase):
                 expected = self.glyphs[strike][index]
                 with self.subTest(strike=strike, codepoint=hex(codepoint)):
                     self.assertEqual(self.font.bitmap(strike, codepoint), expected)
-                    slot = self.font.slot(strike, codepoint)
+                    entry = next(entry for entry in self.font.entries if entry.id == strike)
+                    start = entry.data_offset + index * external_font.SLOT_SIZE
+                    slot = self.data[start:start + external_font.SLOT_SIZE]
                     self.assertEqual(len(slot), 32)
                     self.assertEqual(slot[:body_length], expected)
                     self.assertEqual(slot[body_length:], b"\0" * (32 - body_length))
-                    self.assertEqual(
-                        external_font.extract_bitmap(self.data, strike, codepoint), expected)
 
     def test_single_10px_strike_is_allowed(self):
         data = external_font.build_container({10: self.glyphs[10]})
-        font = external_font.validate_container(data)
-        self.assertEqual([entry.id for entry in font.strikes], [10])
+        font = external_font.read_container(data)
+        self.assertEqual([entry.id for entry in font.entries], [10])
         self.assertEqual(font.total_file_size, 512 + 20992 * 32)
         self.assertEqual(font.bitmap(10, 0x4E00), self.glyphs[10][0])
 
@@ -120,10 +119,10 @@ class ExternalFontTests(unittest.TestCase):
         for codepoint in codepoints:
             index = codepoint - 0x4E00
             strike = rng.choice((10, 12, 16))
-            self.assertEqual(self.font.get_bitmap(strike, codepoint), self.glyphs[strike][index])
+            self.assertEqual(self.font.bitmap(strike, codepoint), self.glyphs[strike][index])
         for bad in (0x4DFF, 0xA000, -1, True, "U+4E00"):
             with self.subTest(bad=bad), self.assertRaises(ValueError):
-                self.font.slot(10, bad)
+                self.font.bitmap(10, bad)
 
     def test_truncation_magic_version_endian_reserved_and_trailing_rejected(self):
         cases = []
@@ -220,7 +219,7 @@ class ExternalFontTests(unittest.TestCase):
                 external_font.StrikeInput(10, self.glyphs[10]),
             ])
 
-    def test_cli_validate_and_generate_json(self):
+    def test_cli_strict_validate(self):
         script = Path(external_font.__file__)
         with tempfile.TemporaryDirectory() as directory:
             directory = Path(directory)
@@ -239,21 +238,6 @@ class ExternalFontTests(unittest.TestCase):
                 text=True, capture_output=True, check=False)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("error:", result.stderr)
-
-            intermediate = directory / "glyphs.json"
-            intermediate.write_text(json.dumps({"strikes": [{
-                "id": 10,
-                "glyphs": [body.hex() for body in self.glyphs[10]],
-            }]}), encoding="utf-8")
-            generated_path = directory / "generated.etxcnf"
-            result = subprocess.run(
-                [sys.executable, str(script), "generate", str(intermediate), str(generated_path)],
-                text=True, capture_output=True, check=False)
-            self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertEqual(
-                generated_path.read_bytes(),
-                external_font.build_container({10: self.glyphs[10]}))
-
 
 if __name__ == "__main__":
     unittest.main()

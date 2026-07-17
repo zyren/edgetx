@@ -27,12 +27,10 @@
 
 #if defined(EDGETX_CN_STDLCD)
 #include "fonts/external_font.h"
-#include "fonts/cn/generated/cn_8.h"
 #include "fonts/cn/generated/cn_default_10.h"
 #include "fonts/cn/generated/cn_10.h"
 #include "fonts/cn/generated/cn_12.h"
 #include "fonts/cn/generated/cn_16.h"
-#include "fonts/cn/generated/cn_32.h"
 #endif
 
 #if !defined(SIMU)
@@ -457,7 +455,7 @@ void lcdDrawCodepoint(coord_t x, coord_t y, uint16_t codepoint, LcdFlags flags)
         static_cast<uint8_t>(strike * 2)
       };
       lcdPutRawCnPattern(x, y + externalCnTopOffset(strike), externalFont,
-                         external, font.widths[0], flags);
+                         external, strike, flags);
       return;
     }
   }

@@ -101,6 +101,8 @@ if (ENABLE_BOOTLOADER_DEBUG)
   # target_compile_definitions(stm32_drivers_w_dbg_bl PRIVATE -DDEBUG)
 endif()
 
+# The generated stamp/build headers in this binary directory must win over
+# source-tree headers, especially when reusing a configured build directory.
 target_include_directories(bootloader
   BEFORE PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
 )

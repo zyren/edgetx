@@ -123,12 +123,11 @@ void logsWrite();
 
 #if defined(EDGETX_CN_STDLCD)
 #include "fonts/external_font.h"
-void sdInit(bool initExternalFont = true);
-void sdMount(bool initExternalFont = true);
+enum class SdMountMode : uint8_t { Normal, StartupEarly };
+void sdInit(SdMountMode mode = SdMountMode::Normal);
+void sdMount(SdMountMode mode = SdMountMode::Normal);
 bool sdExternalFontPrepare();
 bool sdExternalFontActivate();
-ExternalFontResult sdExternalFontVerifyFull(
-    ExternalFontProgressCallback callback = nullptr, void * context = nullptr);
 void sdExternalFontShutdown();
 #else
 void sdInit();
@@ -164,6 +163,8 @@ const char * sdCopyFile(const char * src, const char * dest);
 const char * sdCopyFile(const char * srcFilename, const char * srcDir, const char * destFilename, const char * destDir);
 const char * sdMoveFile(const char * src, const char * dest);
 const char * sdMoveFile(const char * srcFilename, const char * srcDir, const char * destFilename, const char * destDir);
+FRESULT sdUnlink(const char * path);
+FRESULT sdRename(const char * oldPath, const char * newPath);
 
 #define LIST_NONE_SD_FILE   1
 #define LIST_SD_FILE_EXT    2

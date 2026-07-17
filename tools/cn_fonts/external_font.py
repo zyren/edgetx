@@ -1,27 +1,19 @@
 #!/usr/bin/env python3
-"""GX12 external CJK font, Phase 0 container and generator.
+"""Build, read, and strictly validate the GX12 external CJK font container.
 
 The format deliberately has no dependency on a C compiler, a packed struct, or
 an external font library.  A glyph body is supplied in column-major, 1bpp
 form.  The body is copied into a 32-byte slot and the unused tail of that slot
 is zero-filled.
 
-The command line generator consumes a JSON intermediate file of this shape::
-
-    {"strikes": [
-      {"id": 10, "glyphs": ["<body-hex>", ...]},
-      {"id": 12, "glyphs": ["<body-hex>", ...]}
-    ]}
-
-There must be exactly 20992 glyph strings for every strike.  The compact body
-length is 20, 24, or 32 bytes for the 10, 12, and 16 pixel strikes
-respectively.  The CLI supports ``validate FILE`` and
-``generate INPUT.json OUTPUT``.
+There must be exactly 20992 glyphs for every strike.  The compact body length
+is 20, 24, or 32 bytes for the 10, 12, and 16 pixel strikes respectively.  The
+formal CLI exposes strict ``validate FILE`` only; production generation lives
+in :mod:`tools.cn_fonts.generate`.
 """
 from __future__ import annotations
 
 import argparse
-import json
 import struct
 import sys
 import zlib
@@ -38,14 +30,12 @@ MAGIC = b"ETXCNF\x00\x00"
 VERSION = 1
 HEADER_SIZE = 64
 DIRECTORY_ENTRY_SIZE = 32
-DIR_ENTRY_SIZE = DIRECTORY_ENTRY_SIZE  # Public spelling used by some tools.
 SLOT_SIZE = 32
 FIRST_CODEPOINT = 0x4E00
 LAST_CODEPOINT = 0x9FFF
 GLYPH_COUNT = LAST_CODEPOINT - FIRST_CODEPOINT + 1
 ENDIAN_MARKER = 0x12345678
 PAYLOAD_ALIGNMENT = 512
-ALIGNMENT = PAYLOAD_ALIGNMENT
 MAX_STRIKE_COUNT = 3
 SUPPORTED_STRIKE_IDS = (10, 12, 16)
 U32_MAX = 0xFFFFFFFF
@@ -71,8 +61,6 @@ GEOMETRIES = {
     12: StrikeGeometry(12, 12, 12, 2, 13),
     16: StrikeGeometry(16, 16, 16, 2, 17),
 }
-STRIKE_GEOMETRIES = GEOMETRIES
-ADVANCE_BY_STRIKE = {key: value.advance for key, value in GEOMETRIES.items()}
 
 
 # The formats describe bytes only; they are not used as a C packed struct.
@@ -103,15 +91,6 @@ class StrikeInput:
     height: Optional[int] = None
     advance: Optional[int] = None
 
-    @property
-    def strike(self) -> int:
-        """Alias for the directory strike id."""
-
-        return self.id
-
-
-StrikeSpec = StrikeInput
-Strike = StrikeInput
 
 
 @dataclass(frozen=True)
@@ -129,14 +108,6 @@ class DirectoryEntry:
     data_offset: int
     data_length: int
     strike_crc32: int
-
-    @property
-    def strike(self) -> int:
-        return self.id
-
-    @property
-    def size(self) -> int:
-        return self.id
 
     @property
     def body_length(self) -> int:
@@ -166,18 +137,6 @@ class ExternalFont:
     def __post_init__(self) -> None:
         object.__setattr__(self, "_entry_by_id", {entry.id: entry for entry in self.entries})
 
-    @property
-    def raw(self) -> bytes:
-        return self.data
-
-    @property
-    def strikes(self) -> tuple[DirectoryEntry, ...]:
-        return self.entries
-
-    @property
-    def directory(self) -> tuple[DirectoryEntry, ...]:
-        return self.entries
-
     def _get_entry(self, strike: Union[int, DirectoryEntry]) -> DirectoryEntry:
         if isinstance(strike, DirectoryEntry):
             strike_id = strike.id
@@ -204,33 +163,11 @@ class ExternalFont:
             raise ValueError("truncated glyph slot")
         return result
 
-    def slot(self, strike: Union[int, DirectoryEntry], codepoint: int) -> bytes:
-        """Return one complete, fixed-size 32-byte slot."""
-
-        return self._slot(strike, codepoint)
-
-    def extract_slot(self, strike: Union[int, DirectoryEntry], codepoint: int) -> bytes:
-        return self._slot(strike, codepoint)
-
-    def get_slot(self, strike: Union[int, DirectoryEntry], codepoint: int) -> bytes:
-        return self._slot(strike, codepoint)
-
     def bitmap(self, strike: Union[int, DirectoryEntry], codepoint: int) -> bytes:
         """Return the compact column-major bitmap, without slot padding."""
 
         entry = self._get_entry(strike)
         return self._slot(strike, codepoint)[: entry.body_length]
-
-    def extract_bitmap(self, strike: Union[int, DirectoryEntry], codepoint: int) -> bytes:
-        return self.bitmap(strike, codepoint)
-
-    def get_bitmap(self, strike: Union[int, DirectoryEntry], codepoint: int) -> bytes:
-        return self.bitmap(strike, codepoint)
-
-
-Container = ExternalFont
-ParsedContainer = ExternalFont
-
 
 # ---------------------------------------------------------------------------
 # Checked arithmetic and primitive validation helpers
@@ -633,29 +570,6 @@ def build_container(strikes: Any) -> bytes:
     return bytes(raw)
 
 
-def create_container(strikes: Any, output: Any = None) -> bytes:
-    """Alias-friendly constructor; optionally writes ``output`` as well."""
-
-    data = build_container(strikes)
-    if output is not None:
-        Path(output).write_bytes(data)
-    return data
-
-
-def write_container(path: Any, strikes: Any) -> bytes:
-    """Build and write a container, returning the exact bytes written."""
-
-    data = build_container(strikes)
-    Path(path).write_bytes(data)
-    return data
-
-
-write_external_font = write_container
-serialize = build_container
-pack = build_container
-build = build_container
-
-
 # ---------------------------------------------------------------------------
 # Strict parser / validator
 
@@ -907,123 +821,8 @@ def read_container(source: Any) -> ExternalFont:
     )
 
 
-def parse_container(source: Any) -> ExternalFont:
-    return read_container(source)
-
-
-def validate_container(source: Any) -> ExternalFont:
-    """Strict validator; returns the parsed object and raises ValueError."""
-
-    return read_container(source)
-
-
-def validate_file(source: Any) -> ExternalFont:
-    return read_container(source)
-
-
-def validate(source: Any) -> ExternalFont:
-    return read_container(source)
-
-
-def is_valid(source: Any) -> bool:
-    try:
-        read_container(source)
-    except (OSError, TypeError, ValueError):
-        return False
-    return True
-
-
-def extract_slot(source: Any, strike: Union[int, DirectoryEntry], codepoint: int) -> bytes:
-    container = source if isinstance(source, ExternalFont) else read_container(source)
-    return container.slot(strike, codepoint)
-
-
-def extract_bitmap(source: Any, strike: Union[int, DirectoryEntry], codepoint: int) -> bytes:
-    container = source if isinstance(source, ExternalFont) else read_container(source)
-    return container.bitmap(strike, codepoint)
-
-
-def extract_glyph(source: Any, strike: Union[int, DirectoryEntry], codepoint: int) -> bytes:
-    """Alias for compact bitmap extraction."""
-
-    return extract_bitmap(source, strike, codepoint)
-
-
-get_slot = extract_slot
-get_bitmap = extract_bitmap
-read_slot = extract_slot
-read_bitmap = extract_bitmap
-
-
 # ---------------------------------------------------------------------------
-# JSON intermediate input and command line interface
-
-
-def _json_body(value: Any, strike_id: int, index: int) -> bytes:
-    if isinstance(value, str):
-        text = value.strip()
-        if text.startswith(("0x", "0X")):
-            text = text[2:]
-        if len(text) % 2:
-            raise ValueError(f"strike {strike_id} glyph {index}: odd-length hex body")
-        try:
-            return bytes.fromhex(text)
-        except ValueError as exc:
-            raise ValueError(f"strike {strike_id} glyph {index}: invalid hex body") from exc
-    if isinstance(value, list):
-        result = bytearray()
-        for byte_index, item in enumerate(value):
-            _check_uint(item, 8, f"strike {strike_id} glyph {index} byte {byte_index}")
-            result.append(item)
-        return bytes(result)
-    raise ValueError(f"strike {strike_id} glyph {index}: body must be hex or byte list")
-
-
-def _load_intermediate(path: Any) -> Any:
-    try:
-        document = json.loads(Path(path).read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"invalid JSON intermediate input: {exc}") from exc
-    if isinstance(document, Mapping) and "strikes" in document:
-        source = document["strikes"]
-    else:
-        source = document
-
-    if isinstance(source, Mapping):
-        if any(key in source for key in ("glyphs", "glyph_bodies", "bodies")):
-            source = [source]
-        else:
-            source = [
-                {"id": key, "glyphs": value}
-                for key, value in source.items()
-            ]
-    if not isinstance(source, list):
-        raise ValueError("JSON intermediate must contain a strikes list or id map")
-
-    result = []
-    for item in source:
-        if not isinstance(item, Mapping):
-            raise ValueError("each JSON strike must be an object")
-        strike_id = _coerce_id(_field(item, ("id", "strike", "size")))
-        raw_glyphs = _field(item, ("glyphs", "glyph_bodies", "bodies"))
-        if not isinstance(raw_glyphs, list):
-            raise ValueError(f"strike {strike_id}: JSON glyphs must be a list")
-        glyphs = [
-            _json_body(value, strike_id, index)
-            for index, value in enumerate(raw_glyphs)
-        ]
-        result.append(
-            StrikeInput(
-                id=strike_id,
-                glyphs=glyphs,
-                width=item.get("width"),
-                height=item.get("height"),
-                advance=item.get("advance"),
-            )
-        )
-    return result
-
-
+# Strict validation command line interface
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     subparsers = parser.add_subparsers(dest="command")
@@ -1031,13 +830,6 @@ def _build_parser() -> argparse.ArgumentParser:
     validate_parser = subparsers.add_parser("validate", help="strictly validate FILE")
     validate_parser.add_argument("file", type=Path)
 
-    generate_parser = subparsers.add_parser(
-        "generate",
-        aliases=("pack", "create"),
-        help="generate OUTPUT from a JSON intermediate INPUT",
-    )
-    generate_parser.add_argument("input", type=Path)
-    generate_parser.add_argument("output", type=Path)
     return parser
 
 
@@ -1052,12 +844,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             f"glyphs={GLYPH_COUNT} bytes={container.total_file_size}"
         )
         return 0
-    if args.command in ("generate", "pack", "create"):
-        data = build_container(_load_intermediate(args.input))
-        args.output.write_bytes(data)
-        print(f"generated {args.output}: bytes={len(data)}")
-        return 0
-    parser.error("a command is required: validate or generate")
+    parser.error("a command is required: validate")
     return 2  # pragma: no cover - argparse.error exits
 
 

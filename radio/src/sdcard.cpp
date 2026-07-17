@@ -397,6 +397,108 @@ const char * sdCopyFile(const char * srcFilename, const char * srcDir, const cha
   return sdCopyFile(srcPath, destPath);
 }
 
+#if defined(EDGETX_CN_STDLCD)
+static const char * skipDrivePrefix(const char * path)
+{
+  const char * p = path;
+  while (*p >= '0' && *p <= '9') ++p;
+  return p != path && *p == ':' ? p + 1 : path;
+}
+
+static bool appendCanonicalPath(char * output, size_t capacity,
+                                const char * path)
+{
+  while (*path) {
+    while (*path == '/') ++path;
+    if (!*path) break;
+    const char * end = path;
+    while (*end && *end != '/') ++end;
+    const size_t segmentLength = size_t(end - path);
+    if (segmentLength == 1 && path[0] == '.') {
+      path = end;
+      continue;
+    }
+    if (segmentLength == 2 && path[0] == '.' && path[1] == '.') {
+      const size_t length = strlen(output);
+      if (length == 1) return false;
+      char * slash = strrchr(output, '/');
+      if (slash == output)
+        output[1] = '\0';
+      else
+        *slash = '\0';
+      path = end;
+      continue;
+    }
+
+    const size_t length = strlen(output);
+    const size_t separatorLength = length > 1 ? 1 : 0;
+    if (segmentLength > capacity - length - separatorLength - 1) return false;
+    char * destination = output + length;
+    if (separatorLength) *destination++ = '/';
+    memcpy(destination, path, segmentLength);
+    destination[segmentLength] = '\0';
+    path = end;
+  }
+  return true;
+}
+
+static bool canonicalizeSdPath(const char * path, char * output, size_t capacity)
+{
+  if (!path || !output || capacity < 2) return false;
+  path = skipDrivePrefix(path);
+  output[0] = '/';
+  output[1] = '\0';
+
+  if (*path != '/') {
+    char current[2 * FF_MAX_LFN + 2];
+    if (f_getcwd(current, sizeof(current)) != FR_OK) return false;
+    const char * currentPath = skipDrivePrefix(current);
+    if (!appendCanonicalPath(output, capacity, currentPath)) return false;
+  }
+  return appendCanonicalPath(output, capacity, path);
+}
+
+static bool isExternalFontPath(const char * path)
+{
+  char canonical[2 * FF_MAX_LFN + 2];
+  return canonicalizeSdPath(path, canonical, sizeof(canonical)) &&
+         strcasecmp(canonical, EXTERNAL_FONT_DEFAULT_PATH) == 0;
+}
+
+static void restoreExternalFont(bool affected)
+{
+  if (affected && sdMounted() &&
+      externalFontPrepare(EXTERNAL_FONT_DEFAULT_PATH) == ExternalFontResult::Prepared)
+    externalFontActivate();
+}
+#endif
+
+FRESULT sdUnlink(const char * path)
+{
+#if defined(EDGETX_CN_STDLCD)
+  const bool affected = isExternalFontPath(path);
+  if (affected) externalFontShutdown();
+#endif
+  const FRESULT result = f_unlink(path);
+#if defined(EDGETX_CN_STDLCD)
+  restoreExternalFont(affected);
+#endif
+  return result;
+}
+
+FRESULT sdRename(const char * oldPath, const char * newPath)
+{
+#if defined(EDGETX_CN_STDLCD)
+  const bool affected = isExternalFontPath(oldPath) || isExternalFontPath(newPath);
+  if (affected) externalFontShutdown();
+#endif
+  const FRESULT result = f_rename(oldPath, newPath);
+#if defined(EDGETX_CN_STDLCD)
+  restoreExternalFont(affected);
+#endif
+  return result;
+}
+
 // Will overwrite if destination exists
 const char * sdMoveFile(const char * srcPath, const char * destPath)
 {
@@ -406,7 +508,7 @@ const char * sdMoveFile(const char * srcPath, const char * destPath)
     return result;
   }
 
-  FRESULT fres = f_unlink(srcPath);
+  FRESULT fres = sdUnlink(srcPath);
   if(fres != FR_OK) {
     return SDCARD_ERROR(fres);
   }
@@ -426,7 +528,7 @@ const char * sdMoveFile(const char * srcFilename, const char * srcDir, const cha
   char * tmp = strAppend(srcPath, srcDir, CLIPBOARD_PATH_LEN);
   *tmp++ = '/';
   strAppend(tmp, srcFilename, CLIPBOARD_PATH_LEN);
-  FRESULT fres = f_unlink(srcPath);
+  FRESULT fres = sdUnlink(srcPath);
   if(fres != FR_OK) {
     return SDCARD_ERROR(fres);
   }
@@ -504,7 +606,7 @@ FIL g_bluetoothFile = {};
 #include "sdcard.h"
 
 #if defined(EDGETX_CN_STDLCD)
-void sdInit(bool initExternalFont)
+void sdInit(SdMountMode mode)
 #else
 void sdInit()
 #endif
@@ -512,14 +614,14 @@ void sdInit()
   TRACE("sdInit");
   storageInit();
 #if defined(EDGETX_CN_STDLCD)
-  sdMount(initExternalFont);
+  sdMount(mode);
 #else
   sdMount();
 #endif
 }
 
 #if defined(EDGETX_CN_STDLCD)
-void sdMount(bool initExternalFont)
+void sdMount(SdMountMode mode)
 #else
 void sdMount()
 #endif
@@ -537,13 +639,14 @@ void sdMount()
     _g_FATFS_init = true;
 #if defined(EDGETX_CN_STDLCD)
     // Defer the first, slow f_getfree() during the staged startup mount.
-    if (initExternalFont) sdGetFreeSectors();
+    if (mode == SdMountMode::Normal) sdGetFreeSectors();
 #else
     // Call now because f_getfree() takes a long time the first time it is called.
     sdGetFreeSectors();
 #endif
 #if defined(EDGETX_CN_STDLCD)
-    if (initExternalFont && externalFontPrepare() == ExternalFontResult::Prepared)
+    if (mode == SdMountMode::Normal &&
+        externalFontPrepare(EXTERNAL_FONT_DEFAULT_PATH) == ExternalFontResult::Prepared)
       externalFontActivate();
 #endif
 
@@ -573,11 +676,6 @@ bool sdExternalFontPrepare()
 }
 
 bool sdExternalFontActivate() { return sdMounted() && externalFontActivate(); }
-ExternalFontResult sdExternalFontVerifyFull(ExternalFontProgressCallback callback, void * context)
-{
-  if (!sdMounted()) return ExternalFontResult::Unavailable;
-  return externalFontVerifyFull("/FONTS/CN_BASIC.FNT", callback, context);
-}
 void sdExternalFontShutdown() { externalFontShutdown(); }
 #endif
 

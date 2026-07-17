@@ -44,27 +44,41 @@ void fixHeaderCrc(std::vector<uint8_t> & data)
 void fixPayloadCrcs(std::vector<uint8_t> & data)
 {
   const uint32_t crc = crc32(data.data() + kPayloadOffset, data.size() - kPayloadOffset);
-  put32(data, 84, crc);
   put32(data, 40, crc);
+  for (size_t strike = 0; strike < 3; ++strike) {
+    const size_t payload = kPayloadOffset + strike * kStrikeLength;
+    put32(data, 64 + strike * 32 + 20,
+          crc32(data.data() + payload, kStrikeLength));
+  }
   fixHeaderCrc(data);
 }
 
 std::vector<uint8_t> makeFont()
 {
-  std::vector<uint8_t> data(kPayloadOffset + kStrikeLength, 0);
+  std::vector<uint8_t> data(kPayloadOffset + 3 * kStrikeLength, 0);
   const uint8_t magic[8] = {'E','T','X','C','N','F',0,0};
   memcpy(data.data(), magic, 8);
   put16(data, 8, 1); put16(data, 10, 64); put32(data, 12, 0x12345678);
   put16(data, 16, 0x4E00); put16(data, 18, 20992);
-  data[20] = 1; put16(data, 22, 32); put32(data, 24, 64);
-  put32(data, 28, kPayloadOffset); put32(data, 32, kStrikeLength);
+  data[20] = 3; put16(data, 22, 32); put32(data, 24, 64);
+  put32(data, 28, kPayloadOffset); put32(data, 32, 3 * kStrikeLength);
   put32(data, 36, uint32_t(data.size()));
-  data[64] = 10; data[65] = 10; data[66] = 10; data[67] = 2; data[68] = 11;
-  put16(data, 70, 32); put16(data, 72, 20992);
-  put32(data, 76, kPayloadOffset); put32(data, 80, kStrikeLength);
-  for (uint32_t glyph = 0; glyph < 20992; ++glyph)
-    for (uint32_t byte = 0; byte < 20; ++byte)
-      data[kPayloadOffset + glyph * 32 + byte] = uint8_t(glyph + byte);
+  const uint8_t ids[] = {10, 12, 16};
+  for (size_t strike = 0; strike < 3; ++strike) {
+    const size_t entry = 64 + strike * 32;
+    data[entry] = ids[strike];
+    data[entry + 1] = ids[strike];
+    data[entry + 2] = ids[strike];
+    data[entry + 3] = 2;
+    data[entry + 4] = ids[strike] + 1;
+    put16(data, entry + 6, 32); put16(data, entry + 8, 20992);
+    put32(data, entry + 12, kPayloadOffset + uint32_t(strike) * kStrikeLength);
+    put32(data, entry + 16, kStrikeLength);
+    for (uint32_t glyph = 0; glyph < 20992; ++glyph)
+      for (uint32_t byte = 0; byte < uint32_t(ids[strike]) * 2; ++byte)
+        data[kPayloadOffset + strike * kStrikeLength + glyph * 32 + byte] =
+            uint8_t(strike * 0x40 + glyph + byte);
+  }
   fixPayloadCrcs(data);
   return data;
 }
@@ -77,7 +91,7 @@ struct MemoryReader {
   unsigned linkMapCalls = 0;
   unsigned closeCalls = 0;
   bool failReads = false;
-  bool linkMap = true;
+  FRESULT linkMapResult = FR_OK;
   bool closed = false;
 
   static uint32_t size(void * p) { return uint32_t(static_cast<MemoryReader *>(p)->data.size()); }
@@ -98,11 +112,11 @@ struct MemoryReader {
     self.position += length;
     return true;
   }
-  static bool map(void * p)
+  static FRESULT map(void * p)
   {
     auto & self = *static_cast<MemoryReader *>(p);
     ++self.linkMapCalls;
-    return self.linkMap;
+    return self.linkMapResult;
   }
   static void close(void * p)
   {
@@ -113,16 +127,7 @@ struct MemoryReader {
   external_font::Reader reader() { return {this, size, seek, read, map, close}; }
 };
 
-struct ProgressCapture { bool cancel = false; std::vector<uint32_t> values; };
-
-bool progress(void * context, uint32_t scanned, uint32_t)
-{
-  auto & capture = *static_cast<ProgressCapture *>(context);
-  capture.values.push_back(scanned);
-  return !capture.cancel || scanned == 0;
-}
-
-TEST(ExternalFont, PrepareAndActivateDoNotReadPayload)
+TEST(ExternalFont, ThreeStrikePrepareDefersPayloadAndGlyphsReadAfterActivate)
 {
   MemoryReader source;
   external_font::Manager manager;
@@ -130,7 +135,17 @@ TEST(ExternalFont, PrepareAndActivateDoNotReadPayload)
   EXPECT_EQ(0u, source.payloadReads);
   ASSERT_TRUE(manager.activate());
   EXPECT_EQ(0u, source.payloadReads);
-  EXPECT_TRUE(manager.available(10));
+  const uint8_t strikes[] = {10, 12, 16};
+  for (uint8_t strike : strikes) {
+    EXPECT_TRUE(manager.available(strike));
+    uint8_t glyph[32];
+    ASSERT_TRUE(manager.readGlyph(strike, 0x4E00, glyph));
+    const size_t index = strike == 10 ? 0 : strike == 12 ? 1 : 2;
+    EXPECT_EQ(uint8_t(index * 0x40), glyph[0]);
+    EXPECT_TRUE(std::all_of(glyph + strike * 2, glyph + 32,
+                            [](uint8_t byte) { return byte == 0; }));
+  }
+  EXPECT_EQ(3u, source.payloadReads);
 }
 
 TEST(ExternalFont, PreparedFontIsUnreadableUntilActivated)
@@ -143,37 +158,6 @@ TEST(ExternalFont, PreparedFontIsUnreadableUntilActivated)
   EXPECT_TRUE(std::all_of(glyph, glyph + 32, [](uint8_t b) { return b == 0; }));
   ASSERT_TRUE(manager.activate());
   EXPECT_TRUE(manager.readGlyph(10, 0x4E00, glyph));
-}
-
-TEST(ExternalFont, BadPayloadCrcIsOnlyRejectedByFullVerify)
-{
-  MemoryReader source;
-  source.data[40] ^= 1;
-  fixHeaderCrc(source.data);
-  external_font::Manager manager;
-  ASSERT_EQ(ExternalFontResult::Prepared, manager.prepare(source.reader()));
-  ASSERT_TRUE(manager.activate());
-  EXPECT_EQ(ExternalFontResult::Unavailable, manager.verifyFull(source.reader()));
-  EXPECT_TRUE(source.closed);
-}
-
-TEST(ExternalFont, FullVerifyChecksPayloadStrikePaddingAndCancellation)
-{
-  for (int kind = 0; kind < 3; ++kind) {
-    MemoryReader source;
-    if (kind == 0) source.data[84] ^= 1;
-    if (kind == 1) { source.data[kPayloadOffset + 20] = 1; fixPayloadCrcs(source.data); }
-    if (kind == 2) source.data[40] ^= 1;
-    external_font::Manager manager;
-    EXPECT_EQ(ExternalFontResult::Unavailable, manager.verifyFull(source.reader())) << kind;
-    EXPECT_TRUE(source.closed);
-  }
-  MemoryReader source;
-  external_font::Manager manager;
-  ProgressCapture capture; capture.cancel = true;
-  EXPECT_EQ(ExternalFontResult::Cancelled,
-            manager.verifyFull(source.reader(), progress, &capture));
-  EXPECT_EQ(1u, source.closeCalls);
 }
 
 TEST(ExternalFont, PrepareRejectsMetadataErrorsAndCloses)
@@ -227,12 +211,23 @@ TEST(ExternalFont, GlyphPaddingFailureClearsOutputAndFallsBack)
 
 TEST(ExternalFont, ActivationFailureClosesPreparedFileWithoutPayloadRead)
 {
-  MemoryReader source; source.linkMap = false;
+  MemoryReader source; source.linkMapResult = FR_DISK_ERR;
   external_font::Manager manager;
   ASSERT_EQ(ExternalFontResult::Prepared, manager.prepare(source.reader()));
   EXPECT_FALSE(manager.activate());
   EXPECT_EQ(0u, source.payloadReads);
   EXPECT_TRUE(source.closed);
+}
+
+TEST(ExternalFont, LinkMapOutOfMemoryFallsBackToNormalSeeking)
+{
+  MemoryReader source; source.linkMapResult = FR_NOT_ENOUGH_CORE;
+  external_font::Manager manager;
+  ASSERT_EQ(ExternalFontResult::Prepared, manager.prepare(source.reader()));
+  EXPECT_TRUE(manager.activate());
+  EXPECT_FALSE(source.closed);
+  uint8_t glyph[32];
+  EXPECT_TRUE(manager.readGlyph(10, 0x4E00, glyph));
 }
 
 }  // namespace

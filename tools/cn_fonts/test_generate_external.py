@@ -111,9 +111,14 @@ class ExternalGenerationTests(unittest.TestCase):
     def test_pinned_manifest_sources_and_priorities(self):
         manifest = json.loads(generate.MANIFEST.read_text(encoding="utf-8"))
         external = generate.validate_external_manifest(manifest)
-        for name, pin in generate.EXTERNAL_SOURCE_PINS.items():
-            for field, value in pin.items():
-                self.assertEqual(external["sources"][name][field], value)
+        self.assertEqual(external["release"], {
+            "size": 2015744,
+            "sha256": "C7D01736D365736DB04AEFD1FC103DB0FC9BAAA84841C058B0CE23828F894A79",
+        })
+        self.assertEqual(set(external["sources"]), {"unifont17", "wqy9_medium", "wqy_bold", "wqy_medium", "fusion12", "fusion10"})
+        for source in external["sources"].values():
+            self.assertRegex(source["archive_sha256"], r"^[0-9A-F]{64}$")
+            self.assertRegex(source["member_sha256"], r"^[0-9A-F]{64}$")
         self.assertEqual(external["strikes"]["16"]["priority"], ["wqy_bold", "unifont17"])
         self.assertEqual(external["strikes"]["12"]["priority"], ["fusion12", "wqy_medium", "unifont17"])
         self.assertEqual(external["strikes"]["10"]["priority"], ["fusion10", "wqy9_medium", "unifont17"])

@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include <stddef.h>
+
 unsigned char map_utf8_char(const char*& s, uint8_t& len);
 
 #if defined(EDGETX_CN_STDLCD)
@@ -33,5 +35,6 @@ struct Utf8Codepoint
 
 // Strict BMP decoder. It never consumes zero bytes for non-empty input.
 Utf8Codepoint decodeNextUtf8(const char * s, uint8_t len);
-uint16_t mapDecodedCodepoint(uint16_t codepoint, bool valid);
+size_t copyCompleteUtf8Prefix(char * destination, size_t capacity,
+                              const char * source);
 #endif
