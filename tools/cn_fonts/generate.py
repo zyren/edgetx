@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Deterministic offline GX12 Chinese fixed-cell font generator."""
 from __future__ import annotations
-import argparse, ast, hashlib, io, json, re, sys, tarfile, zipfile
+import argparse, ast, gzip, hashlib, io, json, re, sys, tarfile, urllib.request, zipfile
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
+
+try:
+    from . import external_font
+except ImportError:  # Direct execution from tools/cn_fonts.
+    import external_font
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = Path(__file__).with_name("manifest.json")
@@ -49,6 +54,7 @@ def validate_manifest(m):
         else: fail(f"{key}: unsupported source kind")
         if not re.fullmatch(r"[0-9A-F]{64}",archive_hash) or not re.fullmatch(r"[0-9A-F]{64}",s["member_sha256"]) or not re.fullmatch(r"[0-9A-F]{64}",s["subset_sha256"]): fail(f"{key}: invalid source hash")
     if m["sources"].get("wqy16b") != WQY_BOLD_SOURCE_CONTRACT: fail("wqy16b source/hash contract changed")
+    validate_external_manifest(m,pinned=True)
 
 def resolve(expr):
     old=None
@@ -100,7 +106,7 @@ def codepoints(m):
 class Glyph:
     cp:int; dwidth:tuple[int,int]; bbx:tuple[int,int,int,int]; rows:list[int]; record:bytes
 
-def parse_glyph_record(rec):
+def parse_glyph_record(rec, allow_nonzero_bitmap_padding=False):
     """Parse one BDF glyph using the ordered BDF 2.1 line grammar."""
     lines=rec.splitlines()
     if not lines or not re.fullmatch(r"STARTCHAR\s+\S+",lines[0]): fail("glyph must start with STARTCHAR name")
@@ -134,13 +140,13 @@ def parse_glyph_record(rec):
     for row in bitmap:
         if not re.fullmatch(rf"[0-9A-Fa-f]{{{row_chars}}}",row): fail(f"invalid BITMAP row width/hex: {row}")
         value=int(row,16)
-        if unused and value&((1<<unused)-1): fail("nonzero BITMAP row padding bits")
+        if unused and value&((1<<unused)-1) and not allow_nonzero_bitmap_padding: fail("nonzero BITMAP row padding bits")
         rows.append(value)
     encoding=int(fields["ENCODING"].split()[0]); dwidth=tuple(map(int,fields["DWIDTH"].split()))
     return encoding,dwidth,(w,h,xo,yo),rows
 
-def parse_bdf(data):
-    try: text=data.decode("ascii")
+def parse_bdf(data, wanted=None, allow_nonzero_bitmap_padding=False, allow_non_ascii_metadata=False):
+    try: text=data.decode("latin-1" if allow_non_ascii_metadata else "ascii")
     except UnicodeDecodeError: fail("BDF is not ASCII")
     if not text.startswith("STARTFONT ") or not text.endswith("ENDFONT\n"): fail("BDF must have STARTFONT and final ENDFONT")
     cm=re.search(r"^CHARS\s+(\d+)\r?$",text,re.M); ma=re.search(r"^FONT_ASCENT\s+(\d+)\r?$",text,re.M); md=re.search(r"^FONT_DESCENT\s+(\d+)\r?$",text,re.M)
@@ -151,12 +157,14 @@ def parse_bdf(data):
         middle=text[first:endfont]; records=list(re.finditer(r"^STARTCHAR .*?^ENDCHAR\r?\n",middle,re.M|re.S))
         if not records or "".join(x.group(0) for x in records)!=middle: fail("BDF contains trailing/unparsed glyph content")
     if len(records)!=int(cm.group(1)): fail(f"BDF CHARS says {cm.group(1)}, found {len(records)}")
-    glyphs={}
+    glyphs={}; seen=set()
     for x in records:
-        rec=x.group(0); cp,dwidth,bbx,rows=parse_glyph_record(rec)
+        rec=x.group(0); cp,dwidth,bbx,rows=parse_glyph_record(rec,allow_nonzero_bitmap_padding)
         if cp>=0:
-            if cp in glyphs: fail("duplicate BDF encoding")
-            glyphs[cp]=Glyph(cp,dwidth,bbx,rows,rec.encode("ascii"))
+            if cp in seen: fail("duplicate BDF encoding")
+            seen.add(cp)
+            if wanted is None or cp in wanted:
+                glyphs[cp]=Glyph(cp,dwidth,bbx,rows,rec.encode("latin-1" if allow_non_ascii_metadata else "ascii"))
     return int(ma.group(1)),int(md.group(1)),glyphs
 
 def bdf_body(g,ascent,descent,size,source_advance=None):
@@ -326,10 +334,377 @@ def generated(m,cps):
     outputs[outdir/"preview.pbm"]=(f"P1\n# {' '.join(FONT_CONTRACT)} U+25A1\n{pw} {ph}\n"+"\n".join(" ".join(map(str,r)) for r in pix)+"\n").encode()
     return outputs
 
+
+# ---------------------------------------------------------------------------
+# External CN_BASIC.FNT generation
+
+EXTERNAL_SOURCE_PINS = {
+ "unifont17": {"kind":"bdf-gz", "archive":"unifont-17.0.04.bdf.gz",
+  "url":"https://www.nic.funet.fi/pub/gnu/gnu/unifont/unifont-17.0.04/unifont-17.0.04.bdf.gz",
+  "archive_sha256":"9A2DE4826388242771121C7FE00E412523C318318B8EE38E6BE6CD454E7EC802",
+  "member_sha256":"F2B2952312FA189F8963C85EB50FDA14606A6DF5D8DBE9E01651138EB2CECEA9",
+  "source_size":16, "coverage":["U+4E00","U+9FFF"], "required_coverage":["U+4E00","U+9FFF"]},
+ "wqy9_medium": {"kind":"bdf-tar-gz", "archive":"wqy-bitmapfont-bdf-0.7.0-4.tar.gz",
+  "url":"https://sourceforge.net/projects/wqy/files/wqy-bitmapfont/0.7.0/wqy-bitmapfont-bdf-0.7.0-4.tar.gz/download",
+  "archive_sha256":"E1A9BF2D4E608EAADA9822F58F33626204B665A4A60A353DCEB0C5FC09A75D40",
+  "member":"wqy-bitmapfont/wenquanyi_9pt.bdf", "member_size":3229889,
+  "member_sha256":"9F3F52958E6542DB30CDEF15DEC8BA5F0BBC9E75BAF24B444E86B2FE9067461B",
+  "source_size":12, "coverage":["U+4E00","U+9FA5"], "required_coverage":["U+4E00","U+9FA5"],
+  "metric_crop":{"canvas":[12,14],"rect":[0,1,12,12],"require_zero_clipped":True}},
+ "wqy_bold": {"kind":"bdf-tar-gz", "archive":"wqy-bitmapfont-bdf-0.7.0-4.tar.gz",
+  "url":"https://sourceforge.net/projects/wqy/files/wqy-bitmapfont/0.7.0/wqy-bitmapfont-bdf-0.7.0-4.tar.gz/download",
+  "archive_sha256":"E1A9BF2D4E608EAADA9822F58F33626204B665A4A60A353DCEB0C5FC09A75D40",
+  "member":"wqy-bitmapfont/wenquanyi_12ptb.bdf",
+  "member_sha256":"26F493DC492BF64EB974E81C174BBCEDD2FF7FBD116428865992388B04A09042",
+  "source_size":16, "coverage":["U+4E00","U+9FA5"], "required_coverage":["U+4E00","U+9FA5"]},
+ "wqy_medium": {"kind":"bdf-tar-gz", "archive":"wqy-bitmapsong-bdf-1.0.0-RC1_GPLv2+.tar.gz",
+  "url":"https://sourceforge.net/projects/wqy/files/wqy-bitmapfont/1.0.0-RC1/wqy-bitmapsong-bdf-1.0.0-RC1_GPLv2+.tar.gz/download",
+  "archive_sha256":"C29B2C2F5DB73FF74D11A7DCA9608414813DA1C4240B7B6C829A58757B35EBE6",
+  "member":"wqy-bitmapsong/wenquanyi_12pt.bdf",
+  "member_sha256":"EB8E295F761F28691ED9F199BA74C222D3392C6144174CB0B66C78C89A97FA49", "source_size":16},
+ "fusion12": {"kind":"bdf-zip", "archive":"fusion-pixel-font-12px-monospaced-bdf-v2026.07.01.zip",
+  "url":"https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.07.01/fusion-pixel-font-12px-monospaced-bdf-v2026.07.01.zip",
+  "archive_sha256":"C461C312720E005F5A49843A965842E8749F196F00F97FACF1AD926F330296DF",
+  "member":"fusion-pixel-12px-monospaced-zh_hans.bdf",
+  "member_sha256":"AEA441A489B18A93BB417BBA33A31917B1BEF90167B01ED9A63E2E9DF3E144F8", "source_size":12},
+ "fusion10": {"kind":"bdf-zip", "archive":"fusion-pixel-font-10px-monospaced-bdf-v2026.07.01.zip",
+  "url":"https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.07.01/fusion-pixel-font-10px-monospaced-bdf-v2026.07.01.zip",
+  "archive_sha256":"0F28B5850FA9B4B0F8DBB7C40F671A3574A97236A848D1E0ECF6ED302AE659C3",
+  "member":"fusion-pixel-10px-monospaced-zh_hans.bdf",
+  "member_sha256":"A9FECDECBE42C93E8D6C0642CF1A1FABE29E7C4DCDAB43B4540FB23CC7E006B1", "source_size":10},
+}
+EXTERNAL_STRIKE_GEOMETRY = {
+ 10: {"width":10, "height":10},
+ 12: {"width":12, "height":12},
+ 16: {"width":16, "height":16},
+}
+EXTERNAL_PRIORITIES = {
+ 10: ["fusion10","wqy9_medium","unifont17"],
+ 12: ["fusion12","wqy_medium","unifont17"],
+ 16: ["wqy_bold","unifont17"],
+}
+EXTERNAL_TRANSFORMS = {
+ 10: {"wqy9_medium":"center-nearest", "unifont17":"center-nearest"},
+ 12: {"wqy_medium":"center-nearest", "unifont17":"center-nearest"},
+ 16: {"unifont17":"controlled-horizontal-embolden"},
+}
+
+
+@dataclass(frozen=True)
+class ExternalBuild:
+    data: bytes
+    bodies: dict
+    source_counts: dict
+    sha256: str
+
+
+def _external_config(value):
+    if isinstance(value, dict) and "external_font" in value:
+        value=value["external_font"]
+    if not isinstance(value, dict): fail("external_font config must be an object")
+    return value
+
+
+def _external_cp(value):
+    if isinstance(value,str):
+        if not re.fullmatch(r"U\+[0-9A-Fa-f]{4,6}",value): fail(f"invalid external codepoint: {value}")
+        value=int(value[2:],16)
+    if not isinstance(value,int) or isinstance(value,bool): fail("external codepoint must be an integer")
+    if value<0 or value>0x10FFFF: fail("external codepoint is outside Unicode")
+    return value
+
+
+def _external_range(value):
+    if not isinstance(value,list) or len(value)!=2: fail("external coverage must be [first,last]")
+    first,last=(_external_cp(x) for x in value)
+    if first>last: fail("external coverage range is reversed")
+    return first,last
+
+
+def validate_external_manifest(value, pinned=True):
+    """Validate the external source/priority contract and return its config."""
+    ext=_external_config(value)
+    if ext.get("format")!="CN_BASIC.FNT" or ext.get("first_codepoint")!="U+4E00" or ext.get("last_codepoint")!="U+9FFF":
+        fail("external font format/codepoint contract changed")
+    if ext.get("glyph_count")!=external_font.GLYPH_COUNT or ext.get("slot_size")!=external_font.SLOT_SIZE:
+        fail("external font glyph/slot contract changed")
+    if ext.get("alignment")!=external_font.PAYLOAD_ALIGNMENT or ext.get("column_major") is not True or ext.get("bits_per_pixel")!=1:
+        fail("external font packing/alignment contract changed")
+    sources=ext.get("sources")
+    if not isinstance(sources,dict): fail("external_font.sources must be an object")
+    if pinned and set(sources)!=set(EXTERNAL_SOURCE_PINS): fail("external source key contract changed")
+    for key,pin in EXTERNAL_SOURCE_PINS.items() if pinned else sources.items():
+        if key not in sources: fail(f"missing external source: {key}")
+        source=sources[key]
+        if not isinstance(source,dict): fail(f"external source {key} must be an object")
+        if pinned and source!=pin: fail(f"external source {key} contract changed")
+        if pinned:
+            for field in ("kind","archive","archive_sha256","member_sha256"):
+                if field not in source or not isinstance(source[field],str): fail(f"external source {key} missing {field}")
+            if not re.fullmatch(r"[0-9A-F]{64}",source["archive_sha256"]) or not re.fullmatch(r"[0-9A-F]{64}",source["member_sha256"]):
+                fail(f"external source {key} has invalid SHA256")
+            if source["kind"] in ("bdf-tar-gz","bdf-zip") and not source.get("member"):
+                fail(f"external source {key} missing member")
+        if source.get("source_size") not in (10,12,16): fail(f"external source {key} has invalid source_size")
+        if "required_coverage" in source: _external_range(source["required_coverage"])
+        if "coverage" in source: _external_range(source["coverage"])
+        if "metric_crop" in source:
+            crop=source["metric_crop"]
+            if not isinstance(crop,dict) or set(crop)!={"canvas","rect","require_zero_clipped"}: fail(f"external source {key} has invalid metric_crop")
+            canvas=crop["canvas"]; rect=crop["rect"]
+            if (not isinstance(canvas,list) or len(canvas)!=2 or not all(isinstance(x,int) and not isinstance(x,bool) and x>0 for x in canvas)
+                    or not isinstance(rect,list) or len(rect)!=4 or not all(isinstance(x,int) and not isinstance(x,bool) for x in rect)):
+                fail(f"external source {key} has invalid metric_crop geometry")
+            x,y,width,height=rect
+            if x<0 or y<0 or width!=source["source_size"] or height!=source["source_size"] or x+width>canvas[0] or y+height>canvas[1] or crop["require_zero_clipped"] is not True:
+                fail(f"external source {key} metric_crop contract is invalid")
+    strikes=ext.get("strikes")
+    if not isinstance(strikes,dict) or {str(key) for key in strikes}!={"10","12","16"}: fail("external strike contract changed")
+    strikes={str(key):spec for key,spec in strikes.items()}
+    for key,geometry in EXTERNAL_STRIKE_GEOMETRY.items():
+        spec=strikes[str(key)]
+        if spec.get("id")!=key or spec.get("width")!=geometry["width"] or spec.get("height")!=geometry["height"]:
+            fail(f"external strike {key} geometry changed")
+        priority=spec.get("priority")
+        if not isinstance(priority,list) or not priority or len(set(priority))!=len(priority): fail(f"external strike {key} priority is invalid")
+        if pinned and priority!=EXTERNAL_PRIORITIES[key]: fail(f"external strike {key} priority changed")
+        if any(name not in sources for name in priority): fail(f"external strike {key} references unknown source")
+        transforms=spec.get("transforms",{})
+        if not isinstance(transforms,dict) or any(name not in priority for name in transforms): fail(f"external strike {key} transforms are invalid")
+        if pinned and transforms!=EXTERNAL_TRANSFORMS[key]: fail(f"external strike {key} transforms changed")
+        for name in priority:
+            native=sources[name]["source_size"]; transform=transforms.get(name)
+            if native==key:
+                if transform not in (None,"controlled-horizontal-embolden"): fail(f"external strike {key} source {name} has invalid native transform")
+            elif native>key:
+                if transform!="center-nearest": fail(f"external strike {key} source {name} requires center-nearest")
+            else: fail(f"external strike {key} source {name} cannot upscale")
+    return ext
+
+
+def external_extract_bdf(blob, source):
+    """Verify one pinned archive and return its exact BDF member."""
+    if sha256(blob)!=source["archive_sha256"]: fail("external archive SHA256 mismatch")
+    kind=source["kind"]
+    try:
+        if kind=="bdf-gz":
+            data=gzip.decompress(blob)
+        elif kind=="bdf-zip":
+            with zipfile.ZipFile(io.BytesIO(blob)) as archive:
+                matches=[name for name in archive.namelist() if name==source["member"]]
+                if len(matches)!=1: fail("external ZIP does not contain exactly one specified member")
+                data=archive.read(matches[0])
+        elif kind=="bdf-tar-gz":
+            with tarfile.open(fileobj=io.BytesIO(blob),mode="r:gz") as archive:
+                members=archive.getmembers()
+                if any(not safe_tar_name(member.name) for member in members): fail("unsafe external tar member path")
+                matches=[member for member in members if member.name==source["member"]]
+                if len(matches)!=1 or not matches[0].isfile(): fail("external tar member is invalid")
+                if "member_size" in source and matches[0].size!=source["member_size"]: fail("external tar member size mismatch")
+                stream=archive.extractfile(matches[0])
+                if stream is None: fail("external tar member is unreadable")
+                data=stream.read()
+        else: fail(f"unsupported external archive kind: {kind}")
+    except (OSError, EOFError, tarfile.TarError, zipfile.BadZipFile) as exc:
+        fail(f"invalid external archive: {exc}")
+    if sha256(data)!=source["member_sha256"]: fail("external BDF SHA256 mismatch")
+    return data
+
+
+def _external_archive(source, cache_dir=None, source_dir=None, download=True):
+    archive_name=source["archive"]
+    candidates=[]
+    if source_dir is not None: candidates.append(Path(source_dir)/archive_name)
+    if cache_dir is not None: candidates.append(Path(cache_dir)/archive_name)
+    for path in candidates:
+        if path.is_file():
+            blob=path.read_bytes()
+            if sha256(blob)!=source["archive_sha256"]: fail(f"external archive hash mismatch: {path}")
+            return blob
+    if not download: fail(f"external archive not found: {archive_name}")
+    if cache_dir is None: fail("external download requires --external-cache")
+    target=Path(cache_dir)/archive_name; target.parent.mkdir(parents=True,exist_ok=True)
+    temporary=target.with_name(target.name+".download")
+    try:
+        request=urllib.request.Request(source["url"],headers={"User-Agent":"EdgeTX-CN-font-generator/1"})
+        with urllib.request.urlopen(request,timeout=120) as response:
+            blob=response.read()
+        if sha256(blob)!=source["archive_sha256"]: fail(f"downloaded external archive hash mismatch: {archive_name}")
+        temporary.write_bytes(blob); temporary.replace(target)
+    finally:
+        if temporary.exists(): temporary.unlink()
+    return blob
+
+
+def load_external_sources(value, cache_dir=None, source_dir=None, download=True):
+    ext=validate_external_manifest(value)
+    return {key:external_extract_bdf(_external_archive(source,cache_dir,source_dir,download),source)
+            for key,source in sorted(ext["sources"].items())}
+
+
+def nearest_neighbor(body, target_size):
+    """Center-sampled deterministic nearest-neighbor scaling of a binary matrix."""
+    if not isinstance(target_size,int) or isinstance(target_size,bool) or target_size<=0 or not body:
+        fail("invalid nearest-neighbor dimensions")
+    source_height=len(body); source_width=len(body[0])
+    if source_height!=source_width or any(len(row)!=source_width for row in body): fail("nearest-neighbor body must be square")
+    return [[body[((2*y+1)*source_height)//(2*target_size)][((2*x+1)*source_width)//(2*target_size)]
+             for x in range(target_size)] for y in range(target_size)]
+
+
+nearest_neighbor_scale=nearest_neighbor
+
+
+def external_raster(glyph, ascent, descent, size):
+    if ascent+descent<size: fail("external source metrics are shorter than source size")
+    width,height,xoffset,yoffset=glyph.bbx
+    bits=((width+7)//8)*8
+    out=[[0]*size for _ in range(size)]
+    top=ascent-(yoffset+height)
+    for source_y,row in enumerate(glyph.rows):
+        for source_x in range(width):
+            x=xoffset+source_x; y=top+source_y
+            if 0<=x<size and 0<=y<size and row&(1<<(bits-1-source_x)): out[y][x]=1
+    return out
+
+
+def external_native_raster(glyph, ascent, descent, source):
+    """Raster one source glyph, applying an optional metric-canvas crop."""
+    native=source["source_size"]; crop=source.get("metric_crop")
+    if crop is None: return external_raster(glyph,ascent,descent,native)
+    canvas_width,canvas_height=crop["canvas"]; x0,y0,width,height=crop["rect"]
+    if ascent+descent<canvas_height: fail("external metric canvas is taller than source metrics")
+    glyph_width,glyph_height,xoffset,yoffset=glyph.bbx; bits=((glyph_width+7)//8)*8
+    top=ascent-(yoffset+glyph_height); canvas=[[0]*canvas_width for _ in range(canvas_height)]; clipped=0
+    for source_y,row in enumerate(glyph.rows):
+        for source_x in range(glyph_width):
+            if not row&(1<<(bits-1-source_x)): continue
+            x=xoffset+source_x; y=top+source_y
+            if 0<=x<canvas_width and 0<=y<canvas_height: canvas[y][x]=1
+            else: clipped+=1
+    body=[row[x0:x0+width] for row in canvas[y0:y0+height]]
+    clipped+=sum(canvas[y][x] for y in range(canvas_height) for x in range(canvas_width)
+                 if not (x0<=x<x0+width and y0<=y<y0+height))
+    if crop["require_zero_clipped"] and clipped: fail(f"U+{glyph.cp:04X}: metric crop removed {clipped} set pixels")
+    return body
+
+
+def controlled_horizontal_embolden(body):
+    """Extend isolated right stroke edges by one pixel without filling cavities."""
+    if not body or any(len(row)!=len(body[0]) for row in body): fail("embolden body must be rectangular")
+    width=len(body[0]); output=[row[:] for row in body]
+    for y,row in enumerate(body):
+        for x in range(width):
+            left=row[x-1] if x else 0; right=row[x+1] if x+1<width else 0
+            if left and not row[x] and not right: output[y][x]=1
+    return output
+
+
+def unpack_external_body(packed, size):
+    blocks=(size+7)//8
+    if len(packed)!=size*blocks: fail("external packed body length mismatch")
+    return [[(packed[x*blocks+y//8]>>(y%8))&1 for x in range(size)] for y in range(size)]
+
+
+def _external_allowed(source, codepoint):
+    if codepoint==FALLBACK: return True
+    if "coverage" not in source: return True
+    first,last=_external_range(source["coverage"])
+    return first<=codepoint<=last
+
+
+def build_external_font(value, source_bdfs):
+    """Build CN_BASIC.FNT from already extracted BDF bytes.
+
+    This helper is intentionally offline-testable.  Production CLI callers
+    should use :func:`load_external_sources` first.
+    """
+    ext=validate_external_manifest(value,pinned=False)
+    sources=ext["sources"]; strikes={str(key):spec for key,spec in ext["strikes"].items()}
+    referenced=sorted({name for spec in strikes.values() for name in spec["priority"]})
+    missing=[name for name in referenced if name not in source_bdfs]
+    if missing: fail("missing external BDF sources: "+", ".join(missing))
+    wanted=set(range(external_font.FIRST_CODEPOINT,external_font.LAST_CODEPOINT+1)); wanted.add(FALLBACK)
+    usages={name:set() for name in referenced}
+    for spec in strikes.values():
+        for name in spec["priority"]: usages[name].add(spec["id"])
+    rasters={name:{target:{} for target in usages[name]} for name in referenced}
+    for name in referenced:
+        source=sources[name]; native=source["source_size"]
+        try: ascent,descent,glyphs=parse_bdf(source_bdfs[name],wanted,allow_nonzero_bitmap_padding=True,allow_non_ascii_metadata=True)
+        except (OSError,UnicodeError,ValueError) as exc: fail(f"external source {name}: {exc}")
+        if source.get("required_coverage"):
+            first,last=_external_range(source["required_coverage"])
+            absent=next((cp for cp in range(first,last+1) if cp not in glyphs),None)
+            if absent is not None: fail(f"external source {name} missing U+{absent:04X}")
+        for codepoint,glyph in glyphs.items():
+            if not _external_allowed(source,codepoint): continue
+            native_body=external_native_raster(glyph,ascent,descent,source)
+            for target in usages[name]:
+                transform=strikes[str(target)].get("transforms",{}).get(name)
+                if target==native: body=native_body
+                elif native>target and transform=="center-nearest": body=nearest_neighbor(native_body,target)
+                else: fail(f"external source {name} cannot render {native}px to {target}px")
+                packed=pack(body,target,target,0)
+                body_length=target*((target+7)//8)
+                if len(packed)!=body_length or len(packed)>external_font.SLOT_SIZE: fail("external packed body length mismatch")
+                if target%8 and any(packed[x*((target+7)//8)+(target//8)] & (0xFF<<((target%8))) for x in range(target)):
+                    fail("external bitmap high padding bits are nonzero")
+                rasters[name][target][codepoint]=packed
+
+    all_bodies={}; all_counts={}
+    for key in (10,12,16):
+        spec=strikes[str(key)]; target=spec["id"]
+        counts={name:0 for name in spec["priority"]}; counts["fallback"]=0; bodies=[]
+        for codepoint in range(external_font.FIRST_CODEPOINT,external_font.LAST_CODEPOINT+1):
+            selected=None; selected_name=None
+            for name in spec["priority"]:
+                selected=rasters[name][target].get(codepoint)
+                if selected is not None:
+                    selected_name=name; counts[name]+=1; break
+            if selected is None:
+                for name in spec["priority"]:
+                    selected=rasters[name][target].get(FALLBACK)
+                    if selected is not None: selected_name=name; break
+                if selected is None: fail(f"strike {target}: U+{codepoint:04X} has no fallback U+25A1")
+                counts["fallback"]+=1
+            if spec.get("transforms",{}).get(selected_name)=="controlled-horizontal-embolden":
+                selected=pack(controlled_horizontal_embolden(unpack_external_body(selected,target)),target,target,0)
+            bodies.append(selected)
+        if len(bodies)!=external_font.GLYPH_COUNT: fail("external glyph count mismatch")
+        all_bodies[target]=tuple(bodies); all_counts[target]=counts
+    data=external_font.build_container(all_bodies)
+    return ExternalBuild(data,all_bodies,all_counts,sha256(data))
+
+
+def generate_external(m, output, cache_dir=None, source_dir=None, download=True):
+    validate_manifest(m); ext=m["external_font"]
+    bdfs=load_external_sources(ext,cache_dir,source_dir,download)
+    result=build_external_font(ext,bdfs)
+    output=Path(output); output.parent.mkdir(parents=True,exist_ok=True); output.write_bytes(result.data)
+    for strike in (10,12,16):
+        counts=" ".join(f"{name}={count}" for name,count in result.source_counts[strike].items())
+        print(f"external strike={strike} {counts}")
+    print(f"external output={output} sha256={result.sha256}")
+    return result
+
+
+external_generated=build_external_font
+generate_external_font=generate_external
+
 def main(argv=None):
     p=argparse.ArgumentParser(); p.add_argument("--check",action="store_true"); p.add_argument("--extract-subset",action="store_true")
+    p.add_argument("--external-output",type=Path,help="write full U+4E00..U+9FFF CN_BASIC.FNT")
+    p.add_argument("--external-cache",type=Path,help="verified archive download/cache directory")
+    p.add_argument("--external-source-dir",type=Path,help="directory containing pre-downloaded pinned archives")
+    p.add_argument("--external-no-download",action="store_true",help="fail instead of downloading a missing archive")
     for x in SOURCE_KEYS: p.add_argument("--"+x)
-    a=p.parse_args(argv); m=json.loads(MANIFEST.read_text(encoding="utf-8")); cps=codepoints(m)
+    a=p.parse_args(argv); m=json.loads(MANIFEST.read_text(encoding="utf-8"))
+    if a.external_output:
+        if a.extract_subset or a.check: fail("--external-output cannot be combined with --extract-subset/--check")
+        cache=a.external_cache or Path.home()/".cache"/"edgetx-cn-fonts"
+        generate_external(m,a.external_output,cache,a.external_source_dir,not a.external_no_download); return
+    cps=codepoints(m)
     if a.extract_subset: extract(a,m,cps); return
     outputs=generated(m,cps); changed=[]
     for path,data in outputs.items():

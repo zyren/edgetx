@@ -264,6 +264,9 @@ if(SIMU_DISKIO)
 endif()
 
 set(SRC ${SRC} sdcard.cpp rtc.cpp logs.cpp lib_file.cpp)
+if(PCBREV STREQUAL GX12 AND TRANSLATIONS STREQUAL CN)
+  set(SRC ${SRC} fonts/external_font.cpp)
+endif()
 
 if(BLUETOOTH)
   add_definitions(-DBLUETOOTH)

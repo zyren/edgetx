@@ -121,8 +121,19 @@ void logsInit();
 void logsClose();
 void logsWrite();
 
+#if defined(EDGETX_CN_STDLCD)
+#include "fonts/external_font.h"
+void sdInit(bool initExternalFont = true);
+void sdMount(bool initExternalFont = true);
+bool sdExternalFontPrepare();
+bool sdExternalFontActivate();
+ExternalFontResult sdExternalFontVerifyFull(
+    ExternalFontProgressCallback callback = nullptr, void * context = nullptr);
+void sdExternalFontShutdown();
+#else
 void sdInit();
 void sdMount();
+#endif
 void sdDone();
 uint32_t sdMounted();
 

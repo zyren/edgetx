@@ -26,6 +26,9 @@
 #include "hal/storage.h"
 
 #include "edgetx.h"
+#if defined(EDGETX_CN_STDLCD)
+#include "fonts/external_font.h"
+#endif
 #include "lib_file.h"
 
 #if FF_MAX_SS != FF_MIN_SS
@@ -500,23 +503,49 @@ FIL g_bluetoothFile = {};
 #include "audio.h"
 #include "sdcard.h"
 
+#if defined(EDGETX_CN_STDLCD)
+void sdInit(bool initExternalFont)
+#else
 void sdInit()
+#endif
 {
   TRACE("sdInit");
   storageInit();
+#if defined(EDGETX_CN_STDLCD)
+  sdMount(initExternalFont);
+#else
   sdMount();
+#endif
 }
 
+#if defined(EDGETX_CN_STDLCD)
+void sdMount(bool initExternalFont)
+#else
 void sdMount()
+#endif
 {
   TRACE("sdMount");
 
+#if defined(EDGETX_CN_STDLCD)
+  // Invalidate the persistent FIL before every filesystem generation change,
+  // including remount attempts that subsequently fail.
+  externalFontShutdown();
+#endif
   storagePreMountHook();
-  
+
   if (f_mount(&g_FATFS_Obj, "", 1) == FR_OK) {
-    // call sdGetFreeSectors() now because f_getfree() takes a long time first time it's called
     _g_FATFS_init = true;
+#if defined(EDGETX_CN_STDLCD)
+    // Defer the first, slow f_getfree() during the staged startup mount.
+    if (initExternalFont) sdGetFreeSectors();
+#else
+    // Call now because f_getfree() takes a long time the first time it is called.
     sdGetFreeSectors();
+#endif
+#if defined(EDGETX_CN_STDLCD)
+    if (initExternalFont && externalFontPrepare() == ExternalFontResult::Prepared)
+      externalFontActivate();
+#endif
 
 #if defined(LOG_TELEMETRY)
     f_open(&g_telemetryFile, LOGS_PATH "/telemetry.log", FA_OPEN_ALWAYS | FA_WRITE);
@@ -537,9 +566,29 @@ void sdMount()
   }
 }
 
+#if defined(EDGETX_CN_STDLCD)
+bool sdExternalFontPrepare()
+{
+  return sdMounted() && externalFontPrepare() == ExternalFontResult::Prepared;
+}
+
+bool sdExternalFontActivate() { return sdMounted() && externalFontActivate(); }
+ExternalFontResult sdExternalFontVerifyFull(ExternalFontProgressCallback callback, void * context)
+{
+  if (!sdMounted()) return ExternalFontResult::Unavailable;
+  return externalFontVerifyFull("/FONTS/CN_BASIC.FNT", callback, context);
+}
+void sdExternalFontShutdown() { externalFontShutdown(); }
+#endif
+
 void sdDone()
 {
   TRACE("sdDone");
+
+#if defined(EDGETX_CN_STDLCD)
+  // The font FIL must never survive unmount or storageDeInit (including MSC).
+  externalFontShutdown();
+#endif
 
   if (sdMounted()) {
     audioQueue.stopSD();

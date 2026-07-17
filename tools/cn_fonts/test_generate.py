@@ -1,6 +1,9 @@
 import copy, io, json, os, re, tarfile, tempfile, unittest, warnings, zipfile
 from pathlib import Path
-import generate
+try:
+    from . import generate
+except ImportError:
+    import generate
 
 ARCHIVE_FILES={
  "fusion8":"fusion-pixel-font-8px-monospaced-bdf-v2026.07.01.zip",
@@ -48,7 +51,9 @@ class GeneratorTests(unittest.TestCase):
             lambda m:m["profiles"]["CN_10"].update(cell=[10,13],top_offset=0),
             lambda m:m["profiles"]["CN_DEFAULT_10"].update(top_offset=1),
             lambda m:m["profiles"]["CN_12"].update(policy="fallback-only"),
-            lambda m:m["profiles"]["CN_16"].update(source_advance=16)):
+            lambda m:m["profiles"]["CN_16"].update(source_advance=16),
+            lambda m:m["external_font"]["sources"]["unifont17"].update(archive_sha256="0"*64),
+            lambda m:m["external_font"]["strikes"]["12"].update(priority=["unifont17","fusion12","wqy_medium"])):
             bad=copy.deepcopy(self.manifest); mutate(bad)
             with self.assertRaises(ValueError): generate.codepoints(bad)
 

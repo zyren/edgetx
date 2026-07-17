@@ -26,6 +26,7 @@
 #include "utf8.h"
 
 #if defined(EDGETX_CN_STDLCD)
+#include "fonts/external_font.h"
 #include "fonts/cn/generated/cn_8.h"
 #include "fonts/cn/generated/cn_default_10.h"
 #include "fonts/cn/generated/cn_10.h"
@@ -224,6 +225,24 @@ static uint16_t findCnGlyph(const CnPattern & font, uint16_t codepoint)
     else last = middle;
   }
   return first < font.count && font.codepoints[first] == codepoint ? first : 0;
+}
+
+static uint8_t externalCnStrike(LcdFlags flags)
+{
+  switch (FONTSIZE(flags)) {
+    case 0:
+    case MIDSIZE: return 10;
+    case DBLSIZE: return 12;
+    case XXLSIZE: return 16;
+    case TINSIZE:
+    case SMLSIZE:
+    default: return 0;
+  }
+}
+
+static uint8_t externalCnTopOffset(uint8_t strike)
+{
+  return strike == 10 ? 1 : 2;
 }
 
 static bool isCnAsciiCodepoint(uint16_t codepoint)
@@ -427,6 +446,21 @@ void lcdDrawCodepoint(coord_t x, coord_t y, uint16_t codepoint, LcdFlags flags)
     return;
   }
   const uint16_t glyph = findCnGlyph(font, codepoint);
+  // Embedded data is authoritative. External storage is consulted only for a
+  // missing Unified CJK glyph at one of the three supported fixed sizes.
+  const uint8_t strike = externalCnStrike(flags);
+  if (glyph == 0 && strike != 0 && codepoint >= 0x4E00 && codepoint <= 0x9FFF) {
+    uint8_t external[32];
+    if (externalFontReadGlyph(strike, codepoint, external)) {
+      const CnPattern externalFont = {
+        external, nullptr, nullptr, 1, strike, strike,
+        static_cast<uint8_t>(strike * 2)
+      };
+      lcdPutRawCnPattern(x, y + externalCnTopOffset(strike), externalFont,
+                         external, font.widths[0], flags);
+      return;
+    }
+  }
   lcdPutRawCnPattern(x, y, font, font.data + glyph * font.bytesPerGlyph,
                      font.widths[glyph], flags);
 }

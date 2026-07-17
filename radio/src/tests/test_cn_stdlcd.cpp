@@ -13,6 +13,7 @@
 #include "fonts/cn/generated/cn_12.h"
 #include "fonts/cn/generated/cn_16.h"
 #include "fonts/cn/generated/cn_32.h"
+#include "fonts/external_font.h"
 #include "debug.h"
 
 extern LcdFlags getCharPattern(PatternData * pattern, unsigned char c,
@@ -127,6 +128,23 @@ static void renderRadioVersion(uint8_t selectedRow, uint8_t * page)
   menuRadioVersion((event_t)0);
   memcpy(page, displayBuf, DISPLAY_BUFFER_SIZE);
 }
+
+#if defined(RADIO_GX12)
+TEST(CnStdLcd, StartupProgressUsesOriginalFilledBlocks)
+{
+  constexpr coord_t y = LCD_H / 2 - 3;
+  for (uint8_t completed = 0; completed <= 4; ++completed) {
+    lcdClear();
+    drawStartupAnimation(completed * 10, 50);
+    for (uint8_t i = 0; i < 4; ++i) {
+      const coord_t x = LCD_W / 2 - 18 + 10 * i;
+      EXPECT_EQ(i < completed, pixel(x, y));
+      EXPECT_EQ(i < completed, pixel(x + 5, y + 5));
+      EXPECT_EQ(i < completed, pixel(x + 2, y + 2));
+    }
+  }
+}
+#endif
 
 TEST(CnStdLcd, StrictUtf8Decoder)
 {
@@ -270,6 +288,40 @@ TEST(CnStdLcd, SizeDispatchFallbackAndIntentionalBlank)
     lcdDrawCodepoint(0, 0, 0x4E2D, flags);
     EXPECT_FALSE(anyPixel());
     EXPECT_EQ(flags == TINSIZE ? 4 : 5, lcdNextPos);
+  }
+}
+
+TEST(CnStdLcd, ExternalUnavailablePreservesFallbackPixelsAndLayout)
+{
+  externalFontShutdown();
+  const struct Case { LcdFlags flags; uint8_t advance; } cases[] = {
+    { 0, 11 }, { BOLD, 11 }, { MIDSIZE, 11 },
+    { DBLSIZE, 13 }, { XXLSIZE, 17 }
+  };
+  for (const auto & item : cases) {
+    lcdClear();
+    lcdDrawCodepoint(3, 4, 0x9FFF, item.flags);
+    uint8_t first[DISPLAY_BUFFER_SIZE];
+    memcpy(first, displayBuf, sizeof(first));
+    const coord_t endpoint = lcdNextPos;
+
+    EXPECT_EQ(item.advance, getCodepointAdvance(0x9FFF, item.flags));
+    EXPECT_EQ(item.advance, getTextWidth("\xE9\xBF\xBF", 0, item.flags));
+    lcdClear();
+    lcdDrawCodepoint(3, 4, 0x9FFF, item.flags);
+    EXPECT_EQ(endpoint, lcdNextPos);
+    EXPECT_EQ(0, memcmp(first, displayBuf, sizeof(first)));
+  }
+}
+
+TEST(CnStdLcd, UnsupportedExternalSizesKeepExistingBehavior)
+{
+  externalFontShutdown();
+  for (LcdFlags flags : { TINSIZE, SMLSIZE }) {
+    lcdClear();
+    lcdDrawCodepoint(0, 0, 0x9FFF, flags);
+    EXPECT_EQ(getCodepointAdvance(0x9FFF, flags), lcdNextPos);
+    EXPECT_FALSE(anyPixel());
   }
 }
 

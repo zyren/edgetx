@@ -611,6 +611,12 @@ const char * restoreModel(uint8_t idx, char *model_name)
 
 bool storageReadRadioSettings(bool checks)
 {
-  if (!sdMounted()) sdInit();
+  if (!sdMounted()) {
+#if defined(EDGETX_CN_STDLCD)
+    sdInit(false);
+#else
+    sdInit();
+#endif
+  }
   return loadRadioSettingsYaml(checks) == nullptr;
 }
