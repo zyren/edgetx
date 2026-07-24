@@ -45,6 +45,9 @@ class PrefsProfilePanel : public PrefsPanel
     Ui::PrefsProfile * ui;
     int row;
     int col;
+    // these can be different to global current values
+    Board::Type selFWBoard;
+    Firmware *selFirmware;
 
     AutoCheckBox *chkUseSettingsBackup;
     AutoLabel    *lblSettingsBackup;
@@ -56,7 +59,7 @@ class PrefsProfilePanel : public PrefsPanel
     AutoLineEdit *leModelsPath;
     AutoLineEdit *leBackupsPath;
     AutoComboBox *cboLanguage;
-    AutoLabel    *lblSplashImage;
+    AutoImage    *lblSplashImage;
     AutoLineEdit *leSplashPath;
 
     inline void newRow() { ++row; col = 0; }
@@ -64,4 +67,6 @@ class PrefsProfilePanel : public PrefsPanel
     QStringList languageList();
     Firmware * getFirmwareVariant() const;
     QAbstractItemModel *firmwareModel();
+    QString getSplashFileFilter();
+    void displayImage(const QString & fileName);
 };

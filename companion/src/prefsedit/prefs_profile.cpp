@@ -25,6 +25,8 @@
 #include "moduledata.h"
 
 #include <QAbstractItemView>
+#include <QFileInfo>
+#include <QImageReader>
 #include <QStandardItemModel>
 
 constexpr char FIM_TEMPLATESETUP[]    {"Template Setup"};
@@ -56,6 +58,9 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent):
   });
 
   // radio
+  //
+  // Note: lots of things need to happen when the selection changes !!!!!!!
+  //
   ui->cboRadio->setModel(firmwareModel());
   // QComboBox::sizeAdjustPolicy(QCombobox::AdjustToContents) does not resize as requested
   // due to using a model and nested layouts. Since the list view is correct, use it
@@ -229,15 +234,27 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent):
   // Splash path
   leSplashPath = new AutoLineEdit(this, true);
   leSplashPath->setValue(profile.splashFile(), this);
+
   leSplashPath->setBindSave([this] { profile.splashFile(this->leSplashPath->text());});
   laySplash->addWidget(leSplashPath, row, col++);
   // Splash folder select
   AutoFileSelectButton *btnSplashSelect = new AutoFileSelectButton(this);
-  btnSplashSelect->setup(tr("Select splash folder"), profile.splashFile(), getSplashFileFilter(), leSplashPath);;
+  btnSplashSelect->setup(tr("Open Image to load"), g.imagesDir(),
+                         tr("Images (%1)").arg(getSplashFileFilter()), leSplashPath);
+  btnSplashSelect->setBindPostChanged([this] {
+    if (!this->leSplashPath->text().isEmpty()){
+      g.imagesDir(QFileInfo(leSplashPath->text()).dir().absolutePath());
+    }
+  });
   laySplash->addWidget(btnSplashSelect, row, col++);
   // Splash image
   newRow();
-  lblSplashImage = new AutoLabel(this);
+  //        TODO needs to be updated when Firmwarare Changed
+  //        Maybe as dynamic add setBindImage like setBindText and need to add to updateAll etc
+  lblSplashImage = new AutoImage(this, leSplashPath->text(),
+                          Boards::getCapability(getFirmwareVariant()->getBoard(), Board::LcdWidth),
+                          Boards::getCapability(getFirmwareVariant()->getBoard(), Board::LcdHeight),
+                          Boards::getCapability(getFirmwareVariant()->getBoard(), Board::LcdDepth));
   laySplash->addWidget(lblSplashImage, row, col++);
   // Splash clear
   AutoPushButton *btnSplashClear = new AutoPushButton(this, tr("Clear"));
@@ -314,4 +331,15 @@ QAbstractItemModel * PrefsProfilePanel::firmwareModel()
   smdl->setSortCaseSensitivity(Qt::CaseInsensitive);
   smdl->sort(0);
   return smdl;
+}
+
+QString PrefsProfilePanel::getSplashFileFilter()
+{
+  QString fmts;
+
+  for (int idx = 0; idx < QImageReader::supportedImageFormats().count(); idx++) {
+    fmts += QLatin1String(" *.") + QImageReader::supportedImageFormats()[idx];
+  }
+
+  return fmts;
 }
