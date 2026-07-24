@@ -13,6 +13,7 @@ set(${PROJECT_NAME}_NAMES
   autofileselectbutton
   autodirectoryselectbutton
   autohexspinbox
+  autoimage
   autolabel
   autolineedit
   autoprecisioncombobox

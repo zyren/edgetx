@@ -21,22 +21,28 @@
 
 #pragma once
 
-#include "autobitmappedcheckbox.h"
-#include "autobitmappedcombobox.h"
-#include "autobitsetcheckbox.h"
-#include "autocheckbox.h"
-#include "autocollapsiblesection.h"
-#include "autocolorselectbutton.h"
-#include "autocombobox.h"
-#include "autodoublespinbox.h"
-#include "autofileselectbutton.h"
-#include "autodirectoryselectbutton.h"
-#include "autohexspinbox.h"
-#include "autoimage.h"
-#include "autolabel.h"
-#include "autolineedit.h"
-#include "autoprecisioncombobox.h"
-#include "autopushbutton.h"
-#include "autoslider.h"
-#include "autospinbox.h"
-#include "autotimeedit.h"
+#include "autowidget.h"
+
+#include <QLabel>
+
+class AutoImage: public QLabel, public AutoWidget
+{
+  Q_OBJECT
+
+  public:
+    explicit AutoImage(QWidget * parent = nullptr, const QString & filename = QString(), int width = 100, int height = 100, int depth = 4);
+    virtual ~AutoImage();
+
+    virtual void updateValue() override;
+    void setBindModel(std::function<QAbstractItemModel*()> fn) = delete;
+
+    void setup(const QString & filename, int width, int height, int depth);
+
+  protected:
+
+  private:
+    QString m_filename;
+    int m_depth;
+    int m_height;
+    int m_width;
+};
