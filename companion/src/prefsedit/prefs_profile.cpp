@@ -31,8 +31,8 @@
 
 constexpr char FIM_TEMPLATESETUP[]    {"Template Setup"};
 
-PrefsProfilePanel::PrefsProfilePanel(QWidget * parent):
-  PrefsPanel(parent),
+PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Type & bd, Profile & prof) :
+  PrefsPanel(parent, fw, bd, prof),
   ui(new Ui::PrefsProfile),
   row(0),
   col(0)
@@ -227,9 +227,10 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent):
   ui->csectFirmwareOpts->setContentLayout(*layFirmwareOpts);
   ui->csectFirmwareOpts->setBindResize([this] { this->shrink(); });
 
-  // B&W firmware splash image
+  // firmware splash
   row = col = 0;
   ui->csectSplash->setTitle(tr("Splash Screen"));
+  ui->csectSplash->setBindVisible([this] { return !Boards::getCapability(board, Board::HasColorLcd); });
   QGridLayout *laySplash = new QGridLayout();
   // Splash path
   leSplashPath = new AutoLineEdit(this, true);
@@ -252,9 +253,9 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent):
   //        TODO needs to be updated when Firmwarare Changed
   //        Maybe as dynamic add setBindImage like setBindText and need to add to updateAll etc
   lblSplashImage = new AutoImage(this, leSplashPath->text(),
-                          Boards::getCapability(getFirmwareVariant()->getBoard(), Board::LcdWidth),
-                          Boards::getCapability(getFirmwareVariant()->getBoard(), Board::LcdHeight),
-                          Boards::getCapability(getFirmwareVariant()->getBoard(), Board::LcdDepth));
+                          Boards::getCapability(board, Board::LcdWidth),
+                          Boards::getCapability(board, Board::LcdHeight),
+                          Boards::getCapability(board, Board::LcdDepth));
   laySplash->addWidget(lblSplashImage, row, col++);
   // Splash clear
   AutoPushButton *btnSplashClear = new AutoPushButton(this, tr("Clear"));
@@ -266,9 +267,6 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent):
   addHSpring(laySplash, row, col);
   ui->csectSplash->setContentLayout(*laySplash);
   ui->csectSplash->setBindResize([this] { this->shrink(); });
-  ui->csectSplash->setBindVisible([this] {
-    return !(Boards::getCapability(this->getFirmwareVariant()->getBoard(), Board::HasColorLcd));
-  });
 
   update();
   shrink();
@@ -290,6 +288,9 @@ void PrefsProfilePanel::update()
 {
   AbstractPanel::update();
 }
+
+//    TODO CHANGE ALL THESE FIRMWARE FUNCTIONS TO USE firmware valiable !!!!!!
+
 
 Firmware * PrefsProfilePanel::getFirmwareVariant() const
 {

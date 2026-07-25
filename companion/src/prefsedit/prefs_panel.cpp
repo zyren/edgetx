@@ -20,13 +20,13 @@
  */
 
 #include "prefs_panel.h"
-#include "eeprominterface.h"
 
-PrefsPanel::PrefsPanel(QWidget * parent):
+PrefsPanel::PrefsPanel(QWidget * parent, Firmware * firmware, Board::Type & board, Profile & profile):
   AbstractPanel(parent),
-  grid(nullptr),
-  profile(g.currentProfile()),
-  board(getCurrentBoard())
+  firmware(firmware),
+  board(board),
+  profile(profile),
+  grid(nullptr)
 {
 }
 

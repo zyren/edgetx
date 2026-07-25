@@ -35,7 +35,7 @@ class PrefsProfilePanel : public PrefsPanel
     Q_OBJECT
 
   public:
-    PrefsProfilePanel(QWidget * parent);
+    PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Type & bd, Profile & prof);
     virtual ~PrefsProfilePanel();
 
     virtual void save() override;
@@ -45,9 +45,6 @@ class PrefsProfilePanel : public PrefsPanel
     Ui::PrefsProfile * ui;
     int row;
     int col;
-    // these can be different to global current values
-    Board::Type selFWBoard;
-    Firmware *selFirmware;
 
     AutoCheckBox *chkUseSettingsBackup;
     AutoLabel    *lblSettingsBackup;

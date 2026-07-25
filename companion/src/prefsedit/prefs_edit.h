@@ -22,6 +22,7 @@
 #pragma once
 
 #include "prefs_panel.h"
+#include "eeprominterface.h"
 
 #include <QDialog>
 
@@ -55,8 +56,13 @@ class PrefsEditDialog : public QDialog
   private:
     Ui::PrefsEdit *ui;
     bool mainWinHasDirtyChild;
+    Firmware *firmware;
+    Board::Type board;
+    Profile &profile;
     QList<PrefsPanel *> panels;
+    bool dirty;
 
-    void addTab(PrefsPanel * panel, QString text);
+    PrefsPanel * addTab(PrefsPanel * panel, QString text);
+    void save();
     void shrink();
 };

@@ -37,15 +37,19 @@ class PrefsPanel : public AbstractPanel
   public:
     friend class PrefsEditDialog;
 
-    explicit PrefsPanel(QWidget * parent);
+    explicit PrefsPanel(QWidget * parent, Firmware * firmware, Board::Type & board, Profile & profile) ;
     virtual ~PrefsPanel();
 
     virtual void save() override {};
 
+  signals:
+    void firmwareChanged();
+
   protected:
-    GridLayout *grid;
-    Profile &profile;
+    Firmware *firmware;
     Board::Type board;
+    Profile &profile;
+    GridLayout *grid;
 };
 
 class PrefsScrollArea : public QScrollArea

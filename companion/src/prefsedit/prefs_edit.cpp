@@ -27,20 +27,30 @@
 #include "ui_prefs_edit.h"
 #include "helpers.h"
 
+#include <QMessageBox>
+
 PrefsEditDialog::PrefsEditDialog(QWidget * parent, UpdateFactories * factories) :
   QDialog(parent),
   ui(new Ui::PrefsEdit),
-  mainWinHasDirtyChild(false)
+  mainWinHasDirtyChild(false),
+  firmware(getCurrentFirmware()),
+  board(getCurrentBoard()),
+  profile(g.currentProfile()),
+  dirty(false)
 {
   ui->setupUi(this);
   setWindowIcon(CompanionIcon("apppreferences.png"));
   setAttribute(Qt::WA_DeleteOnClose);
   restoreGeometry(g.prefsEditGeo());
 
-  addTab(new PrefsProfilePanel(this), tr("Radio Profile"));
-  //addTab(new PrefsAppPanel(this), tr("Application"));
-  addTab(new PrefsSimuPanel(this), tr("Simulator"));
-  //addTab(new PrefsUpdatePanel(this, factories), tr("Update"));
+  PrefsPanel *profPanel = addTab(new PrefsProfilePanel(this, firmware, board, profile), tr("Radio Profile"));
+  connect(profPanel, &PrefsPanel::firmwareChanged, this, [this] () {
+    foreach(PrefsPanel *panel, panels)
+      panel->update();
+  });
+  //addTab(new PrefsAppPanel(this, firmware, board, profile), tr("Application"));
+  addTab(new PrefsSimuPanel(this, firmware, board, profile), tr("Simulator"));
+  //addTab(new PrefsUpdatePanel(this, firmware, board, profile), tr("Update"));
 
   ui->tabWidget->setCurrentIndex(0);
   shrink();
@@ -53,13 +63,11 @@ PrefsEditDialog::~PrefsEditDialog()
 
 void PrefsEditDialog::accept()
 {
-  for (const auto panel : panels)
-    panel->save();
-
+  save();
   QDialog::accept();
 }
 
-void PrefsEditDialog::addTab(PrefsPanel * panel, QString text)
+PrefsPanel * PrefsEditDialog::addTab(PrefsPanel * panel, QString text)
 {
   panels << panel;
   QWidget * widget = new QWidget(ui->tabWidget);
@@ -67,10 +75,21 @@ void PrefsEditDialog::addTab(PrefsPanel * panel, QString text)
   PrefsScrollArea * area = new PrefsScrollArea(widget, panel);
   baseLayout->addWidget(area);
   ui->tabWidget->addTab(widget, text);
+  connect(panel, &PrefsPanel::modified, this, [this] { dirty = true; });
+  return panel;
 }
 
 void PrefsEditDialog::closeEvent(QCloseEvent *event)
 {
+  if (dirty) {
+    int ret = QMessageBox::question(this, tr("Edit Preferences"),
+                tr("Preferences have been modified.\nDo you want to save your changes?"),
+                (QMessageBox::Save | QMessageBox::Discard), QMessageBox::Save);
+
+    if (ret == QMessageBox::Save)
+      save();
+  }
+
   g.prefsEditGeo(saveGeometry());
 }
 
@@ -82,4 +101,14 @@ void PrefsEditDialog::shrink()
 void PrefsEditDialog::setMainWinHasDirtyChild(bool value)
 {
   mainWinHasDirtyChild = value;
+}
+
+void PrefsEditDialog::save()
+{
+  if (dirty) {
+    dirty = false;
+
+    for (const auto panel : panels)
+      panel->save();
+  }
 }
