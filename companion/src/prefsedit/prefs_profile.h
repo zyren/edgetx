@@ -56,7 +56,7 @@ class PrefsProfilePanel : public PrefsPanel
     AutoLineEdit *leModelsPath;
     AutoLineEdit *leBackupsPath;
     AutoComboBox *cboLanguage;
-    AutoImage    *lblSplashImage;
+    AutoImage    *imgSplash;
     AutoLineEdit *leSplashPath;
 
     inline void newRow() { ++row; col = 0; }

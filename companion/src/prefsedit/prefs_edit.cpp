@@ -45,7 +45,7 @@ PrefsEditDialog::PrefsEditDialog(QWidget * parent, UpdateFactories * factories) 
 
   PrefsPanel *profPanel = addTab(new PrefsProfilePanel(this, firmware, board, profile), tr("Radio Profile"));
   connect(profPanel, &PrefsPanel::firmwareChanged, this, [this] () {
-    foreach(PrefsPanel *panel, panels)
+    foreach(const auto panel, panels)
       panel->update();
   });
   //addTab(new PrefsAppPanel(this, firmware, board, profile), tr("Application"));

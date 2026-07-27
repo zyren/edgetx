@@ -63,10 +63,16 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
   //
   ui->cboRadio->setModel(firmwareModel());
   // QComboBox::sizeAdjustPolicy(QCombobox::AdjustToContents) does not resize as requested
-  // due to using a model and nested layouts. Since the list view is correct, use it
+  // due to using a model and nested layouts. Since the list view width is correct, use it
   ui->cboRadio->setMaximumWidth(ui->cboRadio->view()->width());
   ui->cboRadio->setValue(profile.fwType(), this);
   ui->cboRadio->setBindSave([this] { profile.fwType(ui->cboRadio->currentData().toString());} );
+  ui->cboRadio->setBindPostChanged([this] {
+    this->firmware = this->getFirmwareVariant();
+    this->board = this->firmware->getBoard();
+    // trigger all prefs panels to update including this one
+    emit firmwareChanged(this->firmware);
+  });
 
   // new file
   row = col = 0;
@@ -156,7 +162,7 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
   cboModuleExternal->setBindSave([this] { profile.externalModuleSize(this->cboModuleExternal->currentData().toInt()); });
   layNewFile->addWidget(cboModuleExternal, row, col++);
 
-  addHSpring(layNewFile, row, col);
+  addHSpring(layNewFile, col, row);
   ui->csectNewFile->setContentLayout(*layNewFile);
   ui->csectNewFile->setBindResize([this] { this->shrink(); });
 
@@ -206,7 +212,7 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
   btnBackupsPath->setup(tr("Select backups folder"), profile.pBackupDir(), leBackupsPath);;
   layFolders->addWidget(btnBackupsPath, row, col++);
 
-  addHSpring(layFolders, row, col);
+  addHSpring(layFolders, col, row);
   ui->csectFolders->setContentLayout(*layFolders);
   ui->csectFolders->setBindResize([this] { this->shrink(); });
 
@@ -223,7 +229,7 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
   cboLanguage->setBindSave([this] { profile.fwLanguage(this->cboLanguage->currentText()); });
   layFirmwareOpts->addWidget(cboLanguage, row, col++);
 
-  addHSpring(layFirmwareOpts, row, col);
+  addHSpring(layFirmwareOpts, col, row);
   ui->csectFirmwareOpts->setContentLayout(*layFirmwareOpts);
   ui->csectFirmwareOpts->setBindResize([this] { this->shrink(); });
 
@@ -250,21 +256,22 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
   laySplash->addWidget(btnSplashSelect, row, col++);
   // Splash image
   newRow();
-  //        TODO needs to be updated when Firmwarare Changed
-  //        Maybe as dynamic add setBindImage like setBindText and need to add to updateAll etc
-  lblSplashImage = new AutoImage(this, leSplashPath->text(),
-                          Boards::getCapability(board, Board::LcdWidth),
-                          Boards::getCapability(board, Board::LcdHeight),
-                          Boards::getCapability(board, Board::LcdDepth));
-  laySplash->addWidget(lblSplashImage, row, col++);
+  imgSplash = new AutoImage(this, leSplashPath->text());
+  // change of firmware and thus board can effect the image
+  imgSplash->setBindPreUpdate([this] {
+    imgSplash->setDimensions(Boards::getCapability(board, Board::LcdWidth),
+                             Boards::getCapability(board, Board::LcdHeight),
+                             Boards::getCapability(board, Board::LcdDepth));
+  });
+  laySplash->addWidget(imgSplash, row, col++);
   // Splash clear
   AutoPushButton *btnSplashClear = new AutoPushButton(this, tr("Clear"));
   connect(btnSplashClear, &QPushButton::released, this, [this] () {
-    this->lblSplashImage->clear();
+    this->imgSplash->clear();
     this->leSplashPath->clear();
   });
   laySplash->addWidget(btnSplashClear, row, col++);
-  addHSpring(laySplash, row, col);
+  addHSpring(laySplash, col, row);
   ui->csectSplash->setContentLayout(*laySplash);
   ui->csectSplash->setBindResize([this] { this->shrink(); });
 

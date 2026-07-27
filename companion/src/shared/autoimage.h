@@ -37,6 +37,7 @@ class AutoImage: public QLabel, public AutoWidget
     void setBindModel(std::function<QAbstractItemModel*()> fn) = delete;
 
     void setup(const QString & filename, int width, int height, int depth);
+    void setDimensions(int width, int height, int depth);
 
   protected:
 

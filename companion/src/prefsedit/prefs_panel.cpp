@@ -36,14 +36,15 @@ PrefsPanel::~PrefsPanel()
     delete grid;
 }
 
-PrefsScrollArea::PrefsScrollArea(QWidget * parent, PrefsPanel * panel):
-  QScrollArea(parent),
-  panel(panel)
+void PrefsPanel::onFirmwareChanged(Firmware * firmware)
 {
-  setWidgetResizable(true);
-  setWidget(panel);
-  panel->installEventFilter(this);
+  this->firmware = firmware;
+  board = this->firmware->getBoard();
 }
+
+/*
+    PrefsScrollArea
+*/
 
 bool PrefsScrollArea::eventFilter(QObject * o, QEvent * e)
 {
@@ -53,3 +54,11 @@ bool PrefsScrollArea::eventFilter(QObject * o, QEvent * e)
   return false;
 }
 
+PrefsScrollArea::PrefsScrollArea(QWidget * parent, PrefsPanel * panel):
+  QScrollArea(parent),
+  panel(panel)
+{
+  setWidgetResizable(true);
+  setWidget(panel);
+  panel->installEventFilter(this);
+}

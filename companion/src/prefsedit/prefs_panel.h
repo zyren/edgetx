@@ -23,7 +23,7 @@
 
 #include "appdata.h"
 #include "abstractpanel.h"
-#include "boards.h"
+#include "eeprominterface.h"
 #include "gridlayout.h"
 
 #include <QScrollArea>
@@ -43,7 +43,10 @@ class PrefsPanel : public AbstractPanel
     virtual void save() override {};
 
   signals:
-    void firmwareChanged();
+    void firmwareChanged(Firmware * firmware);
+
+  protected slots:
+    void onFirmwareChanged(Firmware * firmware);
 
   protected:
     Firmware *firmware;

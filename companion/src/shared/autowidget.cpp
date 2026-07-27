@@ -33,6 +33,7 @@ AutoWidget::AutoWidget():
   m_model(nullptr),
   m_text(nullptr),
   m_visible(nullptr),
+  m_preUpdate(nullptr),
   m_postChanged(nullptr),
   m_save(nullptr)
 {
@@ -96,6 +97,11 @@ void AutoWidget::applyBindings()
   // makes no sense to apply parent bind to buddies
   // leave it to each buddy to apply when it is updated
   if (m_model) setAutoModel(m_model());
+}
+
+void AutoWidget::applyPreUpdate()
+{
+  if (m_preUpdate) m_preUpdate();
 }
 
 void AutoWidget::clearBindEnabled()
@@ -183,6 +189,11 @@ void AutoWidget::setBindSave(std::function<void()> fn)
 void AutoWidget::setBindModel(std::function<QAbstractItemModel*()> fn)
 {
   m_model = std::move(fn);
+}
+
+void AutoWidget::setBindPreUpdate(std::function<void()> fn)
+{
+  m_preUpdate = std::move(fn);
 }
 
 void AutoWidget::setBindPostChanged(std::function<void()> fn)
