@@ -68,7 +68,8 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
   ui->cboRadio->setValue(profile.fwType(), this);
   ui->cboRadio->setBindSave([this] { profile.fwType(ui->cboRadio->currentData().toString());} );
   ui->cboRadio->setBindPostChanged([this] {
-    this->firmware = this->getFirmwareVariant();
+    // appending "-xxx" forces the associated Board definition to be loaded
+    this->firmware = Firmware::getFirmwareForId(ui->cboRadio->currentData().toString() % "-xxx");
     this->board = this->firmware->getBoard();
     // trigger all prefs panels to update including this one
     emit firmwareChanged(this->firmware);
@@ -296,15 +297,6 @@ void PrefsProfilePanel::update()
   AbstractPanel::update();
 }
 
-//    TODO CHANGE ALL THESE FIRMWARE FUNCTIONS TO USE firmware valiable !!!!!!
-
-
-Firmware * PrefsProfilePanel::getFirmwareVariant() const
-{
-  // TODO check if need -xxx
-  return Firmware::getFirmwareForId(ui->cboRadio->currentData().toString() % "-xxx");
-}
-
 QString PrefsProfilePanel::getLanguage()
 {
   return !profile.fwLanguage().isEmpty() ?
@@ -316,7 +308,7 @@ QStringList PrefsProfilePanel::languageList()
 {
   QStringList strl;
 
-  for (const char *lang : getFirmwareVariant()->getFirmwareBase()->languageList())
+  for (const char *lang : firmware->getFirmwareBase()->languageList())
     strl.append(lang);
 
   strl.sort();

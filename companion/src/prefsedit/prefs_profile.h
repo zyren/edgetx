@@ -62,7 +62,6 @@ class PrefsProfilePanel : public PrefsPanel
     inline void newRow() { ++row; col = 0; }
     QString getLanguage();
     QStringList languageList();
-    Firmware * getFirmwareVariant() const;
     QAbstractItemModel *firmwareModel();
     QString getSplashFileFilter();
     void displayImage(const QString & fileName);
