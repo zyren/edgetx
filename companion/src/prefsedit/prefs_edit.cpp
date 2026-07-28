@@ -86,8 +86,12 @@ void PrefsEditDialog::closeEvent(QCloseEvent *event)
                 tr("Preferences have been modified.\nDo you want to save your changes?"),
                 (QMessageBox::Save | QMessageBox::Discard), QMessageBox::Save);
 
-    if (ret == QMessageBox::Save)
+    if (ret == QMessageBox::Save) {
       save();
+      //    TODO check how these signals are handled by MDIChild
+      emit firmwareProfileChanged();
+      emit firmwareProfileAboutToChange(true);
+    }
   }
 
   g.prefsEditGeo(saveGeometry());

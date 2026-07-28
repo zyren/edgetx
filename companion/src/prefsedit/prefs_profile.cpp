@@ -66,10 +66,12 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
   // due to using a model and nested layouts. Since the list view width is correct, use it
   ui->cboRadio->setMaximumWidth(ui->cboRadio->view()->width());
   ui->cboRadio->setValue(profile.fwType(), this);
-  ui->cboRadio->setBindSave([this] { profile.fwType(ui->cboRadio->currentData().toString());} );
+  ui->cboRadio->setBindSave([this] { this->profile.fwType(this->ui->cboRadio->currentData().toString());} );
   ui->cboRadio->setBindPostChanged([this] {
-    // appending "-xxx" forces the associated Board definition to be loaded
-    this->firmware = Firmware::getFirmwareForId(ui->cboRadio->currentData().toString() % "-xxx");
+    // appending "-xxx" forces the associated Board definition to be loaded if not already loaded
+    // TODO fix as part of refactoring Firmware and Boards
+    qDebug() << this->ui->cboRadio->currentData();
+    this->firmware = Firmware::getFirmwareForId(this->ui->cboRadio->currentData().toString() % "-xxx");
     this->board = this->firmware->getBoard();
     // trigger all prefs panels to update including this one
     emit firmwareChanged(this->firmware);

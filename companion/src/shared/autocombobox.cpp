@@ -237,40 +237,57 @@ void AutoComboBox::onCurrentIndexChanged(int index)
     return;
 
   bool ok;
-  int val = 0;
-  QString str(itemText(index));
+  int ival = 0;
+  QString sval;
+  bool valChanged = false;
 
   if (m_qString || m_stdString || !isValueInt()) {
     ok = true;
+    if (m_useFindData)
+      sval = itemData(index).toString();
+    else
+      sval = itemText(index);
   } else {
-    val = itemData(index).toInt(&ok);
+    ival = itemData(index).toInt(&ok);
   }
 
   if (ok) {
-    if (m_field && *m_field != val)
-      *m_field = val;
-    else if (m_rawSource && m_rawSource->toValue() != val)
-      *m_rawSource = RawSource(val);
-    else if (m_rawSwitch && m_rawSwitch->toValue() != val)
-      *m_rawSwitch = RawSwitch(val);
-    else if (m_curveType && *m_curveType != val)
-      *m_curveType = (CurveData::CurveType)val;
-    else if (m_flexType && *m_flexType != val)
-      *m_flexType = (Board::FlexType)val;
-    else if (m_switchType && *m_switchType != val)
-      *m_switchType = (Board::SwitchType)val;
-    else if (m_qString && *m_qString != str)
-      *m_qString = str;
-    else if (m_stdString && *m_stdString != str.toStdString())
-      *m_stdString = str.toStdString();
-    // default using m_value
-    else if (isValueInt() && m_value.toInt() != val)
-      m_value = val;
-    else if (!isValueInt() && m_value.toString() != str)
-      m_value = str;
+    if (m_field && *m_field != ival) {
+      *m_field = ival;
+    } else if (m_rawSource && m_rawSource->toValue() != ival) {
+      *m_rawSource = RawSource(ival);
+      valChanged = true;
+    } else if (m_rawSwitch && m_rawSwitch->toValue() != ival) {
+      *m_rawSwitch = RawSwitch(ival);
+      valChanged = true;
+    } else if (m_curveType && *m_curveType != ival) {
+      *m_curveType = (CurveData::CurveType)ival;
+      valChanged = true;
+    } else if (m_flexType && *m_flexType != ival) {
+      *m_flexType = (Board::FlexType)ival;
+      valChanged = true;
+    } else if (m_switchType && *m_switchType != ival) {
+      *m_switchType = (Board::SwitchType)ival;
+      valChanged = true;
+    } else if (m_qString && *m_qString != sval) {
+      *m_qString = sval;
+      valChanged = true;
+    } else if (m_stdString && *m_stdString != sval.toStdString()) {
+      *m_stdString = sval.toStdString();
+      valChanged = true;
+      // default using m_value
+    } else if (isValueInt() && m_value.toInt() != ival) {
+      m_value = ival;
+      valChanged = true;
+    } else if (!isValueInt() && m_value.toString() != sval) {
+      m_value = sval;
+      valChanged = true;
+    }
 
-    emit currentDataChanged(val);
-    runPostChanged();
+    if (valChanged) {
+      emit currentDataChanged(ival);
+      runPostChanged();
+    }
   }
 }
 
