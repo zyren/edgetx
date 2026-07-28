@@ -241,7 +241,7 @@ void AutoComboBox::onCurrentIndexChanged(int index)
   QString sval;
   bool valChanged = false;
 
-  if (m_qString || m_stdString || !isValueInt()) {
+  if (m_qString || m_stdString || m_value.typeId() != QMetaType::Int) {
     ok = true;
     if (m_useFindData)
       sval = itemData(index).toString();
@@ -276,10 +276,10 @@ void AutoComboBox::onCurrentIndexChanged(int index)
       *m_stdString = sval.toStdString();
       valChanged = true;
       // default using m_value
-    } else if (isValueInt() && m_value.toInt() != ival) {
+    } else if (m_value.typeId() == QMetaType::Int && m_value.toInt() != ival) {
       m_value = ival;
       valChanged = true;
-    } else if (!isValueInt() && m_value.toString() != sval) {
+    } else if (m_value.typeId() != QMetaType::Int && m_value.toString() != sval) {
       m_value = sval;
       valChanged = true;
     }
@@ -289,11 +289,4 @@ void AutoComboBox::onCurrentIndexChanged(int index)
       runPostChanged();
     }
   }
-}
-
-bool AutoComboBox::isValueInt()
-{
-  bool ok;
-  m_value.toInt(&ok);
-  return ok;
 }

@@ -96,5 +96,4 @@ class AutoComboBox : public QComboBox, public AutoWidget
 
     void initField();
     void setFieldInit(AbstractPanel * panel);
-    bool isValueInt();
 };

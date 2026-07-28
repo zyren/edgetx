@@ -70,7 +70,6 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
   ui->cboRadio->setBindPostChanged([this] {
     // appending "-xxx" forces the associated Board definition to be loaded if not already loaded
     // TODO fix as part of refactoring Firmware and Boards
-    qDebug() << this->ui->cboRadio->currentData();
     this->firmware = Firmware::getFirmwareForId(this->ui->cboRadio->currentData().toString() % "-xxx");
     this->board = this->firmware->getBoard();
     // trigger all prefs panels to update including this one
@@ -227,9 +226,9 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
   QLabel *lblLanguage = new QLabel(tr("Language"), this);
   layFirmwareOpts->addWidget(lblLanguage, row, col++);
   cboLanguage = new AutoComboBox(this);
-  cboLanguage->addItems(languageList());
-  cboLanguage->setValue(profile.fwLanguage(), this, false);
-  cboLanguage->setBindSave([this] { profile.fwLanguage(this->cboLanguage->currentText()); });
+  cboLanguage->setModel(languageModel());
+  cboLanguage->setValue(profile.fwLanguage(), this);
+  cboLanguage->setBindSave([this] { profile.fwLanguage(this->cboLanguage->currentData().toString()); });
   layFirmwareOpts->addWidget(cboLanguage, row, col++);
 
   addHSpring(layFirmwareOpts, col, row);
@@ -306,15 +305,22 @@ QString PrefsProfilePanel::getLanguage()
     QLocale::languageToString(QLocale().language()).split("_").first();
 }
 
-QStringList PrefsProfilePanel::languageList()
+QAbstractItemModel * PrefsProfilePanel::languageModel()
 {
-  QStringList strl;
+  QStandardItemModel * mdl = new QStandardItemModel(this);
 
-  for (const char *lang : firmware->getFirmwareBase()->languageList())
-    strl.append(lang);
+  for (const char *lang : firmware->getFirmwareBase()->languageList()) {
+    QStandardItem * item =  new QStandardItem();
+    item->setText(lang);
+    item->setData(lang, Qt::UserRole);
+    mdl->appendRow(item);
+  }
 
-  strl.sort();
-  return strl;
+  QSortFilterProxyModel *smdl = new QSortFilterProxyModel(this);
+  smdl->setSourceModel(mdl);
+  smdl->setSortCaseSensitivity(Qt::CaseInsensitive);
+  smdl->sort(0);
+  return smdl;
 }
 
 QAbstractItemModel * PrefsProfilePanel::firmwareModel()
