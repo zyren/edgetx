@@ -36,7 +36,8 @@ PrefsEditDialog::PrefsEditDialog(QWidget * parent, UpdateFactories * factories) 
   firmware(getCurrentFirmware()),
   board(getCurrentBoard()),
   profile(g.currentProfile()),
-  dirty(false)
+  dirty(false),
+  notifyFirmwareChange(false)
 {
   ui->setupUi(this);
   setWindowIcon(CompanionIcon("apppreferences.png"));
@@ -45,6 +46,7 @@ PrefsEditDialog::PrefsEditDialog(QWidget * parent, UpdateFactories * factories) 
 
   PrefsPanel *profPanel = addTab(new PrefsProfilePanel(this, firmware, board, profile), tr("Radio Profile"));
   connect(profPanel, &PrefsPanel::firmwareChanged, this, [this] () {
+    notifyFirmwareChange = true;
     foreach(const auto panel, panels)
       panel->update();
   });
@@ -67,6 +69,12 @@ void PrefsEditDialog::accept()
   QDialog::accept();
 }
 
+void PrefsEditDialog::reject()
+{
+  maybeSave();
+  QDialog::reject();
+}
+
 PrefsPanel * PrefsEditDialog::addTab(PrefsPanel * panel, QString text)
 {
   panels << panel;
@@ -81,20 +89,10 @@ PrefsPanel * PrefsEditDialog::addTab(PrefsPanel * panel, QString text)
 
 void PrefsEditDialog::closeEvent(QCloseEvent *event)
 {
-  if (dirty) {
-    int ret = QMessageBox::question(this, tr("Edit Preferences"),
-                tr("Preferences have been modified.\nDo you want to save your changes?"),
-                (QMessageBox::Save | QMessageBox::Discard), QMessageBox::Save);
+  maybeSave();
 
-    if (ret == QMessageBox::Save) {
-      save();
-      //    TODO check how these signals are handled by MDIChild
-      emit firmwareProfileChanged();
-      emit firmwareProfileAboutToChange(true);
-    }
-  }
-
-  g.prefsEditGeo(saveGeometry());
+  if (!isMaximized())
+    g.prefsEditGeo(saveGeometry());
 }
 
 void PrefsEditDialog::shrink()
@@ -114,5 +112,23 @@ void PrefsEditDialog::save()
 
     for (const auto panel : panels)
       panel->save();
+
+    //    TODO check how these signals are handled by MDIChild
+    // if (notifyFirmwareChange) {
+    //  emit firmwareProfileChanged();
+    //  emit firmwareProfileAboutToChange(true);
+    // }
+  }
+}
+
+void PrefsEditDialog::maybeSave()
+{
+  if (dirty) {
+    int ret = QMessageBox::question(this, tr("Edit Preferences"),
+                tr("Preferences have been modified.\nDo you want to save your changes?"),
+                (QMessageBox::Save | QMessageBox::Discard), QMessageBox::Save);
+
+    if (ret == QMessageBox::Save)
+      save();
   }
 }

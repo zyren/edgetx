@@ -42,6 +42,7 @@ class PrefsEditDialog : public QDialog
 
   public slots:
     void accept() Q_DECL_OVERRIDE;
+    void reject() Q_DECL_OVERRIDE;
     void setMainWinHasDirtyChild(bool value);
 
   signals:
@@ -61,8 +62,10 @@ class PrefsEditDialog : public QDialog
     Profile &profile;
     QList<PrefsPanel *> panels;
     bool dirty;
+    bool notifyFirmwareChange;
 
     PrefsPanel * addTab(PrefsPanel * panel, QString text);
+    void maybeSave();
     void save();
     void shrink();
 };
