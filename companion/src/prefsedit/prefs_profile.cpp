@@ -175,7 +175,9 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
   // SD Path
   AutoLabel *lblSDPath = new AutoLabel(this, tr("SD Path"));
   layFolders->addWidget(lblSDPath, row, col++);
+
   leSDPath = new AutoLineEdit(this, true);
+  leSDPath->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
   leSDPath->setValue(profile.sdPath(), this);
   leSDPath->setEditSignal(true);
   leSDPath->setBindSave([this] { this->profile.sdPath(this->leSDPath->text()); });
@@ -189,7 +191,9 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
   newRow();
   AutoLabel *lblModelsPath = new AutoLabel(this, tr("Models"));
   layFolders->addWidget(lblModelsPath, row, col++);
+
   leModelsPath = new AutoLineEdit(this, true);
+  leModelsPath->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
   leModelsPath->setValue(profile.modelsDir(), this);
   leModelsPath->setEditSignal(true);
   leModelsPath->setBindSave([this] { this->profile.modelsDir(this->leModelsPath->text()); });
@@ -203,7 +207,9 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
   newRow();
   AutoLabel *lblBackupsPath = new AutoLabel(this, tr("Backups"));
   layFolders->addWidget(lblBackupsPath, row, col++);
+
   leBackupsPath = new AutoLineEdit(this, true);
+  leBackupsPath->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
   leBackupsPath->setValue(profile.pBackupDir(), this);
   leBackupsPath->setEditSignal(true);
   leBackupsPath->setBindSave([this] { this->profile.pBackupDir(this->leBackupsPath->text());});
@@ -214,7 +220,7 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
   btnBackupsPath->setup(tr("Select backups folder"), profile.pBackupDir(), leBackupsPath);;
   layFolders->addWidget(btnBackupsPath, row, col++);
 
-  addHSpring(layFolders, col, row);
+  //addHSpring(layFolders, col, row); Do not use as stops folder paths from expanding to available space
   ui->csectFolders->setContentLayout(*layFolders);
   ui->csectFolders->setBindResize([this] { this->shrink(); });
 
@@ -225,6 +231,7 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
   // language
   QLabel *lblLanguage = new QLabel(tr("Language"), this);
   layFirmwareOpts->addWidget(lblLanguage, row, col++);
+
   cboLanguage = new AutoComboBox(this);
   cboLanguage->setModel(languageModel());
   cboLanguage->setValue(profile.fwLanguage(), this);

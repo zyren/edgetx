@@ -48,6 +48,7 @@ AutoDirectorySelectButton::AutoDirectorySelectButton(QWidget * parent, const QSt
 
           if (le) {
             le->setText(m_dir);
+            le->setCursorPosition(0);
           }
         }
       }
