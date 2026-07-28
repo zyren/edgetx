@@ -30,7 +30,8 @@ AutoComboBox::AutoComboBox(QWidget * parent):
 {
   initField();
   setSizeAdjustPolicy(QComboBox::AdjustToContents);
-  connect(this, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &AutoComboBox::onCurrentIndexChanged);
+  connect(this, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, &AutoComboBox::onCurrentIndexChanged);
 }
 
 AutoComboBox::~AutoComboBox()
@@ -39,7 +40,7 @@ AutoComboBox::~AutoComboBox()
 
 void AutoComboBox::initField()
 {
-  m_field = nullptr;
+  m_int = nullptr;
   m_rawSource = nullptr;
   m_rawSwitch = nullptr;
   m_curveType = nullptr;
@@ -107,14 +108,14 @@ void AutoComboBox::setAutoModel(QAbstractItemModel * model)
 void AutoComboBox::setField(unsigned int & field, AbstractPanel * panel)
 {
   setFieldInit(panel);
-  m_field = (int *)&field;
+  m_int = (int *)&field;
   updateValue();
 }
 
 void AutoComboBox::setField(int & field, AbstractPanel * panel)
 {
   setFieldInit(panel);
-  m_field = &field;
+  m_int = &field;
   updateValue();
 }
 
@@ -206,8 +207,8 @@ void AutoComboBox::updateValue()
 {
   setLock(true);
 
-  if (m_field)
-    setCurrentIndex(findData(*m_field));
+  if (m_int)
+    setCurrentIndex(findData(*m_int));
   else if (m_rawSource)
     setCurrentIndex(findData(m_rawSource->toValue()));
   else if (m_rawSwitch)
@@ -239,7 +240,6 @@ void AutoComboBox::onCurrentIndexChanged(int index)
   bool ok;
   int ival = 0;
   QString sval;
-  bool valChanged = false;
 
   if (m_qString || m_stdString || m_value.typeId() != QMetaType::Int) {
     ok = true;
@@ -252,41 +252,30 @@ void AutoComboBox::onCurrentIndexChanged(int index)
   }
 
   if (ok) {
-    if (m_field && *m_field != ival) {
-      *m_field = ival;
+    if (m_int && *m_int != ival) {
+      *m_int = ival;
     } else if (m_rawSource && m_rawSource->toValue() != ival) {
       *m_rawSource = RawSource(ival);
-      valChanged = true;
     } else if (m_rawSwitch && m_rawSwitch->toValue() != ival) {
       *m_rawSwitch = RawSwitch(ival);
-      valChanged = true;
     } else if (m_curveType && *m_curveType != ival) {
       *m_curveType = (CurveData::CurveType)ival;
-      valChanged = true;
     } else if (m_flexType && *m_flexType != ival) {
       *m_flexType = (Board::FlexType)ival;
-      valChanged = true;
     } else if (m_switchType && *m_switchType != ival) {
       *m_switchType = (Board::SwitchType)ival;
-      valChanged = true;
     } else if (m_qString && *m_qString != sval) {
       *m_qString = sval;
-      valChanged = true;
     } else if (m_stdString && *m_stdString != sval.toStdString()) {
       *m_stdString = sval.toStdString();
-      valChanged = true;
       // default using m_value
     } else if (m_value.typeId() == QMetaType::Int && m_value.toInt() != ival) {
       m_value = ival;
-      valChanged = true;
     } else if (m_value.typeId() != QMetaType::Int && m_value.toString() != sval) {
       m_value = sval;
-      valChanged = true;
     }
 
-    if (valChanged) {
-      emit currentDataChanged(ival);
-      runPostChanged();
-    }
+    emit currentDataChanged(ival);  // TODO change to QVariant
+    runPostChanged();
   }
 }

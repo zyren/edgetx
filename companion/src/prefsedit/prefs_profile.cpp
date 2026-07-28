@@ -268,7 +268,7 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
   laySplash->addWidget(imgSplash, row, col++);
   // Splash clear
   AutoPushButton *btnSplashClear = new AutoPushButton(this, tr("Clear"));
-  connect(btnSplashClear, &QPushButton::released, this, [this] () {
+  btnSplashClear->setBindClicked([this] {
     this->imgSplash->clear();
     this->leSplashPath->clear();
   });

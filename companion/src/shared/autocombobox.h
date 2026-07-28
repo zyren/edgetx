@@ -83,7 +83,7 @@ class AutoComboBox : public QComboBox, public AutoWidget
   private:
     int m_next;
     bool m_hasModel;
-    int *m_field;
+    int *m_int;
     RawSource *m_rawSource;
     RawSwitch *m_rawSwitch;
     CurveData::CurveType *m_curveType;

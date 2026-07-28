@@ -58,7 +58,7 @@ PrefsSimuPanel::PrefsSimuPanel(QWidget * parent, Firmware * fw, Board::Type & bd
   ui->btnScrnshotFldr->setup(tr("Select snapshot folder"), g.snapshotDir(), ui->leScrnshotPath);
   ui->btnScrnshotFldr->addBuddyParentWidget(ui->leScrnshotPath);
 
-  connect(ui->btnClearSavedPosn, &QPushButton::released, this, [this] () {
+  ui->btnClearSavedPosn->setBindClicked([this] {
     SimulatorOptions opts = this->profile.simulatorOptions();
     opts.controlsState.clear();
     this->profile.simulatorOptions(opts);
@@ -128,7 +128,7 @@ PrefsSimuPanel::PrefsSimuPanel(QWidget * parent, Firmware * fw, Board::Type & bd
   });
 
   ui->btnJoystickCalib->setBindEnabled([this] { return ui->chkJoystickEnable->isChecked();} );
-  connect(ui->btnJoystickCalib, &QPushButton::released, this, [this]() {
+  ui->btnJoystickCalib->setBindClicked([this] {
     this->profile.jsName(ui->cboJoystick->currentText());
     joystickDialog *jd = new joystickDialog(this);
     jd->exec();

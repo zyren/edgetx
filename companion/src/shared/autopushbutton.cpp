@@ -26,8 +26,16 @@ AutoPushButton::AutoPushButton(QWidget * parent, const QString & text):
   AutoWidget()
 {
   setText(text);
+  connect(this, &QPushButton::clicked, this, [this] () {
+    if (this->m_clicked) this->m_clicked();
+  });
 }
 
 AutoPushButton::~AutoPushButton()
 {
+}
+
+void AutoPushButton::setBindClicked(std::function<void()> fn)
+{
+  m_clicked = std::move(fn);
 }

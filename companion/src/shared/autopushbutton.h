@@ -36,8 +36,10 @@ class AutoPushButton: public QPushButton, public AutoWidget
     virtual void updateValue() override {}
 
     void setBindModel(std::function<QAbstractItemModel*()> fn) = delete;
+    void setBindClicked(std::function<void()> fn);
 
   protected:
 
   private:
+    std::function<void()> m_clicked;
 };
