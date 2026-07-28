@@ -59,9 +59,9 @@ PrefsSimuPanel::PrefsSimuPanel(QWidget * parent, Firmware * fw, Board::Type & bd
   ui->btnScrnshotFldr->addBuddyParentWidget(ui->leScrnshotPath);
 
   connect(ui->btnClearSavedPosn, &QPushButton::released, this, [this] () {
-    SimulatorOptions opts = profile.simulatorOptions();
+    SimulatorOptions opts = this->profile.simulatorOptions();
     opts.controlsState.clear();
-    profile.simulatorOptions(opts);
+    this->profile.simulatorOptions(opts);
   });
 
   ui->chkSaveControls->setValue(g.simuSW(), this);
@@ -80,7 +80,7 @@ PrefsSimuPanel::PrefsSimuPanel(QWidget * parent, Firmware * fw, Board::Type & bd
   });
 
   ui->dsbVolumeGain->setValue(profile.volumeGain() / 10.0, this);
-  ui->dsbVolumeGain->setBindSave([this] { profile.volumeGain(ui->dsbVolumeGain->value() * 10.0); });
+  ui->dsbVolumeGain->setBindSave([this] { this->profile.volumeGain(ui->dsbVolumeGain->value() * 10.0); });
 
   ui->lblBackLightColor->setBindVisible([this] { return Boards::getCapability(board, Board::HasBacklightColor); });
 
@@ -90,7 +90,7 @@ PrefsSimuPanel::PrefsSimuPanel(QWidget * parent, Firmware * fw, Board::Type & bd
   ui->cboBackLightColor->setBindVisible([this] { return Boards::getCapability(board, Board::HasBacklightColor); });
 
   ui->lblCaseColorSample->setBindSave([this] {
-    profile.radioSimCaseColor(ui->lblCaseColorSample->palette().button().color());
+    this->profile.radioSimCaseColor(ui->lblCaseColorSample->palette().button().color());
   });
   ui->lblCaseColorSample->setPalette(profile.radioSimCaseColor());
 
@@ -98,13 +98,13 @@ PrefsSimuPanel::PrefsSimuPanel(QWidget * parent, Firmware * fw, Board::Type & bd
 
   ui->chkBtnClkUseOSTheme->setValue(profile.simBtnClickedUseOSTheme(), this);
   ui->chkBtnClkUseOSTheme->setBindSave([this] {
-    return profile.simBtnClickedUseOSTheme(ui->chkBtnClkUseOSTheme->isChecked());
+    return this->profile.simBtnClickedUseOSTheme(ui->chkBtnClkUseOSTheme->isChecked());
   });
   ui->chkBtnClkUseOSTheme->setBindPostChanged([this] { this->update(); });
 
   ui->lblBtnClkColorSample->setPalette(profile.simBtnClickedColor());
   ui->lblBtnClkColorSample->setBindSave([this] {
-    return profile.simBtnClickedColor(ui->lblBtnClkColorSample->palette().button().color());
+    return this->profile.simBtnClickedColor(ui->lblBtnClkColorSample->palette().button().color());
   });
   ui->lblBtnClkColorSample->setBindEnabled([this] { return !ui->chkBtnClkUseOSTheme->isChecked(); });
   ui->lblBtnClkColorSample->setBindVisible([this] { return !ui->chkBtnClkUseOSTheme->isChecked(); });
@@ -122,14 +122,14 @@ PrefsSimuPanel::PrefsSimuPanel(QWidget * parent, Firmware * fw, Board::Type & bd
   ui->cboJoystick->setBindEnabled([this] { return ui->chkJoystickEnable->isChecked();} );
   ui->cboJoystick->setBindSave([this] {
     if (ui->cboJoystick->isEnabled()) {
-      profile.jsName(ui->cboJoystick->currentText());
+      this->profile.jsName(ui->cboJoystick->currentText());
       g.loadNamedJS();
     }
   });
 
   ui->btnJoystickCalib->setBindEnabled([this] { return ui->chkJoystickEnable->isChecked();} );
   connect(ui->btnJoystickCalib, &QPushButton::released, this, [this]() {
-    profile.jsName(ui->cboJoystick->currentText());
+    this->profile.jsName(ui->cboJoystick->currentText());
     joystickDialog *jd = new joystickDialog(this);
     jd->exec();
     delete jd;

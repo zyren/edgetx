@@ -74,6 +74,7 @@ class AutoWidget
 
     bool lock();
     bool panelLock();
+    void runPreUpdate();
     void runPostChanged();
     void setAutoEnabled(bool enabled);
     void setAutoVisible(bool visible);

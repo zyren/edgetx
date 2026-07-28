@@ -152,6 +152,11 @@ void AutoWidget::removeBuddyWidgets()
   m_buddyWidgets.clear();
 }
 
+void AutoWidget::runPreUpdate()
+{
+  if (m_preUpdate) m_preUpdate();
+}
+
 void AutoWidget::runPostChanged()
 {
   dataChanged();
