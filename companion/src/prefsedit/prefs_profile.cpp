@@ -72,6 +72,7 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
     // TODO fix as part of refactoring Firmware and Boards
     this->firmware = Firmware::getFirmwareForId(this->ui->cboRadio->currentData().toString() % "-xxx");
     this->board = this->firmware->getBoard();
+    this->populateFirmwareOptions();
     // trigger all prefs panels to update including this one
     emit firmwareChanged(this->firmware);
   });
@@ -231,15 +232,26 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
   row = col = 0;
   ui->csectFirmwareOpts->setTitle(tr("Firmware Options"));
   QGridLayout *layFirmwareOpts = new QGridLayout();
-  // language
-  QLabel *lblLanguage = new QLabel(tr("Language"), this);
-  layFirmwareOpts->addWidget(lblLanguage, row, col++);
 
-  cboLanguage = new AutoComboBox(this);
-  cboLanguage->setModel(languageModel());
-  cboLanguage->setValue(profile.fwLanguage(), this);
-  cboLanguage->setBindSave([this] { this->profile.fwLanguage(this->cboLanguage->currentData().toString()); });
-  layFirmwareOpts->addWidget(cboLanguage, row, col++);
+  // language
+  QLabel *lblFirmwareLanguage = new QLabel(tr("Language"), this);
+  layFirmwareOpts->addWidget(lblFirmwareLanguage, row, col++);
+
+  cboFirmwareLanguage = new AutoComboBox(this);
+  cboFirmwareLanguage->setModel(languageModel());
+  cboFirmwareLanguage->setValue(profile.fwLanguage(), this);
+  cboFirmwareLanguage->setBindSave([this] {
+    this->profile.fwLanguage(this->cboFirmwareLanguage->currentData().toString());
+  });
+  layFirmwareOpts->addWidget(cboFirmwareLanguage, row, col++);
+  // other options
+  newRow();
+  AutoLabel *lblFirmwareOptions = new AutoLabel(this, tr("Options"));
+  layFirmwareOpts->addWidget(lblFirmwareOptions, row, col++);
+
+  layFirmwareBuildOpts = new QGridLayout();
+  layFirmwareOpts->addLayout(layFirmwareBuildOpts, row, col++);
+  populateFirmwareOptions();
 
   addHSpring(layFirmwareOpts, col, row);
   ui->csectFirmwareOpts->setContentLayout(*layFirmwareOpts);
@@ -360,4 +372,70 @@ QString PrefsProfilePanel::getSplashFileFilter()
   }
 
   return fmts;
+}
+
+void PrefsProfilePanel::populateFirmwareOptions()
+{
+  QStringList currOpts;
+
+  if (chkFirmwareBuildOpts.size()) {
+    QMutableMapIterator<QString, QCheckBox *> it(chkFirmwareBuildOpts);
+    while (it.hasNext()) {
+      it.next();
+      QCheckBox * cb = it.value();
+
+      if (cb->isChecked())
+        currOpts.append(it.key());    // keep previous selections
+
+      layFirmwareBuildOpts->removeWidget(cb);
+      cb->deleteLater();
+      it.remove();
+    }
+  }
+
+  int index = 0;
+  QWidget * prevFocus = cboFirmwareLanguage;
+
+  for (const Firmware::OptionsGroup &optGrp : firmware->optionGroups()) {
+    for (const Firmware::Option &opt : optGrp) {
+      QCheckBox * cb = new QCheckBox(this);
+      cb->setText(opt.name);
+      cb->setToolTip(opt.tooltip);
+      cb->setChecked(currOpts.contains(opt.name));
+      layFirmwareBuildOpts->addWidget(cb, index / 4, index % 4);
+      QWidget::setTabOrder(prevFocus, cb);
+      // connect to duplicates check handler if this option is part of a group
+      if (optGrp.size() > 1)
+        connect(cb, &QCheckBox::toggled, this, &PrefsProfilePanel::onOptionChanged);
+      chkFirmwareBuildOpts.insert(opt.name, cb);
+      prevFocus = cb;
+      ++index;
+    }
+  }
+
+  shrink();
+}
+
+void PrefsProfilePanel::onOptionChanged(bool state)
+{
+  QCheckBox *cb = qobject_cast<QCheckBox*>(sender());
+
+  if (!(cb && state)) return;
+
+  const Firmware::OptionsList & fwOpts = firmware->optionGroups();
+
+  // This de-selects any mutually exlusive options (that is, members of the same QList<Option> list).
+  for (const Firmware::OptionsGroup & optGrp : fwOpts) {
+    for (const Firmware::Option & opt : optGrp) {
+      if (cb->text() == opt.name) {
+        QCheckBox *ocb = nullptr;
+
+        foreach(const Firmware::Option & other, optGrp)
+          if (other.name != opt.name && (ocb = chkFirmwareBuildOpts.value(other.name, nullptr)))
+            ocb->setChecked(false);
+
+        return;
+      }
+    }
+  }
 }

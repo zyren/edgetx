@@ -114,18 +114,47 @@ void PrefsEditDialog::setMainWinHasDirtyChild(bool value)
 
 void PrefsEditDialog::save()
 {
-  if (dirty) {
-    dirty = false;
+  if (!dirty) return;
 
-    for (const auto panel : panels)
-      panel->save();
+  dirty = false;
 
-    //    TODO check how these signals are handled by MDIChild
-    // if (notifyFirmwareChange) {
-    //  emit firmwareProfileChanged();
-    //  emit firmwareProfileAboutToChange(true);
-    // }
+  for (const auto panel : panels)
+    panel->save();
+
+/*   bool fwchange = false;
+  Firmware * newFw = getFirmwareVariant();  // always !null
+  // If a new fw type has been choosen, several things need to reset
+  if (Firmware::getCurrentVariant()->getId() != newFw->getId()) {
+    // check if we're going to be converting to a new radio type and there are unsaved files in the main window
+    if (mainWinHasDirtyChild && !Boards::isBoardCompatible(Firmware::getCurrentVariant()->getBoard(), newFw->getBoard())) {
+      QString q = tr("<p><b>You cannot switch Radio Type or change Build Options while there are unsaved file changes. What do you wish to do?</b></p> <ul>" \
+                     "<li><i>Save All</i> - Save any open file(s) before saving Settings.<li>" \
+                     "<li><i>Reset</i> - Revert to the previous Radio Type and Build Options before saving Settings.</li>" \
+                     "<li><i>Cancel</i> - Return to the Settings editor dialog.</li></ul>");
+      int resp = QMessageBox::question(this, windowTitle(), q, (QMessageBox::SaveAll | QMessageBox::Reset | QMessageBox::Cancel), QMessageBox::Cancel);
+      if (resp == QMessageBox::SaveAll) {
+        // signal main window to save files, need to do this before the fw actually changes
+        emit firmwareProfileAboutToChange();
+      }
+      else if (resp == QMessageBox::Reset) {
+        // bail out early before saving the radio type & firmware options
+        QDialog::accept();
+        return;
+      }
+      else {
+        // we do not accept the dialog close
+        return;
+      }
+    }
+    Firmware::setCurrentVariant(newFw);
+    fwchange = true;
   }
+
+  QDialog::accept();
+
+  if (fwchange)
+    emit firmwareProfileChanged();  // important to do this after the accepted() signal
+ */
 }
 
 void PrefsEditDialog::maybeSave()

@@ -44,6 +44,9 @@ class PrefsProfilePanel : public PrefsPanel
   signals:
     void sdPathChanged(QString path);
 
+  private slots:
+    void onOptionChanged(bool state);
+
   private:
     Ui::PrefsProfile * ui;
     int row;
@@ -58,14 +61,18 @@ class PrefsProfilePanel : public PrefsPanel
     AutoLineEdit *leSDPath;
     AutoLineEdit *leModelsPath;
     AutoLineEdit *leBackupsPath;
-    AutoComboBox *cboLanguage;
+    AutoComboBox *cboFirmwareLanguage;
     AutoImage    *imgSplash;
     AutoLineEdit *leSplashPath;
+    QStringList   strlBuildOpts;
+    QGridLayout  *layFirmwareBuildOpts;
+    QMap<QString, QCheckBox *> chkFirmwareBuildOpts;
 
     inline void newRow() { ++row; col = 0; }
     QString getLanguage();
     QAbstractItemModel *languageModel();
     QAbstractItemModel *firmwareModel();
+    void populateFirmwareOptions();
     QString getSplashFileFilter();
     void displayImage(const QString & fileName);
 };
