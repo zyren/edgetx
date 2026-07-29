@@ -181,6 +181,9 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
   leSDPath->setValue(profile.sdPath(), this);
   leSDPath->setEditSignal(true);
   leSDPath->setBindSave([this] { this->profile.sdPath(this->leSDPath->text()); });
+  leSDPath->setBindPostChanged([this] {
+    emit this->sdPathChanged(this->leSDPath->text());
+  });
   layFolders->addWidget(leSDPath, row, col++);
 
   AutoDirectorySelectButton *btnSDPath = new AutoDirectorySelectButton(this);

@@ -50,9 +50,16 @@ PrefsEditDialog::PrefsEditDialog(QWidget * parent, UpdateFactories * factories) 
     foreach(const auto panel, panels)
       panel->update();
   });
+
   //addTab(new PrefsAppPanel(this, firmware, board, profile), tr("Application"));
+
   addTab(new PrefsSimuPanel(this, firmware, board, profile), tr("Simulator"));
-  //addTab(new PrefsUpdatePanel(this, firmware, board, profile), tr("Update"));
+
+  //PrefsUpdatePanel *updatePanel = new PrefsUpdatePanel(this, firmware, board, profile);
+  //addTab(updatePanel, tr("Update"));
+  //connect(profPanel, &PrefsProfilePanel::sdPathChanged, updatePanel, &PrefsUpdatePanel::onSDPathChanged);
+
+
 
   ui->tabWidget->setCurrentIndex(0);
   shrink();

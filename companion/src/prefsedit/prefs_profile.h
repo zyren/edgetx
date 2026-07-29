@@ -41,6 +41,9 @@ class PrefsProfilePanel : public PrefsPanel
     virtual void save() override;
     virtual void update() override;
 
+  signals:
+    void sdPathChanged(QString path);
+
   private:
     Ui::PrefsProfile * ui;
     int row;
