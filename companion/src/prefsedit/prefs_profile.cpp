@@ -251,7 +251,7 @@ PrefsProfilePanel::PrefsProfilePanel(QWidget * parent, Firmware * fw, Board::Typ
 
   layFirmwareBuildOpts = new QGridLayout();
   layFirmwareOpts->addLayout(layFirmwareBuildOpts, row, col++);
-  populateFirmwareOptions(profile.fwOptions().split("-"));
+  populateFirmwareOptions(profile.fwOptions().split("-", Qt::SkipEmptyParts));
 
   addHSpring(layFirmwareOpts, col, row);
   ui->csectFirmwareOpts->setContentLayout(*layFirmwareOpts);
@@ -311,8 +311,8 @@ PrefsProfilePanel::~PrefsProfilePanel()
 
 void PrefsProfilePanel::save()
 {
-  AbstractPanel::save();
   profile.fwOptions(getSelectedOptions().join("-"));
+  AbstractPanel::save();
 }
 
 void PrefsProfilePanel::update()
@@ -383,13 +383,13 @@ void PrefsProfilePanel::populateFirmwareOptions(QStringList opts)
     QMutableMapIterator<QString, QCheckBox *> it(chkFirmwareBuildOpts);
     while (it.hasNext()) {
       it.next();
-      QCheckBox * cb = it.value();
+      QCheckBox * chk = it.value();
 
-      if (cb->isChecked())
+      if (chk->isChecked())
         currOpts.append(it.key());    // keep previous selections
 
-      layFirmwareBuildOpts->removeWidget(cb);
-      cb->deleteLater();
+      layFirmwareBuildOpts->removeWidget(chk);
+      chk->deleteLater();
       it.remove();
     }
   }
@@ -399,41 +399,35 @@ void PrefsProfilePanel::populateFirmwareOptions(QStringList opts)
 
   for (const Firmware::OptionsGroup &optGrp : firmware->getFirmwareBase()->optionGroups()) {
     for (const Firmware::Option &opt : optGrp) {
-      QCheckBox * cb = new QCheckBox(this);
-      cb->setText(opt.name);
-      cb->setToolTip(opt.tooltip);
-      cb->setChecked(currOpts.contains(opt.name));
-      layFirmwareBuildOpts->addWidget(cb, index / 4, index % 4);
-      QWidget::setTabOrder(prevFocus, cb);
+      AutoCheckBox * chk = new AutoCheckBox(this, opt.name);
+      chk->setValue(currOpts.contains(opt.name), this);
+      chk->setToolTip(opt.tooltip);
       // connect to duplicates check handler if this option is part of a group
       if (optGrp.size() > 1)
-        connect(cb, &QCheckBox::toggled, this, &PrefsProfilePanel::onOptionChanged);
-      chkFirmwareBuildOpts.insert(opt.name, cb);
-      prevFocus = cb;
+        chk->setBindPostChanged([=] { this->onOptionChanged(opt.name); });
+      layFirmwareBuildOpts->addWidget(chk, index / 4, index % 4);
+      chkFirmwareBuildOpts.insert(opt.name, chk);
+      QWidget::setTabOrder(prevFocus, chk);
+      prevFocus = chk;
       ++index;
     }
   }
-
   shrink();
 }
 
-void PrefsProfilePanel::onOptionChanged(bool state)
+void PrefsProfilePanel::onOptionChanged(QString name)
 {
-  QCheckBox *cb = qobject_cast<QCheckBox*>(sender());
-
-  if (!(cb && state)) return;
-
   const Firmware::OptionsList & fwOpts = firmware->getFirmwareBase()->optionGroups();
 
   // This de-selects any mutually exlusive options (that is, members of the same QList<Option> list).
   for (const Firmware::OptionsGroup & optGrp : fwOpts) {
     for (const Firmware::Option & opt : optGrp) {
-      if (cb->text() == opt.name) {
-        QCheckBox *ocb = nullptr;
+      if (name == opt.name) {
+        QCheckBox *ochk = nullptr;
 
         foreach(const Firmware::Option & other, optGrp)
-          if (other.name != opt.name && (ocb = chkFirmwareBuildOpts.value(other.name, nullptr)))
-            ocb->setChecked(false);
+          if (other.name != opt.name && (ochk = chkFirmwareBuildOpts.value(other.name, nullptr)))
+            ochk->setChecked(false);
 
         return;
       }
@@ -447,11 +441,12 @@ QStringList PrefsProfilePanel::getSelectedOptions()
 
   if (chkFirmwareBuildOpts.size()) {
     QMutableMapIterator<QString, QCheckBox *> it(chkFirmwareBuildOpts);
+
     while (it.hasNext()) {
       it.next();
-      QCheckBox * cb = it.value();
+      QCheckBox * chk = it.value();
 
-      if (cb->isChecked())
+      if (chk->isChecked())
         opts.append(it.key());
     }
   }

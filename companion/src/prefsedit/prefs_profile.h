@@ -44,8 +44,8 @@ class PrefsProfilePanel : public PrefsPanel
   signals:
     void sdPathChanged(QString path);
 
-  private slots:
-    void onOptionChanged(bool state);
+  public slots:
+    void onOptionChanged(QString name);
 
   private:
     Ui::PrefsProfile * ui;
