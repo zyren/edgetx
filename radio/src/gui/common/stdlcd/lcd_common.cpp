@@ -25,6 +25,14 @@
 #include "fonts.h"
 #include "utf8.h"
 
+#if defined(EDGETX_CN_STDLCD)
+#include "fonts/external_font.h"
+#include "fonts/cn/generated/cn_default_10.h"
+#include "fonts/cn/generated/cn_10.h"
+#include "fonts/cn/generated/cn_12.h"
+#include "fonts/cn/generated/cn_16.h"
+#endif
+
 #if !defined(SIMU)
   #define assert(x)
 #else
@@ -145,19 +153,316 @@ uint8_t getCharWidth(char c, LcdFlags flags)
   return getPatternWidth(&pattern);
 }
 
-uint8_t getTextWidth(const char * s, uint8_t len, LcdFlags flags)
+coord_t getTextWidth(const char * s, uint8_t len, LcdFlags flags)
 {
+#if defined(EDGETX_CN_STDLCD)
+  coord_t width = 0;
+  uint16_t remaining = len ? len : UINT8_MAX;
+  while (remaining && *s) {
+    const uint8_t c = static_cast<uint8_t>(*s);
+    if (c < 0x20) {
+      ++s;
+      --remaining;
+      continue;
+    }
+    Utf8Codepoint decoded = decodeNextUtf8(s, static_cast<uint8_t>(remaining));
+    if (!decoded.consumed) break;
+    uint16_t codepoint = resolveCnCodepoint(decoded.value, decoded.valid);
+#if defined(EDGETX_CN_STDLCD)
+    width += getCodepointAdvance(codepoint, flags);
+#else
+    width += getCharWidth(static_cast<uint8_t>(codepoint), flags) + 1;
+#endif
+    s += decoded.consumed;
+    remaining -= decoded.consumed;
+  }
+  return width;
+#else
   uint8_t width = 0;
   for (int i = 0; len == 0 || i < len; ++i) {
     unsigned char c = map_utf8_char(s, len);
-    if (!c) {
-      break;
-    }
+    if (!c) break;
     width += getCharWidth(c, flags) + 1;
     s++;
   }
   return width;
+#endif
 }
+
+#if defined(EDGETX_CN_STDLCD)
+struct CnPattern
+{
+  const uint8_t * data;
+  const uint16_t * codepoints;
+  const uint8_t * widths;
+  uint16_t count;
+  uint8_t width;
+  uint8_t height;
+  uint8_t bytesPerGlyph;
+};
+
+static CnPattern getCnPattern(LcdFlags flags)
+{
+  switch (FONTSIZE(flags)) {
+    case TINSIZE: return { nullptr, nullptr, nullptr, 0, 3, 5, 0 };
+    case SMLSIZE: return { nullptr, nullptr, nullptr, 0, 4, 6, 0 };
+    case MIDSIZE: return { &CN_10_glyphs[0][0], CN_10_codepoints, CN_10_widths, CN_10_GLYPH_COUNT, CN_10_WIDTH, CN_10_STORAGE_HEIGHT, CN_10_BYTES_PER_GLYPH };
+    case DBLSIZE: return { &CN_12_glyphs[0][0], CN_12_codepoints, CN_12_widths, CN_12_GLYPH_COUNT, CN_12_WIDTH, CN_12_STORAGE_HEIGHT, CN_12_BYTES_PER_GLYPH };
+    case XXLSIZE: return { &CN_16_glyphs[0][0], CN_16_codepoints, CN_16_widths, CN_16_GLYPH_COUNT, CN_16_WIDTH, CN_16_STORAGE_HEIGHT, CN_16_BYTES_PER_GLYPH };
+    default: return { &CN_DEFAULT_10_glyphs[0][0], CN_DEFAULT_10_codepoints, CN_DEFAULT_10_widths, CN_DEFAULT_10_GLYPH_COUNT, CN_DEFAULT_10_WIDTH, CN_DEFAULT_10_STORAGE_HEIGHT, CN_DEFAULT_10_BYTES_PER_GLYPH };
+  }
+}
+
+static uint16_t findCnGlyph(const CnPattern & font, uint16_t codepoint)
+{
+  uint16_t first = 1;
+  uint16_t last = font.count;
+  while (first < last) {
+    uint16_t middle = first + (last - first) / 2;
+    if (font.codepoints[middle] < codepoint) first = middle + 1;
+    else last = middle;
+  }
+  return first < font.count && font.codepoints[first] == codepoint ? first : 0;
+}
+
+static uint8_t externalCnStrike(LcdFlags flags)
+{
+  switch (FONTSIZE(flags)) {
+    case 0:
+    case MIDSIZE: return 10;
+    case DBLSIZE: return 12;
+    case XXLSIZE: return 16;
+    case TINSIZE:
+    case SMLSIZE:
+    default: return 0;
+  }
+}
+
+static uint8_t externalCnTopOffset(uint8_t strike)
+{
+  return strike == 10 ? 1 : 2;
+}
+
+static bool isCnAsciiCodepoint(uint16_t codepoint)
+{
+  return codepoint >= 0x20 && codepoint <= 0x7E;
+}
+
+static bool isCnInlineCodepoint(uint16_t codepoint)
+{
+  return codepoint >= FONT_SYMS_START && codepoint < FONT_LANG_START;
+}
+
+uint16_t resolveCnCodepoint(uint16_t codepoint, bool valid)
+{
+  if (!valid) return 0xFFFF;
+  if (codepoint == L'°') return CN_CODEPOINT_DEGREE;
+  if (codepoint == L'≥') return CN_CODEPOINT_GREATEREQUAL;
+  if (isCnInlineCodepoint(codepoint))
+    return static_cast<uint8_t>(codepoint);
+  if (codepoint <= 0xFF && !isCnAsciiCodepoint(codepoint)) return 0xFFFF;
+  return codepoint;
+}
+
+static bool isCnGeneratedLiteral(uint16_t codepoint, LcdFlags flags)
+{
+  return FONTSIZE(flags) == 0 &&
+         (codepoint == static_cast<uint8_t>(CHAR_BW_DEGREE) ||
+          codepoint == static_cast<uint8_t>(CHAR_BW_GREATEREQUAL));
+}
+
+static bool isCnLegacySemanticCodepoint(uint16_t codepoint)
+{
+  return codepoint == CN_CODEPOINT_DEGREE ||
+         codepoint == CN_CODEPOINT_GREATEREQUAL ||
+         isCnInlineCodepoint(codepoint);
+}
+
+static uint8_t legacyCodepoint(uint16_t codepoint)
+{
+  if (codepoint == CN_CODEPOINT_DEGREE) return CHAR_BW_DEGREE;
+  if (codepoint == CN_CODEPOINT_GREATEREQUAL) return CHAR_BW_GREATEREQUAL;
+  return static_cast<uint8_t>(codepoint);
+}
+
+uint8_t getCodepointAdvance(uint16_t codepoint, LcdFlags flags)
+{
+  codepoint = resolveCnCodepoint(codepoint, true);
+  if (codepoint == CN_CODEPOINT_DEGREE ||
+      codepoint == CN_CODEPOINT_GREATEREQUAL ||
+      isCnInlineCodepoint(codepoint))
+    return getCharWidth(static_cast<uint8_t>(legacyCodepoint(codepoint)), flags) + 1;
+  if (isCnGeneratedLiteral(codepoint, flags)) {
+    const CnPattern font = getCnPattern(flags);
+    return font.widths[findCnGlyph(font, codepoint)] + 1;
+  }
+  if (isCnAsciiCodepoint(codepoint))
+    return getCharWidth(static_cast<uint8_t>(codepoint), flags) + 1;
+  CnPattern font = getCnPattern(flags);
+  if (!font.data) return font.width + 1;
+  return font.widths[findCnGlyph(font, codepoint)] + 1;
+}
+
+static void lcdPutRawCnPatternClipped(coord_t x, coord_t y,
+                                     const CnPattern & font,
+                                     const uint8_t * pattern,
+                                     uint8_t logicalWidth, LcdFlags flags,
+                                     coord_t clipLeft, coord_t clipTop,
+                                     coord_t clipRight, coord_t clipBottom)
+{
+  bool blink = false;
+  bool invers = false;
+  if (flags & BLINK) {
+    if (BLINK_ON_PHASE) {
+      if (flags & INVERS) invers = true;
+      else blink = true;
+    }
+  }
+  else if (flags & INVERS) {
+    invers = true;
+  }
+  const uint8_t lines = (font.height + 7) / 8;
+  for (uint8_t column = 0; column <= logicalWidth; ++column) {
+    const coord_t px = x + column;
+    if (px < clipLeft || px >= clipRight || px < 0 || px >= LCD_W) continue;
+    for (uint8_t row = 0; row < font.height; ++row) {
+      const coord_t py = y + row;
+      if (py < clipTop || py >= clipBottom || py < 0 || py >= LCD_H) continue;
+      bool plot = column < logicalWidth &&
+                  (pattern[column * lines + row / 8] & (1 << (row % 8)));
+      if (invers) plot = !plot;
+      if (!blink) lcdDrawPoint(px, py, plot ? FORCE : ERASE);
+    }
+  }
+  lcdNextPos = x + logicalWidth + 1;
+}
+
+static void lcdPutRawCnPattern(coord_t x, coord_t y, const CnPattern & font,
+                               const uint8_t * pattern, uint8_t logicalWidth,
+                               LcdFlags flags)
+{
+  lcdPutRawCnPatternClipped(x, y, font, pattern, logicalWidth, flags,
+                            0, 0, LCD_W, LCD_H);
+}
+
+#if defined(SIMU)
+void lcdDrawRawFixedCellForTest(coord_t x, coord_t y, const uint8_t * data,
+                                uint8_t width, uint8_t height, LcdFlags flags)
+{
+  CnPattern font = { data, nullptr, nullptr, 1, width, height,
+                     static_cast<uint8_t>(width * ((height + 7) / 8)) };
+  lcdPutRawCnPattern(x, y, font, data, width, flags);
+}
+#endif
+
+static void lcdPutLegacyDefaultPattern(coord_t x, coord_t y,
+                                       const PatternData & pattern,
+                                       LcdFlags flags)
+{
+  bool blink = false;
+  bool invers = false;
+  if (flags & BLINK) {
+    if (BLINK_ON_PHASE) {
+      if (flags & INVERS) invers = true;
+      else blink = true;
+    }
+  }
+  else if (flags & INVERS) {
+    invers = true;
+  }
+
+  const uint8_t lines = (pattern.height + 7) / 8;
+  uint8_t logicalColumn = 0;
+  for (uint8_t sourceColumn = 0; sourceColumn < pattern.width; ++sourceColumn) {
+    const uint8_t * source = pattern.data + sourceColumn * lines;
+    bool sentinel = true;
+    for (uint8_t line = 0; line < lines; ++line)
+      if (source[line] != 0xFF) sentinel = false;
+    if (sentinel) continue;
+
+    const coord_t px = x + logicalColumn++;
+    if (px < 0 || px >= LCD_W) continue;
+    for (uint8_t row = 0; row < 10; ++row) {
+      const coord_t py = y + row;
+      if (py < 0 || py >= LCD_H) continue;
+      bool plot = row >= 2 && row < pattern.height + 2 &&
+                  (source[(row - 2) / 8] & (1 << ((row - 2) % 8)));
+      if (invers) plot = !plot;
+      if (!blink) lcdDrawPoint(px, py, plot ? FORCE : ERASE);
+    }
+  }
+
+  const coord_t spacingX = x + logicalColumn;
+  if (!blink && spacingX >= 0 && spacingX < LCD_W) {
+    for (uint8_t row = 0; row < 10; ++row) {
+      const coord_t py = y + row;
+      if (py >= 0 && py < LCD_H)
+        lcdDrawPoint(spacingX, py, invers ? FORCE : ERASE);
+    }
+  }
+  lcdNextPos = x + logicalColumn + 1;
+}
+
+static void lcdDrawCnDefaultGlyph(coord_t x, coord_t y, uint8_t c,
+                                  LcdFlags flags)
+{
+  const CnPattern font = getCnPattern(flags);
+  const uint16_t glyph = findCnGlyph(font, c);
+  lcdPutRawCnPattern(x, y, font, font.data + glyph * font.bytesPerGlyph,
+                     font.widths[glyph], flags);
+}
+
+void lcdDrawCodepoint(coord_t x, coord_t y, uint16_t codepoint, LcdFlags flags)
+{
+  codepoint = resolveCnCodepoint(codepoint, true);
+
+  if (FONTSIZE(flags) == 0 &&
+      (isCnAsciiCodepoint(codepoint) ||
+       isCnLegacySemanticCodepoint(codepoint))) {
+    if (isCnGeneratedLiteral(codepoint, flags)) {
+      lcdDrawCnDefaultGlyph(x, y, static_cast<uint8_t>(codepoint), flags);
+    }
+    else {
+      PatternData pattern;
+      getCharPattern(&pattern, legacyCodepoint(codepoint), flags);
+      lcdPutLegacyDefaultPattern(x, y, pattern, flags);
+    }
+    return;
+  }
+
+  if (isCnLegacySemanticCodepoint(codepoint)) {
+    lcdDrawChar(x, y, legacyCodepoint(codepoint), flags);
+    return;
+  }
+  if (isCnAsciiCodepoint(codepoint)) {
+    lcdDrawChar(x, y, static_cast<uint8_t>(codepoint), flags);
+    return;
+  }
+  CnPattern font = getCnPattern(flags);
+  if (!font.data) {
+    lcdNextPos = x + font.width + 1; // intentional TIN/SML blank
+    return;
+  }
+  const uint16_t glyph = findCnGlyph(font, codepoint);
+  // Embedded data is authoritative. External storage is consulted only for a
+  // missing Unified CJK glyph at one of the three supported fixed sizes.
+  const uint8_t strike = externalCnStrike(flags);
+  if (glyph == 0 && strike != 0 && codepoint >= 0x4E00 && codepoint <= 0x9FFF) {
+    uint8_t external[32];
+    if (externalFontReadGlyph(strike, codepoint, external)) {
+      const CnPattern externalFont = {
+        external, nullptr, nullptr, 1, strike, strike,
+        static_cast<uint8_t>(strike * 2)
+      };
+      lcdPutRawCnPattern(x, y + externalCnTopOffset(strike), externalFont,
+                         external, strike, flags);
+      return;
+    }
+  }
+  lcdPutRawCnPattern(x, y, font, font.data + glyph * font.bytesPerGlyph,
+                     font.widths[glyph], flags);
+}
+#endif
 
 void lcdPutPattern(coord_t x, coord_t y, const uint8_t * pattern, uint8_t width, uint8_t height, LcdFlags flags)
 {
@@ -245,6 +550,20 @@ void lcdPutPattern(coord_t x, coord_t y, const uint8_t * pattern, uint8_t width,
 
 void lcdDrawChar(coord_t x, coord_t y, uint8_t c, LcdFlags flags)
 {
+#if defined(EDGETX_CN_STDLCD)
+  if (FONTSIZE(flags) == 0 &&
+      ((c >= 0x20 && c <= 0x7E) || isCnInlineCodepoint(c))) {
+    if (isCnGeneratedLiteral(c, flags)) {
+      lcdDrawCnDefaultGlyph(x, y, c, flags);
+    }
+    else {
+      PatternData defaultPattern;
+      getCharPattern(&defaultPattern, c, flags);
+      lcdPutLegacyDefaultPattern(x, y, defaultPattern, flags);
+    }
+    return;
+  }
+#endif
   lcdNextPos = x - 1;
   PatternData pattern;
   flags = getCharPattern(&pattern, c, flags);
@@ -383,7 +702,7 @@ void drawTimer(coord_t x, coord_t y, int32_t tme, LcdFlags att, LcdFlags att2)
 
   lcdDrawNumber(x, y, qr.quot, att|LEADING0|LEFT, 2);
   if (att & TIMEBLINK)
-    lcdDrawChar(lcdLastRightPos, y, separator, BLINK);
+    lcdDrawChar(lcdLastRightPos, y, separator, (att & att2) | BLINK);
   else
     lcdDrawChar(lcdLastRightPos, y, separator, att&att2);
   lcdDrawNumber(lcdNextPos, y, qr.rem, (att2|LEADING0|LEFT) & (~RIGHT), 2);

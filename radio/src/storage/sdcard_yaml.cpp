@@ -493,31 +493,31 @@ void swapModels(uint8_t id1, uint8_t id2)
   FILINFO fno;
   if (f_stat(fname2,&fno) != FR_OK) {
     if (f_stat(fname1,&fno) == FR_OK) {
-      if (f_rename(fname1, fname2) == FR_OK)
+      if (sdRename(fname1, fname2) == FR_OK)
         swapModelHeaders(id1,id2);
     }
     return;
   }
 
   if (f_stat(fname1,&fno) != FR_OK) {
-    f_rename(fname2, fname1);
+    sdRename(fname2, fname1);
     return;
   }
 
   // just in case...
-  f_unlink(fname1_tmp);
+  sdUnlink(fname1_tmp);
 
-  if (f_rename(fname1, fname1_tmp) != FR_OK) {
+  if (sdRename(fname1, fname1_tmp) != FR_OK) {
     TRACE("Error renaming 1");
     return;
   }
 
-  if (f_rename(fname2, fname1) != FR_OK) {
+  if (sdRename(fname2, fname1) != FR_OK) {
     TRACE("Error renaming 2");
     return;
   }
 
-  if (f_rename(fname1_tmp, fname2) != FR_OK) {
+  if (sdRename(fname1_tmp, fname2) != FR_OK) {
     TRACE("Error renaming 1 tmp");
     return;
   }
@@ -531,7 +531,7 @@ int8_t deleteModel(uint8_t idx)
   getModelNumberStr(idx, model_idx);
   GET_FILENAME(fname, MODELS_PATH, model_idx, YAML_EXT);
 
-  if (f_unlink(fname) != FR_OK) {
+  if (sdUnlink(fname) != FR_OK) {
     return -1;
   }
 
@@ -611,6 +611,12 @@ const char * restoreModel(uint8_t idx, char *model_name)
 
 bool storageReadRadioSettings(bool checks)
 {
-  if (!sdMounted()) sdInit();
+  if (!sdMounted()) {
+#if defined(EDGETX_CN_STDLCD)
+    sdInit(SdMountMode::StartupEarly);
+#else
+    sdInit();
+#endif
+  }
   return loadRadioSettingsYaml(checks) == nullptr;
 }

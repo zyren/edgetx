@@ -42,7 +42,11 @@ void lcdDrawSizedText(coord_t x, coord_t y, const char * s, uint8_t len, LcdFlag
   const uint8_t orig_len = len;
   uint32_t fontsize = FONTSIZE(flags);
 
+#if defined(EDGETX_CN_STDLCD)
+  coord_t width = 0;
+#else
   uint8_t width = 0;
+#endif
   if (flags & RIGHT) {
     width = getTextWidth(s, len, flags);
     x -= width;
@@ -53,7 +57,8 @@ void lcdDrawSizedText(coord_t x, coord_t y, const char * s, uint8_t len, LcdFlag
   }
 
   bool setx = false;
-  while (len--) {
+#if defined(EDGETX_CN_STDLCD)
+  while (len && *s) {
     unsigned char c = *s;
 
     if (setx) {
@@ -64,12 +69,18 @@ void lcdDrawSizedText(coord_t x, coord_t y, const char * s, uint8_t len, LcdFlag
       break;
     }
     else if (c >= 0x20) {
-      // UTF8 detection
-      c = map_utf8_char(s, len);
-      if (!c) break;
-
-      lcdDrawChar(x, y, c, flags);
+      Utf8Codepoint decoded = decodeNextUtf8(s, len);
+      if (!decoded.consumed) break;
+      uint16_t codepoint = resolveCnCodepoint(decoded.value, decoded.valid);
+#if defined(EDGETX_CN_STDLCD)
+      lcdDrawCodepoint(x, y, codepoint, flags);
+#else
+      lcdDrawChar(x, y, static_cast<uint8_t>(codepoint), flags);
+#endif
       x = lcdNextPos;
+      s += decoded.consumed;
+      len -= decoded.consumed;
+      continue;
     }
     else if (c == 0x1F) {  //X-coord prefix
       setx = true;
@@ -94,7 +105,46 @@ void lcdDrawSizedText(coord_t x, coord_t y, const char * s, uint8_t len, LcdFlag
       x += (c*FW/2); // EXTENDED SPACE
     }
     s++;
+    len--;
   }
+#else
+  while (len--) {
+    unsigned char c = *s;
+    if (setx) {
+      x = c;
+      setx = false;
+    }
+    else if (!c) {
+      break;
+    }
+    else if (c >= 0x20) {
+      c = map_utf8_char(s, len);
+      if (!c) break;
+      lcdDrawChar(x, y, c, flags);
+      x = lcdNextPos;
+    }
+    else if (c == 0x1F) {
+      setx = true;
+    }
+    else if (c == 0x1E) {
+      len = orig_len;
+      x = orig_x;
+      y += FH;
+      if (fontsize == DBLSIZE) y += FH;
+      else if (fontsize == MIDSIZE) y += 4;
+      else if (fontsize == SMLSIZE) y--;
+      if (y >= LCD_H) break;
+    }
+    else if (c == 0x1D) {
+      x |= 0x3F;
+      x += 1;
+    }
+    else {
+      x += (c*FW/2);
+    }
+    s++;
+  }
+#endif
   lcdLastRightPos = x;
   lcdNextPos = x;
 #if !defined(BOOT)
@@ -155,7 +205,11 @@ void drawGPSCoord(coord_t x, coord_t y, int32_t value, const char * direction, L
   att &= ~RIGHT & ~BOLD;
   uint32_t absvalue = abs(value);
   lcdDrawNumber(x, y, absvalue / 1000000, att); // ddd
+#if defined(EDGETX_CN_STDLCD)
+  lcdDrawCodepoint(lcdLastRightPos, y, CN_CODEPOINT_DEGREE, att);
+#else
   lcdDrawChar(lcdLastRightPos, y, CHAR_BW_DEGREE, att);
+#endif
   absvalue = absvalue % 1000000;
   absvalue *= 60;
   if (g_eeGeneral.gpsFormat == 0 || !seconds) {
@@ -197,7 +251,8 @@ void drawDate(coord_t x, coord_t y, TelemetryItem & telemetryItem, LcdFlags att)
   }
 }
 
-void drawTimerWithMode(coord_t x, coord_t y, uint8_t index, LcdFlags att)
+void drawTimerWithMode(coord_t x, coord_t y, uint8_t index, LcdFlags att,
+                       coord_t labelOffset)
 {
   const TimerData &timer = g_model.timers[index];
 
@@ -232,10 +287,10 @@ void drawTimerWithMode(coord_t x, coord_t y, uint8_t index, LcdFlags att)
     uint8_t xLabel = (negative ? x - 56 : x - 49);
     uint8_t len = zlen(timer.name, LEN_TIMER_NAME);
     if (len > 0) {
-      lcdDrawSizedText(xLabel, y + FH, timer.name, len, RIGHT);
+      lcdDrawSizedText(xLabel, y + labelOffset, timer.name, len, RIGHT);
     }
     else {
-      drawTimerMode(xLabel, y + FH, timer.mode, RIGHT);
+      drawTimerMode(xLabel, y + labelOffset, timer.mode, RIGHT);
     }
   }
 }
@@ -353,11 +408,28 @@ void lcdInvertLine(int8_t line)
   if (line < 0) return;
   if (line >= LCD_LINES) return;
 
+#if defined(EDGETX_CN_STDLCD)
+  const coord_t firstY = line * FH;
+  const coord_t lastY = min<coord_t>(firstY + FH, LCD_H);
+  for (coord_t page = firstY / 8;
+       page <= (lastY - 1) / 8 && page < LCD_PAGES; ++page) {
+    uint8_t *p = &displayBuf[page * LCD_W];
+    const coord_t pageTop = page * 8;
+    const uint8_t from = max<coord_t>(firstY, pageTop) - pageTop;
+    const uint8_t to = min<coord_t>(lastY, pageTop + 8) - pageTop;
+    const uint8_t mask = ((uint16_t(1) << to) - 1) ^ ((uint16_t(1) << from) - 1);
+    for (coord_t x=0; x<LCD_W; ++x) {
+      ASSERT_IN_DISPLAY(p);
+      *p++ ^= mask;
+    }
+  }
+#else
   uint8_t *p  = &displayBuf[line * LCD_W];
   for (coord_t x=0; x<LCD_W; x++) {
     ASSERT_IN_DISPLAY(p);
     *p++ ^= 0xff;
   }
+#endif
 }
 
 void lcdDrawHorizontalLine(coord_t x, coord_t y, coord_t w, uint8_t pat, LcdFlags att)

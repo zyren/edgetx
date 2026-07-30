@@ -400,7 +400,7 @@ static void luaDumpState(lua_State * L, const char * filename, const FILINFO * f
     if (dresult != FR_OK) {
       // Save failed, close file handle and delete file.
       f_close(&D);
-      f_unlink(filename);
+      sdUnlink(filename);
       TRACE("luaDumpState(%s): Error saving bytecode to file.", filename);
     } else if (f_close(&D) == FR_OK) {
       if (finfo != nullptr)

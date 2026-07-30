@@ -157,7 +157,7 @@ void onSdManagerMenu(const char * result)
   }
   else if (result == STR_DELETE_FILE) {
     getSelectionFullPath(lfn);
-    f_unlink(lfn);
+    sdUnlink(lfn);
     strncpy(statusLineMsg, line, 13);
     strcpy(statusLineMsg+min((uint8_t)strlen(statusLineMsg), (uint8_t)13), STR_REMOVED);
     showStatusLine();
@@ -566,7 +566,7 @@ void menuRadioSdManager(event_t _event)
             else {
               reusableBuffer.sdManager.lines[i][efflen] = 0;
             }
-            f_rename(reusableBuffer.sdManager.originalName, reusableBuffer.sdManager.lines[i]);
+            sdRename(reusableBuffer.sdManager.originalName, reusableBuffer.sdManager.lines[i]);
             REFRESH_FILES();
           }
         }

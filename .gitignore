@@ -19,3 +19,5 @@ compile_commands.json
 CMakeUserPresets.json
 /site/
 .devcontainer/devcontainer-lock.json
+/EdgeTX-GX12-CN-*-release.bin
+/EdgeTX-GX12-CN-*-release.zip

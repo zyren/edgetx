@@ -543,7 +543,7 @@ int cliTestFatFsSD(const char ** argv)
   }
 
   // Delete file
-  if (f_unlink(filename) != FR_OK) {
+  if (sdUnlink(filename) != FR_OK) {
     // close failed, forget file
 	cliSerialPrint("Cannot delete file");
   } else {

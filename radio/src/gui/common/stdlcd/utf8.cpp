@@ -22,6 +22,7 @@
 
 #include <stdint.h>
 #include "fonts.h"
+#include "utf8.h"
 #include "definitions.h"
 #include "translations/translations.h"
 
@@ -228,4 +229,63 @@ unsigned char map_utf8_char(const char*& s, uint8_t& len)
 
   return c;
 }
+
+#if defined(EDGETX_CN_STDLCD)
+Utf8Codepoint decodeNextUtf8(const char * s, uint8_t len)
+{
+  if (!s || !len || !*s)
+    return { 0, 0, true };
+
+  const uint8_t c0 = static_cast<uint8_t>(s[0]);
+  if (c0 < 0x80)
+    return { c0, 1, true };
+
+  uint32_t value;
+  uint8_t count;
+  if (c0 >= 0xC2 && c0 <= 0xDF) {
+    value = c0 & 0x1F;
+    count = 2;
+  }
+  else if (c0 >= 0xE0 && c0 <= 0xEF) {
+    value = c0 & 0x0F;
+    count = 3;
+  }
+  else {
+    return { 0, 1, false }; // continuation, overlong lead, or non-BMP lead
+  }
+
+  if (len < count)
+    return { 0, 1, false };
+  for (uint8_t i = 1; i < count; ++i) {
+    const uint8_t c = static_cast<uint8_t>(s[i]);
+    if ((c & 0xC0) != 0x80)
+      return { 0, 1, false };
+    value = (value << 6) | (c & 0x3F);
+  }
+  if ((count == 2 && value < 0x80) || (count == 3 && value < 0x800) ||
+      (value >= 0xD800 && value <= 0xDFFF) || value > 0xFFFF)
+    return { 0, 1, false };
+  return { static_cast<uint16_t>(value), count, true };
+}
+
+size_t copyCompleteUtf8Prefix(char * destination, size_t capacity,
+                              const char * source)
+{
+  if (!destination || capacity == 0) return 0;
+  memset(destination, 0, capacity);
+  if (!source) return 0;
+
+  size_t copied = 0;
+  while (source[copied] != '\0' && copied < capacity) {
+    const size_t remaining = strlen(source + copied);
+    const Utf8Codepoint decoded = decodeNextUtf8(
+        source + copied,
+        static_cast<uint8_t>(remaining > UINT8_MAX ? UINT8_MAX : remaining));
+    if (!decoded.valid || decoded.consumed > capacity - copied) break;
+    memcpy(destination + copied, source + copied, decoded.consumed);
+    copied += decoded.consumed;
+  }
+  return copied;
+}
+#endif
 

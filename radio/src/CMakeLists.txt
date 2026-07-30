@@ -264,6 +264,9 @@ if(SIMU_DISKIO)
 endif()
 
 set(SRC ${SRC} sdcard.cpp rtc.cpp logs.cpp lib_file.cpp)
+if(PCBREV STREQUAL GX12 AND TRANSLATIONS STREQUAL CN)
+  set(SRC ${SRC} fonts/external_font.cpp)
+endif()
 
 if(BLUETOOTH)
   add_definitions(-DBLUETOOTH)
@@ -552,6 +555,9 @@ if(NATIVE_BUILD)
   add_library(radiolib_native OBJECT EXCLUDE_FROM_ALL
     ${RADIOLIB_NATIVE_SRC}
   )
+  if(PCBREV STREQUAL GX12 AND TRANSLATIONS STREQUAL CN)
+    target_compile_definitions(radiolib_native PRIVATE EDGETX_CN_STDLCD)
+  endif()
 
   # Add SIMU and NATIVE_THREAD here PUBLIC, so it can be imported by other targets
   # via INTERFACE_COMPILE_OPTIONS
@@ -631,6 +637,9 @@ if(BOOTLOADER)
 endif()
 
 add_executable(firmware ${SRC})
+if(PCBREV STREQUAL GX12 AND TRANSLATIONS STREQUAL CN)
+  target_compile_definitions(firmware PRIVATE EDGETX_CN_STDLCD)
+endif()
 link_libraries(firmware -lstdc++)
 add_dependencies(firmware ${RADIO_DEPENDENCIES})
 set_target_properties(firmware PROPERTIES EXCLUDE_FROM_ALL TRUE)

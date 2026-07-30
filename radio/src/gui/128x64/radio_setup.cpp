@@ -287,6 +287,53 @@ void menuRadioSetup(event_t event)
 #if defined(RTCLOCK)
       case ITEM_RADIO_SETUP_DATE:
         lcdDrawTextAlignedLeft(y, STR_DATE);
+#if defined(EDGETX_CN_STDLCD)
+        {
+          const coord_t yearWidth = getTextWidth("0000");
+          const coord_t fieldWidth = getTextWidth("00");
+          const coord_t separatorWidth = getTextWidth("-");
+          const coord_t yearX = LCD_W - yearWidth - 2 * fieldWidth -
+                                2 * separatorWidth;
+          const coord_t monthX = yearX + yearWidth + separatorWidth;
+          const coord_t dayX = monthX + fieldWidth + separatorWidth;
+
+          for (uint8_t j = 0; j < 3; j++) {
+            uint8_t rowattr = (menuHorizontalPosition == j ? attr : 0);
+            switch (j) {
+              case 0:
+                lcdDrawNumber(yearX, y, t.tm_year + TM_YEAR_BASE,
+                              rowattr | LEADING0 | LEFT, 4);
+                lcdDrawChar(yearX + yearWidth, y, '-');
+                if (rowattr && s_editMode > 0)
+                  t.tm_year = checkIncDec(event, t.tm_year, 123, 137, 0);
+                break;
+              case 1:
+                lcdDrawNumber(monthX, y, t.tm_mon + 1,
+                              rowattr | LEADING0 | LEFT, 2);
+                lcdDrawChar(monthX + fieldWidth, y, '-');
+                if (rowattr && s_editMode > 0)
+                  t.tm_mon = checkIncDec(event, t.tm_mon, 0, 11, 0);
+                break;
+              case 2:
+              {
+                int16_t year = TM_YEAR_BASE + t.tm_year;
+                int8_t dlim = (((((year % 4 == 0) && (year % 100 != 0)) ||
+                                 (year % 400 == 0)) && (t.tm_mon == 1))
+                                   ? 1
+                                   : 0);
+                static const uint8_t dmon[] = {
+                    31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+                dlim += dmon[t.tm_mon];
+                lcdDrawNumber(dayX, y, t.tm_mday,
+                              rowattr | LEADING0 | LEFT, 2);
+                if (rowattr && s_editMode > 0)
+                  t.tm_mday = checkIncDec(event, t.tm_mday, 1, dlim, 0);
+                break;
+              }
+            }
+          }
+        }
+#else
         for (uint8_t j=0; j<3; j++) {
           uint8_t rowattr = (menuHorizontalPosition==j ? attr : 0);
           switch (j) {
@@ -312,6 +359,7 @@ void menuRadioSetup(event_t event)
             }
           }
         }
+#endif
         if (attr && checkIncDec_Ret) {
           g_rtcTime = gmktime(&t); // update local timestamp and get wday calculated
         }
@@ -462,7 +510,11 @@ void menuRadioSetup(event_t event)
           lcdDrawTextIndented(y, STR_IMU_MAX);
           lcdDrawNumber(LCD_W-7, y, IMU_MAX_DEFAULT + g_eeGeneral.imuMax, attr|RIGHT);
           coord_t lp = lcdLastLeftPos - 2;
+#if defined(EDGETX_CN_STDLCD)
+          lcdDrawCodepoint(lcdLastRightPos, y, CN_CODEPOINT_DEGREE, attr);
+#else
           lcdDrawChar(lcdLastRightPos, y, CHAR_BW_DEGREE, attr);
+#endif
           if (attr) {
             CHECK_INCDEC_GENVAR(event, g_eeGeneral.imuMax, IMU_MAX_DEFAULT - IMU_MAX_RANGE, IMU_MAX_DEFAULT + IMU_MAX_RANGE);
             lcdDrawText(lp, y, ")", RIGHT);
@@ -477,7 +529,11 @@ void menuRadioSetup(event_t event)
           lcdDrawTextIndented(y, STR_IMU_OFFSET);
           lcdDrawNumber(LCD_W-7, y, g_eeGeneral.imuOffset, attr|RIGHT);
           coord_t lp = lcdLastLeftPos - 2;
+#if defined(EDGETX_CN_STDLCD)
+          lcdDrawCodepoint(lcdLastRightPos, y, CN_CODEPOINT_DEGREE, attr);
+#else
           lcdDrawChar(lcdLastRightPos, y, CHAR_BW_DEGREE, attr);
+#endif
           if (attr) {
             CHECK_INCDEC_GENVAR(event, g_eeGeneral.imuOffset, IMU_OFFSET_MIN, IMU_OFFSET_MAX);
             lcdDrawText(lp, y, ")", RIGHT);

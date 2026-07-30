@@ -26,9 +26,15 @@
 
 #define FW                             6
 #define FWNUM                          5
-#define FH                             8
+#if defined(EDGETX_CN_STDLCD)
+  #define FH                           10
+#else
+  #define FH                           8
+#endif
 
+/* LCD_LINES is the UI text-row count. LCD_PAGES is the physical 1bpp page count. */
 #define LCD_LINES                      (LCD_H/FH)
+#define LCD_PAGES                      ((LCD_H+7)/8)
 #define LCD_COLS                       (LCD_W/FW)
 
 #define NUM_BODY_LINES                 (LCD_LINES-1)
@@ -114,6 +120,19 @@ void lcdClear();
 
 void lcdDrawChar(coord_t x, coord_t y, uint8_t c);
 void lcdDrawChar(coord_t x, coord_t y, uint8_t c, LcdFlags flags);
+#if defined(EDGETX_CN_STDLCD)
+constexpr uint16_t CN_CODEPOINT_DEGREE = 0xFFFE;
+constexpr uint16_t CN_CODEPOINT_GREATEREQUAL = 0xFFFD;
+uint16_t resolveCnCodepoint(uint16_t codepoint, bool valid);
+void lcdDrawCodepoint(coord_t x, coord_t y, uint16_t codepoint, LcdFlags flags);
+uint8_t getCodepointAdvance(uint16_t codepoint, LcdFlags flags);
+#if defined(SIMU)
+// Test hook for the production fixed-cell renderer. Data is column-major,
+// top-to-bottom bytes, bit 0 at the top; no legacy 0xff sentinel is applied.
+void lcdDrawRawFixedCellForTest(coord_t x, coord_t y, const uint8_t * data,
+                                uint8_t width, uint8_t height, LcdFlags flags);
+#endif
+#endif
 void lcdDrawCenteredText(coord_t y, const char * s, LcdFlags flags = 0);
 void lcdDrawText(coord_t x, coord_t y, const char * s, LcdFlags flags);
 void lcdDrawTextAtIndex(coord_t x, coord_t y, const char *const *s, uint8_t idx, LcdFlags flags);
@@ -172,4 +191,4 @@ void drawTelemetryTopBar();
 
 void lcdDraw1bitBitmap(coord_t x, coord_t y, const unsigned char * img, uint8_t idx, LcdFlags att=0);
 
-uint8_t getTextWidth(const char * s, uint8_t len=0, LcdFlags flags=0);
+coord_t getTextWidth(const char * s, uint8_t len=0, LcdFlags flags=0);

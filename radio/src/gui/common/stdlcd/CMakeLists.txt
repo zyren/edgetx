@@ -24,6 +24,17 @@ set(GUI_SRC
   model_curve_edit.cpp
   )
 
+# Phase 2 CN assets are firmware/simulator sources only. Bootloader sources are
+# assembled separately and never receive these files or this feature macro.
+if(PCBREV STREQUAL GX12 AND TRANSLATIONS STREQUAL CN)
+  set(GUI_SRC ${GUI_SRC}
+    ../../fonts/cn/generated/cn_default_10.cpp
+    ../../fonts/cn/generated/cn_10.cpp
+    ../../fonts/cn/generated/cn_12.cpp
+    ../../fonts/cn/generated/cn_16.cpp
+  )
+endif()
+
 if(PXX2 OR LUA OR MULTIMODULE)
   set(GUI_SRC ${GUI_SRC} ../common/stdlcd/radio_tools.cpp)
 endif()

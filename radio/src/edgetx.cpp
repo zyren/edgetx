@@ -1317,6 +1317,83 @@ inline uint32_t PWR_PRESS_DURATION_MIN()
 
 constexpr uint32_t PWR_PRESS_DURATION_MAX = 500; // 5s
 
+#if defined(EDGETX_CN_STDLCD)
+enum class StartupHoldResult : uint8_t { Holding, Released, TimedOut, Accepted };
+
+static void drawStartupAnimationBlocks(uint8_t blocks)
+{
+  const uint32_t total = PWR_PRESS_DURATION_MIN() ? PWR_PRESS_DURATION_MIN() : 5;
+  drawStartupAnimation(blocks * total / 5, total);
+}
+
+static void stopStartupAfterFailedHold(StartupHoldResult result)
+{
+  if (result == StartupHoldResult::TimedOut) {
+    drawSleepBitmap();
+    backlightDisable();
+    while (pwrPressed()) {
+      drawSleepBitmap();
+      backlightDisable();
+    }
+  }
+  sdExternalFontShutdown();
+  boardOff();
+}
+
+void runStartupAnimation()
+{
+  const tmr10ms_t start = get_tmr10ms();
+  tmr10ms_t duration = 0;
+  StartupHoldResult result = StartupHoldResult::Holding;
+
+  const bool fontPrepared = sdExternalFontPrepare();
+
+  while (result == StartupHoldResult::Holding) {
+    duration = get_tmr10ms() - start;
+    if (duration >= PWR_PRESS_DURATION_MAX) {
+      result = StartupHoldResult::TimedOut;
+    }
+    else if (!pwrPressed()) {
+      result = StartupHoldResult::Released;
+    }
+    else if (duration < PWR_PRESS_DURATION_MIN()) {
+      drawStartupAnimation(duration, PWR_PRESS_DURATION_MIN());
+    }
+    else {
+      // Accepted only while still pressed, strictly after the configured minimum.
+      if (!pwrPressed() || get_tmr10ms() - start >= PWR_PRESS_DURATION_MAX)
+        continue;
+      result = StartupHoldResult::Accepted;
+      pwrOn();
+#if defined(HAPTIC)
+      if (!g_eeGeneral.disablePwrOnOffHaptic &&
+          (g_eeGeneral.hapticMode != e_mode_quiet))
+        haptic.play(15, 3, PLAY_NOW);
+#endif
+      drawStartupAnimationBlocks(4);
+    }
+  }
+
+  if (result != StartupHoldResult::Accepted) {
+    stopStartupAfterFailedHold(result);
+    return;
+  }
+
+  // Link-map creation only runs after an accepted, pre-timeout release.
+  while (pwrPressed()) {
+    if (get_tmr10ms() - start >= PWR_PRESS_DURATION_MAX) {
+      stopStartupAfterFailedHold(StartupHoldResult::TimedOut);
+      return;
+    }
+  }
+  if (get_tmr10ms() - start >= PWR_PRESS_DURATION_MAX) {
+    stopStartupAfterFailedHold(StartupHoldResult::TimedOut);
+    return;
+  }
+  if (fontPrepared)
+    sdExternalFontActivate();
+}
+#else
 void runStartupAnimation()
 {
   tmr10ms_t start = get_tmr10ms();
@@ -1347,6 +1424,7 @@ void runStartupAnimation()
     boardOff();
   }
 }
+#endif
 #endif
 
 void moveTrimsToOffsets() // copy state of 3 primary to subtrim
@@ -1398,7 +1476,6 @@ uint8_t startOptions = 0;
 void edgeTxInit()
 {
   TRACE("edgeTxInit");
-
 #if defined(COLORLCD)
   // SD_CARD_PRESENT() does not work properly on most
   // B&W targets, so that we need to delay the detection
@@ -1450,6 +1527,14 @@ void edgeTxInit()
 #if defined(STARTUP_ANIMATION)
   if (WAS_RESET_BY_WATCHDOG_OR_SOFTWARE()) {
     pwrOn();
+#if defined(EDGETX_CN_STDLCD)
+    if (!UNEXPECTED_SHUTDOWN()) {
+      if (!sdMounted())
+        sdInit();
+      else if (sdExternalFontPrepare())
+        sdExternalFontActivate();
+    }
+#endif
   }
   else {
     runStartupAnimation();
@@ -1466,8 +1551,13 @@ void edgeTxInit()
   // SDCARD related stuff, only enable if normal boot
   if (!UNEXPECTED_SHUTDOWN()) {
 
-    if (!sdMounted())
+    if (!sdMounted()) {
+#if defined(EDGETX_CN_STDLCD)
+      sdInit(SdMountMode::Normal);
+#else
       sdInit();
+#endif
+    }
 
 #if !defined(COLORLCD)
     if (!sdMounted()) {

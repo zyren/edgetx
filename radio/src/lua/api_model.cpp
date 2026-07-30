@@ -29,6 +29,9 @@
 #include "model_init.h"
 #include "gvars.h"
 #include "mixes.h"
+#if defined(EDGETX_CN_STDLCD)
+#include "gui/common/stdlcd/utf8.h"
+#endif
 
 #include "lua_states.h"
 
@@ -100,7 +103,11 @@ static int luaModelSetInfo(lua_State *L)
     const char * key = luaL_checkstring(L, -2);
     if (!strcmp(key, "name")) {
       const char * name = luaL_checkstring(L, -1);
+#if defined(EDGETX_CN_STDLCD)
+      copyCompleteUtf8Prefix(g_model.header.name, sizeof(g_model.header.name), name);
+#else
       strncpy(g_model.header.name, name, sizeof(g_model.header.name));
+#endif
     }
     else if (!strcmp(key, "extendedLimits")) {
       g_model.extendedLimits = lua_toboolean(L, -1);

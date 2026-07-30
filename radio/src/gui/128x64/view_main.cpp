@@ -36,11 +36,24 @@
 #endif
 #define MODELNAME_X   (2*FW-2)
 #define MODELNAME_Y   (0)
+#if defined(EDGETX_CN_STDLCD)
+static constexpr coord_t MAIN_VIEW_LINE_HEIGHT = 8;
+static constexpr LcdFlags MAIN_VIEW_COMPACT_TEXT_FLAGS = SMLSIZE;
+static constexpr LcdFlags MAIN_VIEW_BATTERY_SIZE = SMLSIZE;
+static constexpr LcdFlags MAIN_VIEW_BATTERY_UNIT_SIZE = SMLSIZE;
+static constexpr LcdFlags MAIN_VIEW_CLOCK_SIZE = SMLSIZE;
+#else
+static constexpr coord_t MAIN_VIEW_LINE_HEIGHT = FH;
+static constexpr LcdFlags MAIN_VIEW_COMPACT_TEXT_FLAGS = 0;
+static constexpr LcdFlags MAIN_VIEW_BATTERY_SIZE = BIGSIZE;
+static constexpr LcdFlags MAIN_VIEW_BATTERY_UNIT_SIZE = 0;
+static constexpr LcdFlags MAIN_VIEW_CLOCK_SIZE = 0;
+#endif
 #define PHASE_X       (6*FW-2)
-#define PHASE_Y       (2*FH)
+#define PHASE_Y       (2*MAIN_VIEW_LINE_HEIGHT)
 #define VBATT_X       (6*FW-1)
-#define VBATT_Y       (2*FH)
-#define VBATTUNIT_Y   (3*FH)
+#define VBATT_Y       (2*MAIN_VIEW_LINE_HEIGHT)
+#define VBATTUNIT_Y   (3*MAIN_VIEW_LINE_HEIGHT)
 #define REBOOT_X      (2)
 #define BAR_HEIGHT    (BOX_WIDTH-1l) // don't remove the l here to force 16bits maths on 9X
 #define TRIM_LEN      21
@@ -273,7 +286,7 @@ void displayTrims(uint8_t phase)
 void displayBattVoltage()
 {
 #if defined(BATTGRAPH)
-  putsVBat(VBATT_X - 8, VBATT_Y + 1, RIGHT);
+  putsVBat(VBATT_X - 8, VBATT_Y + 1, RIGHT | MAIN_VIEW_BATTERY_SIZE);
   lcdDrawSolidFilledRect(VBATT_X - 25, VBATT_Y + 9, 21, 5);
   lcdDrawSolidVerticalLine(VBATT_X - 4, VBATT_Y + 10, 3);
   uint8_t count = GET_TXBATT_BARS(20);
@@ -293,9 +306,14 @@ void displayBattVoltage()
   if (!IS_TXBATT_WARNING() || BLINK_ON_PHASE)
     lcdDrawSolidFilledRect(VBATT_X - 26, VBATT_Y, 24, 15);
 #else
-  LcdFlags att = (IS_TXBATT_WARNING() ? BLINK|INVERS : 0) | BIGSIZE;
+  LcdFlags att = (IS_TXBATT_WARNING() ? BLINK|INVERS : 0) |
+                 MAIN_VIEW_BATTERY_SIZE;
   putsVBat(VBATT_X-1, VBATT_Y, att|NO_UNIT);
-  lcdDrawChar(VBATT_X, VBATTUNIT_Y, 'V');
+#if defined(EDGETX_CN_STDLCD)
+  lcdDrawChar(lcdLastRightPos, VBATTUNIT_Y, 'V', MAIN_VIEW_BATTERY_UNIT_SIZE);
+#else
+  lcdDrawChar(VBATT_X, VBATTUNIT_Y, 'V', MAIN_VIEW_BATTERY_UNIT_SIZE);
+#endif
 #endif
 }
 
@@ -468,16 +486,19 @@ void menuMainView(event_t event)
         if (view_base == VIEW_OUTPUTS_VALUES) {
           x0 = (i % 4 * 9 + 3) * FW / 2;
 #if LCD_H >= 96
-          y0 = i / 4 * FH * 2 + 50;
+          y0 = i / 4 * MAIN_VIEW_LINE_HEIGHT * 2 + 50;
 #else
-          y0 = i / 4 * FH + 40;
+          y0 = i / 4 * MAIN_VIEW_LINE_HEIGHT + 40;
 #endif
           if (g_eeGeneral.ppmunit == PPM_US) {
-            lcdDrawNumber(x0 + 4 * FW, y0, PPM_CH_CENTER(chan) + val / 2, RIGHT);
+            lcdDrawNumber(x0 + 4 * FW, y0, PPM_CH_CENTER(chan) + val / 2,
+                          RIGHT | MAIN_VIEW_COMPACT_TEXT_FLAGS);
           } else if (g_eeGeneral.ppmunit == PPM_PERCENT_PREC1) {
-            lcdDrawNumber(x0 + 4 * FW, y0, calcRESXto1000(val), RIGHT | PREC1);
+            lcdDrawNumber(x0 + 4 * FW, y0, calcRESXto1000(val),
+                          RIGHT | PREC1 | MAIN_VIEW_COMPACT_TEXT_FLAGS);
           } else {
-            lcdDrawNumber(x0+4*FW , y0, calcRESXto1000(val)/10, RIGHT); // G: Don't like the decimal part*
+            lcdDrawNumber(x0+4*FW , y0, calcRESXto1000(val)/10,
+                          RIGHT | MAIN_VIEW_COMPACT_TEXT_FLAGS); // G: Don't like the decimal part*
           }
         }
         else {
@@ -507,7 +528,8 @@ void menuMainView(event_t event)
       break;
 
     case VIEW_TIMER2:
-      drawTimerWithMode(87, 5 * FH, 1, RIGHT | DBLSIZE);
+      drawTimerWithMode(87, 5 * MAIN_VIEW_LINE_HEIGHT, 1,
+                        RIGHT | DBLSIZE, MAIN_VIEW_LINE_HEIGHT);
       break;
 
     case VIEW_INPUTS:
@@ -539,13 +561,14 @@ void menuMainView(event_t event)
             if (SWITCH_EXISTS(i) && !switchIsFlex(i) && !switchIsCustomSwitch(i)) {
               auto switch_display = switchGetDisplayPosition(i);
               coord_t x = switch_display.col == 0 ? 3 * FW + 3 : 18 * FW + 1;
-              coord_t y = 33 + switch_display.row * FH;
+              coord_t y = 33 + switch_display.row * MAIN_VIEW_LINE_HEIGHT;
               getvalue_t val = getValue(MIXSRC_FIRST_SWITCH + i);
               if (val == 0) x -= 1;
               getvalue_t sw =
                   ((val < 0) ? 3 * i + 1
                               : ((val == 0) ? 3 * i + 2 : 3 * i + 3));
-              drawSwitch(x, y, sw, CENTERED, false);
+              drawSwitch(x, y, sw,
+                         CENTERED | MAIN_VIEW_COMPACT_TEXT_FLAGS, false);
             }
           }
         }
@@ -555,7 +578,7 @@ void menuMainView(event_t event)
               auto switch_display = switchGetDisplayPosition(i);
               coord_t x = (switch_display.col == 0 ? 8 : 96) + switch_display.row * 5;
               if (maxSwitch < 9) x += 3;
-              drawSmallSwitch(x, 5 * FH + 1, 4, i);
+              drawSmallSwitch(x, 5 * MAIN_VIEW_LINE_HEIGHT + 1, 4, i);
             }
           }
         }
@@ -590,7 +613,8 @@ void menuMainView(event_t event)
     displayVoltageOrAlarm();
 
     // Timer 1
-    drawTimerWithMode(125, 2 * FH, 0, RIGHT | DBLSIZE);
+    drawTimerWithMode(125, 2 * MAIN_VIEW_LINE_HEIGHT, 0,
+                      RIGHT | DBLSIZE, MAIN_VIEW_LINE_HEIGHT);
 
     // Trims sliders
     displayTrims(mode);
@@ -609,14 +633,14 @@ void menuMainView(event_t event)
     gvarDisplayTimer--;
     warningText = STR_GLOBAL_VAR;
     drawMessageBox(warningText);
-    lcdDrawSizedText(16, 5 * FH, g_model.gvars[gvarLastChanged].name, LEN_GVAR_NAME, 0);
-    lcdDrawText(16 + 6 * FW, 5 * FH, "[", BOLD);
-    drawGVarValue(lcdLastRightPos, 5 * FH, gvarLastChanged, GVAR_VALUE(gvarLastChanged, getGVarFlightMode(mixerCurrentFlightMode, gvarLastChanged)),
+    lcdDrawSizedText(16, 5 * MAIN_VIEW_LINE_HEIGHT, g_model.gvars[gvarLastChanged].name, LEN_GVAR_NAME, 0);
+    lcdDrawText(16 + 6 * FW, 5 * MAIN_VIEW_LINE_HEIGHT, "[", BOLD);
+    drawGVarValue(lcdLastRightPos, 5 * MAIN_VIEW_LINE_HEIGHT, gvarLastChanged, GVAR_VALUE(gvarLastChanged, getGVarFlightMode(mixerCurrentFlightMode, gvarLastChanged)),
                   LEFT | BOLD);
     if (g_model.gvars[gvarLastChanged].unit) {
-      lcdDrawText(lcdLastRightPos, 5 * FH, "%", BOLD);
+      lcdDrawText(lcdLastRightPos, 5 * MAIN_VIEW_LINE_HEIGHT, "%", BOLD);
     }
-    lcdDrawText(lcdLastRightPos, 5 * FH, "]", BOLD);
+    lcdDrawText(lcdLastRightPos, 5 * MAIN_VIEW_LINE_HEIGHT, "]", BOLD);
     warningText = nullptr;
   }
 #endif
@@ -629,7 +653,7 @@ void menuMainView(event_t event)
 #endif
 #if defined(RTCLOCK)
   if (view_base != VIEW_CHAN_MONITOR && rtcIsValid()) {
-    drawRtcTime(CLOCK_X, CLOCK_Y, LEFT|TIMEBLINK);
+    drawRtcTime(CLOCK_X, CLOCK_Y, LEFT|TIMEBLINK|MAIN_VIEW_CLOCK_SIZE);
   }
 #endif
 }

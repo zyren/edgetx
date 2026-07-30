@@ -1,0 +1,122 @@
+{
+  "schema": 7,
+  "translation": "radio/src/translations/i18n/cn.h",
+  "fallback": "U+25A1",
+  "cn12_identifiers": [
+    "STR_ABOUTUS", "STR_ALARMSWARN", "STR_BATTERY", "STR_EMERGENCY_MODE",
+    "STR_FAILSAFEWARN", "STR_MODEL", "STR_NO_SDCARD", "STR_SD_CARD",
+    "STR_STORAGE_WARNING", "STR_SWITCHWARN", "STR_TEST_WARNING",
+    "STR_THROTTLE_UPPERCASE", "STR_WARNING", "STR_WRONG_PCBREV"
+  ],
+  "profiles": {
+    "CN_DEFAULT_10":{"source":"fusion10", "policy":"all-cn-h-ascii", "expected_glyphs":720, "expected_translation_codepoints":624, "body":[10,10], "cell":[10,10], "top_offset":0},
+    "CN_10":{"source":"fusion10", "policy":"fallback-only", "expected_glyphs":1, "expected_translation_codepoints":0, "body":[10,10], "cell":[10,12], "top_offset":1},
+    "CN_12":{"source":"fusion12", "policy":"identifiers", "expected_glyphs":34, "expected_translation_codepoints":33, "body":[12,12], "cell":[12,16], "top_offset":2},
+    "CN_16":{"source":"wqy16b", "policy":"identifiers", "expected_glyphs":34, "expected_translation_codepoints":33, "body":[16,16], "cell":[16,20], "top_offset":2, "source_advance":17}
+  },
+  "sources": {
+    "fusion10": {
+      "kind":"bdf-zip", "version":"2026.07.01",
+      "url":"https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.07.01/fusion-pixel-font-10px-monospaced-bdf-v2026.07.01.zip",
+      "zip_sha256":"0F28B5850FA9B4B0F8DBB7C40F671A3574A97236A848D1E0ECF6ED302AE659C3",
+      "member":"fusion-pixel-10px-monospaced-zh_hans.bdf", "member_sha256":"A9FECDECBE42C93E8D6C0642CF1A1FABE29E7C4DCDAB43B4540FB23CC7E006B1",
+      "subset":"radio/src/fonts/cn/source/fusion-pixel-10px-zh_hans.subset.bdf", "subset_sha256":"29A020C73EC097A6B8BD10482FFB5E6DFB59118C79250A14E5558A66D0C99888"
+    },
+    "fusion12": {
+      "kind":"bdf-zip", "version":"2026.07.01",
+      "url":"https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.07.01/fusion-pixel-font-12px-monospaced-bdf-v2026.07.01.zip",
+      "zip_sha256":"C461C312720E005F5A49843A965842E8749F196F00F97FACF1AD926F330296DF",
+      "member":"fusion-pixel-12px-monospaced-zh_hans.bdf", "member_sha256":"AEA441A489B18A93BB417BBA33A31917B1BEF90167B01ED9A63E2E9DF3E144F8",
+      "subset":"radio/src/fonts/cn/source/fusion-pixel-12px-zh_hans.subset.bdf", "subset_sha256":"4B6014A141D32526F99CFF56416F7EAFBED4F1F87831CC78BB3A11331C2E56B5"
+    },
+    "wqy16b": {
+      "kind":"bdf-tar-gz", "version":"0.7.0-4",
+      "url":"https://sourceforge.net/projects/wqy/files/wqy-bitmapfont/0.7.0/wqy-bitmapfont-bdf-0.7.0-4.tar.gz/download",
+      "archive_size":5203506, "archive_sha256":"E1A9BF2D4E608EAADA9822F58F33626204B665A4A60A353DCEB0C5FC09A75D40",
+      "member":"wqy-bitmapfont/wenquanyi_12ptb.bdf", "member_size":5462992, "member_sha256":"26F493DC492BF64EB974E81C174BBCEDD2FF7FBD116428865992388B04A09042",
+      "subset":"radio/src/fonts/cn/source/wqy-16px-bold-zh.subset.bdf", "subset_sha256":"D8047A55DC1F456A41D87FEDDED4C9B8F83B408F12357EF1180F592E7AE804C3"
+    }
+  },
+  "external_font": {
+    "format": "CN_BASIC.FNT",
+    "first_codepoint": "U+4E00",
+    "last_codepoint": "U+9FFF",
+    "glyph_count": 20992,
+    "slot_size": 32,
+    "alignment": 512,
+    "column_major": true,
+    "bits_per_pixel": 1,
+    "release": {
+      "size": 2015744,
+      "sha256": "C7D01736D365736DB04AEFD1FC103DB0FC9BAAA84841C058B0CE23828F894A79"
+    },
+    "sources": {
+      "unifont17": {
+        "kind": "bdf-gz",
+        "archive": "unifont-17.0.04.bdf.gz",
+        "url": "https://www.nic.funet.fi/pub/gnu/gnu/unifont/unifont-17.0.04/unifont-17.0.04.bdf.gz",
+        "archive_sha256": "9A2DE4826388242771121C7FE00E412523C318318B8EE38E6BE6CD454E7EC802",
+        "member_sha256": "F2B2952312FA189F8963C85EB50FDA14606A6DF5D8DBE9E01651138EB2CECEA9",
+        "source_size": 16,
+        "coverage": ["U+4E00", "U+9FFF"],
+        "required_coverage": ["U+4E00", "U+9FFF"]
+      },
+      "wqy9_medium": {
+        "kind": "bdf-tar-gz",
+        "archive": "wqy-bitmapfont-bdf-0.7.0-4.tar.gz",
+        "url": "https://sourceforge.net/projects/wqy/files/wqy-bitmapfont/0.7.0/wqy-bitmapfont-bdf-0.7.0-4.tar.gz/download",
+        "archive_sha256": "E1A9BF2D4E608EAADA9822F58F33626204B665A4A60A353DCEB0C5FC09A75D40",
+        "member": "wqy-bitmapfont/wenquanyi_9pt.bdf",
+        "member_size": 3229889,
+        "member_sha256": "9F3F52958E6542DB30CDEF15DEC8BA5F0BBC9E75BAF24B444E86B2FE9067461B",
+        "source_size": 12,
+        "coverage": ["U+4E00", "U+9FA5"],
+        "required_coverage": ["U+4E00", "U+9FA5"],
+        "metric_crop": {"canvas": [12, 14], "rect": [0, 1, 12, 12], "require_zero_clipped": true}
+      },
+      "wqy_bold": {
+        "kind": "bdf-tar-gz",
+        "archive": "wqy-bitmapfont-bdf-0.7.0-4.tar.gz",
+        "url": "https://sourceforge.net/projects/wqy/files/wqy-bitmapfont/0.7.0/wqy-bitmapfont-bdf-0.7.0-4.tar.gz/download",
+        "archive_sha256": "E1A9BF2D4E608EAADA9822F58F33626204B665A4A60A353DCEB0C5FC09A75D40",
+        "member": "wqy-bitmapfont/wenquanyi_12ptb.bdf",
+        "member_sha256": "26F493DC492BF64EB974E81C174BBCEDD2FF7FBD116428865992388B04A09042",
+        "source_size": 16,
+        "coverage": ["U+4E00", "U+9FA5"],
+        "required_coverage": ["U+4E00", "U+9FA5"]
+      },
+      "wqy_medium": {
+        "kind": "bdf-tar-gz",
+        "archive": "wqy-bitmapsong-bdf-1.0.0-RC1_GPLv2+.tar.gz",
+        "url": "https://sourceforge.net/projects/wqy/files/wqy-bitmapfont/1.0.0-RC1/wqy-bitmapsong-bdf-1.0.0-RC1_GPLv2+.tar.gz/download",
+        "archive_sha256": "C29B2C2F5DB73FF74D11A7DCA9608414813DA1C4240B7B6C829A58757B35EBE6",
+        "member": "wqy-bitmapsong/wenquanyi_12pt.bdf",
+        "member_sha256": "EB8E295F761F28691ED9F199BA74C222D3392C6144174CB0B66C78C89A97FA49",
+        "source_size": 16
+      },
+      "fusion12": {
+        "kind": "bdf-zip",
+        "archive": "fusion-pixel-font-12px-monospaced-bdf-v2026.07.01.zip",
+        "url": "https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.07.01/fusion-pixel-font-12px-monospaced-bdf-v2026.07.01.zip",
+        "archive_sha256": "C461C312720E005F5A49843A965842E8749F196F00F97FACF1AD926F330296DF",
+        "member": "fusion-pixel-12px-monospaced-zh_hans.bdf",
+        "member_sha256": "AEA441A489B18A93BB417BBA33A31917B1BEF90167B01ED9A63E2E9DF3E144F8",
+        "source_size": 12
+      },
+      "fusion10": {
+        "kind": "bdf-zip",
+        "archive": "fusion-pixel-font-10px-monospaced-bdf-v2026.07.01.zip",
+        "url": "https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.07.01/fusion-pixel-font-10px-monospaced-bdf-v2026.07.01.zip",
+        "archive_sha256": "0F28B5850FA9B4B0F8DBB7C40F671A3574A97236A848D1E0ECF6ED302AE659C3",
+        "member": "fusion-pixel-10px-monospaced-zh_hans.bdf",
+        "member_sha256": "A9FECDECBE42C93E8D6C0642CF1A1FABE29E7C4DCDAB43B4540FB23CC7E006B1",
+        "source_size": 10
+      }
+    },
+    "strikes": {
+      "10": {"id": 10, "width": 10, "height": 10, "priority": ["fusion10", "wqy9_medium", "unifont17"], "transforms": {"wqy9_medium": "center-nearest", "unifont17": "center-nearest"}},
+      "12": {"id": 12, "width": 12, "height": 12, "priority": ["fusion12", "wqy_medium", "unifont17"], "transforms": {"wqy_medium": "center-nearest", "unifont17": "center-nearest"}},
+      "16": {"id": 16, "width": 16, "height": 16, "priority": ["wqy_bold", "unifont17"], "transforms": {"unifont17": "controlled-horizontal-embolden"}}
+    }
+  }
+}

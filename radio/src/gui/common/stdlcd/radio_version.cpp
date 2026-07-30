@@ -30,7 +30,12 @@
 #include "fw_version.h"
 
 #define MENU_BODY_TOP    (FH + 1)
+#if defined(EDGETX_CN_STDLCD)
+// The strict '<' check admits y=LCD_H-FH as the last complete 10px row.
+#define MENU_BODY_BOTTOM (LCD_H - FH + 1)
+#else
 #define MENU_BODY_BOTTOM (LCD_H)
+#endif
 
 #if defined(PXX2) || defined(CROSSFIRE)
 constexpr uint8_t COLUMN2_X = 10 * FW;
@@ -266,9 +271,18 @@ void menuRadioVersion(event_t event)
 {
   SIMPLE_MENU(STR_MENUVERSION, menuTabGeneral, MENU_RADIO_VERSION, ITEM_RADIO_VERSION_COUNT);
 
+#if defined(EDGETX_CN_STDLCD)
+  coord_t y = MENU_HEADER_HEIGHT;
+#else
   coord_t y = MENU_HEADER_HEIGHT + 2;
+#endif
   lcdDrawText(FW, y, vers_stamp, SMLSIZE);
+#if defined(EDGETX_CN_STDLCD)
+  constexpr uint8_t selectableItems = ITEM_RADIO_VERSION_COUNT - HEADER_LINE;
+  y = LCD_H - selectableItems * FH;
+#else
   y += 5 * (FH - 1) + 2;
+#endif
 
 #if defined(PCBTARANIS)
   lcdDrawText(INDENT_WIDTH, y, STR_FIRMWARE_OPTIONS, menuVerticalPosition == ITEM_RADIO_FIRMWARE_OPTIONS ? INVERS : 0);
