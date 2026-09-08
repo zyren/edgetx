@@ -248,7 +248,12 @@ static uint8_t externalCnStrike(LcdFlags flags)
 
 static uint8_t externalCnTopOffset(uint8_t strike)
 {
-  return strike == 10 ? 1 : 2;
+  // External strike bodies are rasterized exactly like the embedded CN_* cells
+  // (same sources, same full-cell layout: 10px cells carry one blank top row).
+  // Draw strike 10 at the same screen position as the embedded CN_DEFAULT_10
+  // path (y+0): the previous +1 pushed CJK one row down next to the 5x7 Latin
+  // glyphs (bottom-heavy mixed lines) and let ink spill into the next text row.
+  return strike == 10 ? 0 : 2;
 }
 
 static bool isCnAsciiCodepoint(uint16_t codepoint)
@@ -393,8 +398,9 @@ static void lcdPutLegacyDefaultPattern(coord_t x, coord_t y,
     for (uint8_t row = 0; row < 10; ++row) {
       const coord_t py = y + row;
       if (py < 0 || py >= LCD_H) continue;
-      bool plot = row >= 2 && row < pattern.height + 2 &&
-                  (source[(row - 2) / 8] & (1 << ((row - 2) % 8)));
+      bool plot = false;
+      if (row >= 2 && row < pattern.height + 2)
+        plot = (source[(row - 2) / 8] & (1 << ((row - 2) % 8))) != 0;
       if (invers) plot = !plot;
       if (!blink) lcdDrawPoint(px, py, plot ? FORCE : ERASE);
     }
@@ -559,8 +565,11 @@ void lcdPutPattern(coord_t x, coord_t y, const uint8_t * pattern, uint8_t width,
 void lcdDrawChar(coord_t x, coord_t y, uint8_t c, LcdFlags flags)
 {
 #if defined(EDGETX_CN_STDLCD)
+  // Note: include 0x7F - the 5x7 set defines arrows at both 0x7E and 0x7F.
+  // Only 0x20..0x7E used to take the centred CN path, so the 0x7F arrow was
+  // drawn two rows higher (legacy top-aligned) than its 0x7E counterpart.
   if (FONTSIZE(flags) == 0 &&
-      ((c >= 0x20 && c <= 0x7E) || isCnInlineCodepoint(c))) {
+      ((c >= 0x20 && c <= 0x7F) || isCnInlineCodepoint(c))) {
     if (isCnGeneratedLiteral(c, flags)) {
       lcdDrawCnDefaultGlyph(x, y, c, flags);
     }

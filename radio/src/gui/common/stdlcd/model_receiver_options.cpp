@@ -290,8 +290,15 @@ void menuModelReceiverOptions(event_t event)
   #endif
               auto lenChannel = limit<uint8_t>(1, (abs(channelValue) * wbar / 2 + lim / 2) / lim, wbar / 2);
               auto xChannel = (channelValue > 0) ? RECEIVER_OPTIONS_2ND_COLUMN + wbar / 2 : RECEIVER_OPTIONS_2ND_COLUMN + wbar / 2 + 1 - lenChannel;
-              lcdDrawHorizontalLine(xChannel, y + 3, lenChannel, SOLID, 0);
-              lcdDrawHorizontalLine(xChannel, y + 4, lenChannel, SOLID, 0);
+#if defined(EDGETX_CN_STDLCD)
+              // CN rows place the text band at y+2..y+8; shift the 2px bargraph
+              // down by two rows so it is centred on the row text.
+              const coord_t barY = y + 2;
+#else
+              const coord_t barY = y;
+#endif
+              lcdDrawHorizontalLine(xChannel, barY + 3, lenChannel, SOLID, 0);
+              lcdDrawHorizontalLine(xChannel, barY + 4, lenChannel, SOLID, 0);
             }
           }
           break;

@@ -113,9 +113,16 @@ void menuModelFailsafe(event_t event)
     const uint8_t lenFailsafe = limit<uint8_t>(1, (abs(failsafeValue) * wbar/2 + lim/2) / lim, wbar/2);
     const coord_t xChannel = (channelValue>0) ? x+LCD_W-3-wbar/2 : x+LCD_W-2-wbar/2-lenChannel;
     const coord_t xFailsafe = (failsafeValue>0) ? x+LCD_W-3-wbar/2 : x+LCD_W-2-wbar/2-lenFailsafe;
-    lcdDrawHorizontalLine(xChannel, y+1, lenChannel, DOTTED, 0);
-    lcdDrawHorizontalLine(xChannel, y+2, lenChannel, DOTTED, 0);
-    lcdDrawSolidHorizontalLine(xFailsafe, y+3, lenFailsafe);
-    lcdDrawSolidHorizontalLine(xFailsafe, y+4, lenFailsafe);
+#if defined(EDGETX_CN_STDLCD)
+    // CN rows place the text band at y+2..y+8; shift the 4px gauge down by two
+    // rows so it is centred on the row text like the rest of the CN layout.
+    const coord_t barY = y + 2;
+#else
+    const coord_t barY = y;
+#endif
+    lcdDrawHorizontalLine(xChannel, barY+1, lenChannel, DOTTED, 0);
+    lcdDrawHorizontalLine(xChannel, barY+2, lenChannel, DOTTED, 0);
+    lcdDrawSolidHorizontalLine(xFailsafe, barY+3, lenFailsafe);
+    lcdDrawSolidHorizontalLine(xFailsafe, barY+4, lenFailsafe);
   }
 }

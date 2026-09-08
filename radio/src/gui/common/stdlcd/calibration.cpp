@@ -53,6 +53,16 @@ void menuCommonCalib(event_t event)
   // make sure we don't scroll while calibrating
   menuCalibrationState = reusableBuffer.calib.state;
 
+#if defined(EDGETX_CN_STDLCD)
+  // CN text cells are 10px tall (FH=10); starting the three instruction rows
+  // at MENU_HEADER_HEIGHT(=10) pushes the last one onto the stick graphics
+  // (their boxes start at row BOX_CENTERY-BOX_WIDTH/2 = 33). Start the block
+  // higher so it fits in the band above the boxes.
+  const coord_t calibTextY = 2;
+#else
+  const coord_t calibTextY = MENU_HEADER_HEIGHT;
+#endif
+
   switch (event) {
     case EVT_ENTRY:
     case EVT_KEY_BREAK(KEY_EXIT):
@@ -72,21 +82,21 @@ void menuCommonCalib(event_t event)
   switch (reusableBuffer.calib.state) {
     case CALIB_START:
       // START CALIBRATION
-      lcdDrawText(LCD_W/2, MENU_HEADER_HEIGHT+2*FH, STR_MENUTOSTART, CENTERED);
+      lcdDrawText(LCD_W/2, calibTextY+2*FH, STR_MENUTOSTART, CENTERED);
       break;
 
     case CALIB_SET_MIDPOINT:
       // SET MIDPOINT
-      lcdDrawText(LCD_W/2, MENU_HEADER_HEIGHT+FH, STR_SETMIDPOINT, INVERS|CENTERED);
-      lcdDrawText(LCD_W/2, MENU_HEADER_HEIGHT+2*FH, STR_MENUWHENDONE, CENTERED);
+      lcdDrawText(LCD_W/2, calibTextY+FH, STR_SETMIDPOINT, INVERS|CENTERED);
+      lcdDrawText(LCD_W/2, calibTextY+2*FH, STR_MENUWHENDONE, CENTERED);
       adcCalibSetMidPoint();
       break;
 
     case CALIB_MOVE_STICKS:
       // MOVE STICKS/POTS
-      lcdDrawText(LCD_W/2, MENU_HEADER_HEIGHT, STR_MOVESTICKSPOTS, INVERS|CENTERED);
-      lcdDrawText(LCD_W/2, MENU_HEADER_HEIGHT+FH, STR_MENUAXISDIR, CENTERED);
-      lcdDrawText(LCD_W/2, MENU_HEADER_HEIGHT+2*FH, STR_MENUWHENDONE, CENTERED);
+      lcdDrawText(LCD_W/2, calibTextY, STR_MOVESTICKSPOTS, INVERS|CENTERED);
+      lcdDrawText(LCD_W/2, calibTextY+FH, STR_MENUAXISDIR, CENTERED);
+      lcdDrawText(LCD_W/2, calibTextY+2*FH, STR_MENUWHENDONE, CENTERED);
       adcCalibSetMinMax();
       break;
 

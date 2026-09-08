@@ -531,6 +531,17 @@ void drawSource(coord_t x, coord_t y, mixsrc_t idx, LcdFlags att)
   uint16_t aidx = abs(idx);
   bool inverted = idx < 0;
 
+#if defined(EDGETX_CN_STDLCD)
+  // CN rows place the default text band at y+2..y+8; drop the small source
+  // icon keycap (solid 5x7 block + tiny letter) down by two rows so it stays
+  // centred on the row text like the checkbox/slider fixes above.
+  const coord_t iconY = y + 2;
+  const coord_t iconCharY = y + 3;
+#else
+  const coord_t iconY = y;
+  const coord_t iconCharY = y + 1;
+#endif
+
   if (aidx == MIXSRC_NONE) {
     lcdDrawText(x, y, STR_EMPTY, att);
   }
@@ -543,15 +554,15 @@ void drawSource(coord_t x, coord_t y, mixsrc_t idx, LcdFlags att)
       x = lcdLastLeftPos - 5;
       if (inverted)
         lcdDrawChar(x-5, y, '-');
-      lcdDrawChar(x, y+1, CHR_INPUT, RIGHT|TINSIZE);
-      lcdDrawSolidFilledRect(x-1, y, 5, 7);
+      lcdDrawChar(x, iconCharY, CHR_INPUT, RIGHT|TINSIZE);
+      lcdDrawSolidFilledRect(x-1, iconY, 5, 7);
     } else {
       if (inverted) {
         lcdDrawChar(x-1, y, '-');
         x += 3;
       }
-      lcdDrawChar(x+1, y+1, CHR_INPUT, TINSIZE);
-      lcdDrawSolidFilledRect(x, y, 5, 7);
+      lcdDrawChar(x+1, iconCharY, CHR_INPUT, TINSIZE);
+      lcdDrawSolidFilledRect(x, iconY, 5, 7);
       if (g_model.inputNames[aidx-MIXSRC_FIRST_INPUT][0])
         lcdDrawSizedText(x+6, y, g_model.inputNames[aidx-MIXSRC_FIRST_INPUT], LEN_INPUT_NAME, att);
       else
@@ -568,8 +579,8 @@ void drawSource(coord_t x, coord_t y, mixsrc_t idx, LcdFlags att)
         x = lcdLastLeftPos - 4;
         if (inverted)
           lcdDrawChar(x-5, y, '-');
-        lcdDrawChar(x, y+1, '1'+qr.quot, TINSIZE);
-        lcdDrawFilledRect(x-1, y, 5, 7, SOLID);
+        lcdDrawChar(x, iconCharY, '1'+qr.quot, TINSIZE);
+        lcdDrawFilledRect(x-1, iconY, 5, 7, SOLID);
       }
       else
 #endif
@@ -588,8 +599,8 @@ void drawSource(coord_t x, coord_t y, mixsrc_t idx, LcdFlags att)
         x += 3;
       }
       if (qr.quot < MAX_SCRIPTS && qr.rem < scriptInputsOutputs[qr.quot].outputsCount) {
-        lcdDrawChar(x+1, y+1, '1'+qr.quot, TINSIZE);
-        lcdDrawFilledRect(x, y, 5, 7, SOLID);
+        lcdDrawChar(x+1, iconCharY, '1'+qr.quot, TINSIZE);
+        lcdDrawFilledRect(x, iconY, 5, 7, SOLID);
         lcdDrawSizedText(x+5, y, scriptInputsOutputs[qr.quot].outputs[qr.rem].name, att & STREXPANDED ? 9 : 4, att);
       }
       else
@@ -615,6 +626,14 @@ void drawCheckBox(coord_t x, coord_t y, uint8_t value, LcdFlags attr)
 {
   if (value)
     lcdDrawChar(x+1, y, '#');
+#if defined(EDGETX_CN_STDLCD)
+  // CN mode draws default text inside a 10px cell from row y+2 to y+8 (the
+  // 5x7 glyphs are centred there). Keep the fixed 7x7 box on that same band
+  // so the '#' check stays inside the box and the box lines up with the text
+  // beside it; without this the box sits at the top of the row while the
+  // check glyph hangs over its bottom edge.
+  y += 2;
+#endif
   if (attr)
     lcdDrawSolidFilledRect(x, y, 7, 7);
   else
@@ -701,7 +720,14 @@ void drawGauge(coord_t x, coord_t y, coord_t w, coord_t h, int32_t val, int32_t 
 void drawSlider(coord_t x, coord_t y, uint8_t width, uint8_t value, uint8_t max, uint8_t attr)
 {
   lcdDrawChar(x + (value * (width - FWNUM)) / max, y, '$');
-  lcdDrawSolidHorizontalLine(x, y + 3, width, FORCE);
+#if defined(EDGETX_CN_STDLCD)
+  // CN mode renders the 5x7 glyphs centred on rows y+2..y+8; put the track line
+  // on the same centre so it aligns with the '$' knob (stock used y+3).
+  const coord_t trackY = y + 5;
+#else
+  const coord_t trackY = y + 3;
+#endif
+  lcdDrawSolidHorizontalLine(x, trackY, width, FORCE);
   if (attr && (!(attr & BLINK) || !BLINK_ON_PHASE)) {
     lcdDrawSolidFilledRect(x, y, width, FH - 1);
   }
