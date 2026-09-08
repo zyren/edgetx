@@ -27,10 +27,18 @@
 
 #if defined(EDGETX_CN_STDLCD)
 #include "fonts/external_font.h"
-#include "fonts/cn/generated/cn_default_10.h"
 #include "fonts/cn/generated/cn_10.h"
+#if defined(EDGETX_CN_STDLCD_LITE)
+// 512K-flash X7 targets: keep only the glyphs the SD-card font does not cover.
+// Every CJK glyph (U+4E00-U+9FFF) is read from /FONTS/CN_BASIC.FNT at runtime.
+#include "fonts/cn/generated/cn_default_10_lite.h"
+#include "fonts/cn/generated/cn_12_lite.h"
+#include "fonts/cn/generated/cn_16_lite.h"
+#else
+#include "fonts/cn/generated/cn_default_10.h"
 #include "fonts/cn/generated/cn_12.h"
 #include "fonts/cn/generated/cn_16.h"
+#endif
 #endif
 
 #if !defined(SIMU)

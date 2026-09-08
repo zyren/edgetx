@@ -26,13 +26,27 @@ set(GUI_SRC
 
 # Phase 2 CN assets are firmware/simulator sources only. Bootloader sources are
 # assembled separately and never receive these files or this feature macro.
-if(PCBREV STREQUAL GX12 AND TRANSLATIONS STREQUAL CN)
+# 1 MB-flash X7 parts (and native/simulator builds) embed the full CJK subset.
+# 512K-flash X7 parts build with EDGETX_CN_STDLCD_LITE: only the glyphs that
+# the SD-card font cannot cover stay embedded; all CJK text is served by
+# /FONTS/CN_BASIC.FNT loaded at runtime.
+if(PCB STREQUAL X7 AND TRANSLATIONS STREQUAL CN)
   set(GUI_SRC ${GUI_SRC}
-    ../../fonts/cn/generated/cn_default_10.cpp
     ../../fonts/cn/generated/cn_10.cpp
-    ../../fonts/cn/generated/cn_12.cpp
-    ../../fonts/cn/generated/cn_16.cpp
   )
+  if(EDGETX_CN_USE_LITE_FONTS)
+    set(GUI_SRC ${GUI_SRC}
+      ../../fonts/cn/generated/cn_default_10_lite.cpp
+      ../../fonts/cn/generated/cn_12_lite.cpp
+      ../../fonts/cn/generated/cn_16_lite.cpp
+    )
+  else()
+    set(GUI_SRC ${GUI_SRC}
+      ../../fonts/cn/generated/cn_default_10.cpp
+      ../../fonts/cn/generated/cn_12.cpp
+      ../../fonts/cn/generated/cn_16.cpp
+    )
+  endif()
 endif()
 
 if(PXX2 OR LUA OR MULTIMODULE)
@@ -57,7 +71,9 @@ if(GHOST)
     )
 endif()
 
-if(PXX2 OR MULTIMODULE)
+# 512K-flash X7 CN firmware (EDGETX_CN_STDLCD_LITE) omits the spectrum analyser
+# tool GUI to fit the flash; 1MB parts and native/simulator builds keep it.
+if((PXX2 OR MULTIMODULE) AND NOT EDGETX_CN_USE_LITE_FONTS)
   set(GUI_SRC
     ${GUI_SRC}
     ../common/stdlcd/radio_spectrum_analyser.cpp

@@ -33,7 +33,7 @@ set(TEST_SRC_FILES ${TEST_SRC_FILES}
 add_executable(gtests-radio EXCLUDE_FROM_ALL
   ${TEST_SRC_FILES}
 )
-if(PCBREV STREQUAL GX12 AND TRANSLATIONS STREQUAL CN)
+if(PCB STREQUAL X7 AND TRANSLATIONS STREQUAL CN)
   target_compile_definitions(gtests-radio PRIVATE EDGETX_CN_STDLCD)
 endif()
 target_compile_options(gtests-radio PRIVATE ${SIMU_SRC_OPTIONS})

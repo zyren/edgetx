@@ -172,6 +172,16 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/bitmaps/${BITMAPS_DIR})
 
+# CN stdlcd font strategy: an X7 CN firmware on a 512K-flash part cannot hold
+# the full embedded CJK subset (~19 KB). 1 MB-flash parts and native builds
+# keep the full subset; 512K parts build with EDGETX_CN_STDLCD_LITE and serve
+# every CJK glyph (U+4E00-U+9FFF) from the external /FONTS/CN_BASIC.FNT font
+# that is loaded from the SD card at runtime.
+set(EDGETX_CN_USE_LITE_FONTS OFF)
+if(PCB STREQUAL X7 AND TRANSLATIONS STREQUAL CN AND NOT NATIVE_BUILD AND NOT TARGET_FLASH_SIZE)
+  set(EDGETX_CN_USE_LITE_FONTS ON)
+endif()
+
 include(gui/CMakeLists.txt)
 
 # TODO: move to storage/
@@ -264,7 +274,7 @@ if(SIMU_DISKIO)
 endif()
 
 set(SRC ${SRC} sdcard.cpp rtc.cpp logs.cpp lib_file.cpp)
-if(PCBREV STREQUAL GX12 AND TRANSLATIONS STREQUAL CN)
+if(PCB STREQUAL X7 AND TRANSLATIONS STREQUAL CN)
   set(SRC ${SRC} fonts/external_font.cpp)
 endif()
 
@@ -555,7 +565,7 @@ if(NATIVE_BUILD)
   add_library(radiolib_native OBJECT EXCLUDE_FROM_ALL
     ${RADIOLIB_NATIVE_SRC}
   )
-  if(PCBREV STREQUAL GX12 AND TRANSLATIONS STREQUAL CN)
+  if(PCB STREQUAL X7 AND TRANSLATIONS STREQUAL CN)
     target_compile_definitions(radiolib_native PRIVATE EDGETX_CN_STDLCD)
   endif()
 
@@ -637,8 +647,11 @@ if(BOOTLOADER)
 endif()
 
 add_executable(firmware ${SRC})
-if(PCBREV STREQUAL GX12 AND TRANSLATIONS STREQUAL CN)
+if(PCB STREQUAL X7 AND TRANSLATIONS STREQUAL CN)
   target_compile_definitions(firmware PRIVATE EDGETX_CN_STDLCD)
+  if(EDGETX_CN_USE_LITE_FONTS)
+    target_compile_definitions(firmware PRIVATE EDGETX_CN_STDLCD_LITE)
+  endif()
 endif()
 link_libraries(firmware -lstdc++)
 add_dependencies(firmware ${RADIO_DEPENDENCIES})

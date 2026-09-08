@@ -183,21 +183,25 @@ void menuRadioTools(event_t event)
 #endif
 
 #if defined(INTERNAL_MODULE_PXX2)
+#if !defined(EDGETX_CN_STDLCD_LITE)
   if (isPXX2ModuleOptionAvailable(reusableBuffer.radioTools.modules[INTERNAL_MODULE].information.modelID, MODULE_OPTION_SPECTRUM_ANALYSER))
     addRadioModuleToolHandler(index++, STR_SPECTRUM_ANALYSER_INT, menuRadioSpectrumAnalyser, INTERNAL_MODULE);
+#endif
 
   if (isPXX2ModuleOptionAvailable(reusableBuffer.radioTools.modules[INTERNAL_MODULE].information.modelID, MODULE_OPTION_POWER_METER))
     addRadioModuleToolHandler(index++, STR_POWER_METER_INT, menuRadioPowerMeter, INTERNAL_MODULE);
 #endif
 
+#if !defined(EDGETX_CN_STDLCD_LITE)
 #if defined(HARDWARE_INTERNAL_MODULE) && defined(MULTIMODULE)
   if (g_eeGeneral.internalModule == MODULE_TYPE_MULTIMODULE)
     addRadioModuleToolHandler(index++, STR_SPECTRUM_ANALYSER_INT, menuRadioSpectrumAnalyser, INTERNAL_MODULE);
 #endif
+#endif
 
 #if defined(HARDWARE_EXTERNAL_MODULE)
 
-#if (defined(PXX2) || defined(MULTIMODULE))
+#if (defined(PXX2) || defined(MULTIMODULE)) && !defined(EDGETX_CN_STDLCD_LITE)
   bool has_spectrum_analyser = false;
 #if defined(PXX2)
   if (isPXX2ModuleOptionAvailable(reusableBuffer.radioTools.modules[EXTERNAL_MODULE].information.modelID, MODULE_OPTION_SPECTRUM_ANALYSER))
