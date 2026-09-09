@@ -221,7 +221,7 @@
 #define TR_SF_FAILSAFE                 "设置失控保护"
 #define TR_SF_RANGE_CHECK              "测距模式"
 #define TR_SF_MOD_BIND                 "模块对频"
-#define TR_SF_RGBLEDS                  "RGB LED 灯"
+#define TR_SF_RGBLEDS                  "RGB LED"
 
 #define TR_SOUND                       "播放声音"
 #define TR_PLAY_TRACK                  TR("Ply Trk", "播放音频文件")
@@ -235,7 +235,7 @@
 #define TR_SF_BACKLIGHT                "背光"
 #define TR_SF_VARIO                    "Vario传感器"
 #define TR_SF_TEST                     "测试"
-#define TR_SF_SAFETY                   "锁定通道值"
+#define TR_SF_SAFETY                   "锁定通道"
 
 #define TR_SF_SCREENSHOT               "截屏"
 #define TR_SF_RACING_MODE              "竞速模式"
@@ -440,7 +440,7 @@
 
 #define TR_YES                         "是"
 #define TR_NO                          "否"
-#define TR_DELETEMODEL                 "删除 模型"
+#define TR_DELETEMODEL                 "删除模型"
 #define TR_COPYINGMODEL                "复制模型..."
 #define TR_MOVINGMODEL                 "移动模型..."
 #define TR_LOADINGMODEL                "载入模型..."
@@ -522,7 +522,7 @@
 #define TR_DELAYUP                     "上行延时"
 #define TR_SLOWDOWN                    TR("下慢放", "下行慢动作")
 #define TR_SLOWUP                      "上行慢动作"
-#define TR_CV                          "曲线"
+#define TR_CV                          "CV"
 #define TR_GV                          TR("G", "GV")
 #define TR_RANGE                       "范围"
 #define TR_CENTER                      "中点"
@@ -630,7 +630,7 @@
 #define TR_MENUTORESET                 TR_ENTER " to 重置"
 #define TR_PPM_TRAINER                 "TR"
 #define TR_CH                          "CH"
-#define TR_MODEL                       "模型"
+#define TR_MODEL                       "Model"
 #define TR_FM                          TR_SFC_AIR("DM", "FM")
 #define TR_EEPROMLOWMEM                "EEPROM low mem"
 #define TR_PRESS_ANY_KEY_TO_SKIP       "按任意键跳过"
